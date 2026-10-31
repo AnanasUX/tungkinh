@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Chùa An Nhiên – Hệ Thống Tu Tập & Lễ Phật Trực Tuyến</title>
+    <meta name="description" content="Chùa An Nhiên - Không gian tâm linh thanh tịnh, tụng kinh, gõ mõ, thỉnh chuông, dâng hương và tích lũy công đức trực tuyến.">
+    
+    <!-- Google Fonts: Be Vietnam Pro & Playfair Display / Cinzel for Vietnamese sacred aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,600;0,800;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="temple-body">
+
+    <!-- CANVAS BACKGROUND VẬT LÝ KHÓI TRẦM, BỤI VÀNG VÀ HÀO QUANG -->
+    <canvas id="templeCanvas" class="temple-canvas"></canvas>
+
+    <!-- TOAST NOTIFICATION THÔNG BÁO TÂM LINH -->
+    <div id="toastNotification" class="toast-notification" role="status" aria-live="polite">
+        <span class="toast-icon">卐</span>
+        <span id="toastMessage" class="toast-msg">Nam Mô A Di Đà Phật</span>
+    </div>
+
+    <!-- HEADER / HUD ĐIỀU KHIỂN & TRẠNG THÁI HÀNH GIẢ -->
+    <header class="temple-header">
+        <div class="header-left">
+            <div class="temple-brand">
+                <div class="lotus-emblem" aria-hidden="true">
+                    <svg viewBox="0 0 100 100" class="lotus-svg">
+                        <path d="M50 15 C45 35 25 45 10 50 C25 60 40 85 50 90 C60 85 75 60 90 50 C75 45 55 35 50 15 Z" fill="url(#lotusGoldGrad)"/>
+                        <circle cx="50" cy="52" r="10" fill="#ffd54f"/>
+                        <defs>
+                            <linearGradient id="lotusGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#fff176"/>
+                                <stop offset="50%" stop-color="#ffb300"/>
+                                <stop offset="100%" stop-color="#ff8f00"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1 class="temple-title">CHÙA AN NHIÊN</h1>
+                    <span class="temple-subtitle">Đạo Tràng Tu Tập & Lễ Phật</span>
+                </div>
+            </div>
+
+            <!-- PROFILE BADGE CỦA HÀNH GIẢ -->
+            <div id="userProfileBadge" class="user-badge" style="display: none;">
+                <div class="user-avatar-wrap" id="userAvatarWrap">
+                    <span id="userAvatarIcon" class="avatar-icon">🧘‍♂️</span>
+                </div>
+                <div class="user-info">
+                    <div class="user-name-row">
+                        <strong id="userDisplayName">Hành Giả</strong>
+                        <span id="userAgeTag" class="age-tag">30 tuổi</span>
+                    </div>
+                    <div class="user-sub-row">
+                        <span id="userSeatTag" class="seat-badge">Bồ đoàn: Chưa chọn</span>
+                        <button type="button" id="btnEditProfile" class="btn-subtle" title="Chỉnh sửa hồ sơ tu học">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Sửa
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THÔNG SỐ CÔNG ĐỨC & TU TẬP (HUD STATS) -->
+        <div class="header-center">
+            <div class="stat-pill" title="Thời gian tu tập buổi hôm nay">
+                <span class="stat-icon">⏳</span>
+                <div class="stat-data">
+                    <span class="stat-val" id="practiceTimer">00:00:00</span>
+                    <span class="stat-lbl">Tu Tập</span>
+                </div>
+            </div>
+
+            <div class="stat-pill" title="Số lần gõ mõ định tâm">
+                <span class="stat-icon">🪵</span>
+                <div class="stat-data">
+                    <span class="stat-val" id="hudMoCount">0</span>
+                    <span class="stat-lbl">Tiếng Mõ</span>
+                </div>
+            </div>
+
+            <div class="stat-pill" title="Số lần thỉnh chuông khai tuệ">
+                <span class="stat-icon">🔔</span>
+                <div class="stat-data">
+                    <span class="stat-val" id="hudBellCount">0</span>
+                    <span class="stat-lbl">Chuông Ngân</span>
+                </div>
+            </div>
+
+            <div class="stat-pill merit-pill" title="Điểm phước đức tích lũy">
+                <span class="stat-icon">✨</span>
+                <div class="stat-data">
+                    <span class="stat-val" id="hudMeritCount">0</span>
+                    <span class="stat-lbl">Phước Đức</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- HEADER RIGHT TOOLS -->
+        <div class="header-right">
+            <button type="button" id="btnToggleAmbient" class="btn-icon" title="Âm thiền thanh tịnh (Nhạc nền)">
+                <span id="ambientIcon">🎵</span>
+            </button>
+            <button type="button" id="btnToggleAudio" class="btn-icon" title="Tắt / Bật toàn bộ âm thanh">
+                <span id="audioIcon">🔊</span>
+            </button>
+            <button type="button" id="btnOpenHelp" class="btn-icon" title="Hướng dẫn & Phím tắt">
+                <span>❓</span>
+            </button>
+            <button type="button" id="btnFullscreen" class="btn-icon" title="Toàn màn hình Chánh điện">
+                <span id="fullscreenIcon">⛶</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- KHÔNG GIAN CHÁNH ĐIỆN CHÙA AN NHIÊN -->
+    <main class="main-temple-hall" id="templeHall">
+
+        <!-- LỜI NGUYỆN CẦU TÂM LINH BAY TRÊN ĐỈNH CHÁNH ĐIỆN -->
+        <div class="temple-banner-prayer" id="prayerBanner">
+            <span class="prayer-icon">🌸</span>
+            <span id="currentPrayerText" class="prayer-text">"Nguyện mười phương an lành, thân tâm thường thanh tịnh, vạn sự cát tường."</span>
+        </div>
+
+        <!-- BÀN THỜ PHẬT TRANG NGHIÊM (ALTAR) -->
+        <section class="sanctuary-altar" aria-label="Bàn Thờ Phật">
+            
+            <!-- HÀO QUANG ĐỨC PHẬT PHÍA SAU TƯỢNG -->
+            <div class="buddha-halo-container" aria-hidden="true">
+                <div class="buddha-halo-ray"></div>
+                <div class="buddha-halo-circle"></div>
+            </div>
+
+            <!-- TÔN TƯỢNG ĐỨC PHẬT TỌA ĐÀI SEN (VECTOR TÔN NGHIÊM) -->
+            <div class="buddha-statue-wrap" id="buddhaStatue">
+                <svg viewBox="0 0 300 400" class="buddha-svg" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                        <!-- Gold Gradient for Buddha Body -->
+                        <linearGradient id="buddhaGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fff9c4"/>
+                            <stop offset="35%" stop-color="#fbc02d"/>
+                            <stop offset="70%" stop-color="#f57f17"/>
+                            <stop offset="100%" stop-color="#d4af37"/>
+                        </linearGradient>
+                        <!-- Robe Dark Amber Gradient -->
+                        <linearGradient id="robeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#ffb74d"/>
+                            <stop offset="50%" stop-color="#e65100"/>
+                            <stop offset="100%" stop-color="#8d2b00"/>
+                        </linearGradient>
+                        <!-- Lotus Petal Gradient -->
+                        <linearGradient id="lotusPetal" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ffebee"/>
+                            <stop offset="40%" stop-color="#f48fb1"/>
+                            <stop offset="100%" stop-color="#ad1457"/>
+                        </linearGradient>
+                        <!-- Filter for divine gold glow -->
+                        <filter id="divineGlow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="8" result="blur"/>
+                            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                        </filter>
+                    </defs>
+
+                    <!-- Nhục kế & Hào quang đỉnh đầu (Ushnisha) -->
+                    <circle cx="150" cy="55" r="14" fill="url(#buddhaGold)"/>
+                    <ellipse cx="150" cy="46" rx="6" ry="8" fill="#ffd54f"/>
+                    <circle cx="150" cy="40" r="3" fill="#fff" filter="url(#divineGlow)"/>
+
+                    <!-- Khuôn Mặt Từ Bi -->
+                    <ellipse cx="150" cy="85" rx="36" ry="44" fill="url(#buddhaGold)" filter="url(#divineGlow)"/>
+                    <!-- Đôi Tai Dài (Tướng Hảo Quý) -->
+                    <path d="M110 80 C104 90 106 120 114 125 C118 120 118 100 116 85 Z" fill="url(#buddhaGold)"/>
+                    <path d="M190 80 C196 90 194 120 186 125 C182 120 182 100 184 85 Z" fill="url(#buddhaGold)"/>
+                    <!-- Bạch Hào Tướng (Giữa Trán) -->
+                    <circle cx="150" cy="74" r="2.8" fill="#ffffff" filter="url(#divineGlow)"/>
+                    <!-- Mắt Nhắm Khép Thiền Từ Ái -->
+                    <path d="M130 84 Q140 92 144 87" stroke="#795548" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                    <path d="M170 84 Q160 92 156 87" stroke="#795548" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+                    <!-- Miệng Nụ Cười Cứu Độ -->
+                    <path d="M142 108 Q150 114 158 108" stroke="#a94442" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+
+                    <!-- Pháp Y (Áo Cà Sa Phật) -->
+                    <path d="M114 125 C80 160 70 230 65 300 L235 300 C230 230 220 160 186 125 C165 145 135 145 114 125 Z" fill="url(#robeGrad)"/>
+                    <path d="M118 135 C130 180 170 240 235 300" stroke="#ffd54f" stroke-width="2.5" fill="none" opacity="0.6"/>
+                    <path d="M182 135 C170 180 130 240 65 300" stroke="#ffd54f" stroke-width="2.5" fill="none" opacity="0.6"/>
+
+                    <!-- Cánh Tay & Ấn Thiền Định (Dhyana Mudra) -->
+                    <path d="M75 250 C85 285 120 295 150 295 C180 295 215 285 225 250 C210 240 180 260 150 260 C120 260 90 240 75 250 Z" fill="url(#buddhaGold)"/>
+                    <!-- Bàn Tay Đặt Ngang Bụng Tiếp Dẫn / Thiền Định -->
+                    <ellipse cx="150" cy="285" rx="30" ry="12" fill="url(#buddhaGold)"/>
+
+                    <!-- Chân Tọa Kiết Già (Xếp Bằng Sen) -->
+                    <path d="M45 300 C70 280 230 280 255 300 C265 320 245 335 150 335 C55 335 35 320 45 300 Z" fill="url(#robeGrad)"/>
+
+                    <!-- ĐÀI SEN NGÀN CÁNH (LOTUS THRONE) -->
+                    <!-- Lớp Cánh Phía Sau -->
+                    <path d="M50 330 Q80 295 110 330" fill="url(#lotusPetal)"/>
+                    <path d="M100 325 Q130 290 160 325" fill="url(#lotusPetal)"/>
+                    <path d="M140 325 Q170 290 200 325" fill="url(#lotusPetal)"/>
+                    <path d="M190 330 Q220 295 250 330" fill="url(#lotusPetal)"/>
+                    <!-- Thân Đài Sen Vàng -->
+                    <ellipse cx="150" cy="340" rx="125" ry="24" fill="#ffb300"/>
+                    <ellipse cx="150" cy="336" rx="120" ry="20" fill="#fff59d"/>
+                    <!-- Lớp Cánh Sen Nở Rực Phía Trước -->
+                    <path d="M35 340 C50 310 90 320 100 365 C70 365 45 355 35 340 Z" fill="url(#lotusPetal)"/>
+                    <path d="M85 345 C110 305 145 315 150 372 C120 372 95 360 85 345 Z" fill="url(#lotusPetal)"/>
+                    <path d="M215 345 C190 305 155 315 150 372 C180 372 205 360 215 345 Z" fill="url(#lotusPetal)"/>
+                    <path d="M265 340 C250 310 210 320 200 365 C230 365 255 355 265 340 Z" fill="url(#lotusPetal)"/>
+                    <!-- Đế Sen Đế Bát Giác Trang Nghiêm -->
+                    <polygon points="40,375 260,375 240,395 60,395" fill="#e65100"/>
+                </svg>
+            </div>
+
+            <!-- PHÁP KHÍ TẢ HỮU VÀ LỄ VẬT TIỀN ĐÀI -->
+            <div class="altar-table">
+                <!-- HOA SEN TƯƠI TẢ PHÍA -->
+                <div class="altar-item flower-vase flower-left" title="Bình Hoa Sen Dâng Phật">
+                    <div class="lotus-bouquet">
+                        <div class="lotus-flower bloom-1">🌸</div>
+                        <div class="lotus-flower bloom-2">🌸</div>
+                        <div class="lotus-flower bloom-3">🪷</div>
+                    </div>
+                    <div class="vase-body"></div>
+                </div>
+
+                <!-- ĐÈN CẦY / NẾN LUNG LINH BÊN TRÁI -->
+                <div class="altar-item candle-holder candle-left" title="Ngọn Đèn Tâm Đăng">
+                    <div class="candle-flame"></div>
+                    <div class="candle-stick"></div>
+                    <div class="candle-stand"></div>
+                </div>
+
+                <!-- LƯ HƯƠNG ĐỒNG TRUNG TÂM (INCENSE BURNER) -->
+                <div class="altar-item incense-censer" id="incenseCenser" title="Lư Hương Trầm Nghi Ngút">
+                    <div class="incense-sticks">
+                        <span class="stick-glowing stick-1"></span>
+                        <span class="stick-glowing stick-2"></span>
+                        <span class="stick-glowing stick-3"></span>
+                    </div>
+                    <div class="censer-body">
+                        <div class="censer-lid-ornament">卐</div>
+                    </div>
+                    <div class="censer-base"></div>
+                </div>
+
+                <!-- ĐÈN CẦY / NẾN BÊN PHẢI -->
+                <div class="altar-item candle-holder candle-right" title="Ngọn Đèn Trí Tuệ">
+                    <div class="candle-flame"></div>
+                    <div class="candle-stick"></div>
+                    <div class="candle-stand"></div>
+                </div>
+
+                <!-- HOA SEN BÊN HỮU -->
+                <div class="altar-item flower-vase flower-right" title="Bình Hoa Sen Dâng Phật">
+                    <div class="lotus-bouquet">
+                        <div class="lotus-flower bloom-1">🌸</div>
+                        <div class="lotus-flower bloom-2">🪷</div>
+                        <div class="lotus-flower bloom-3">🌸</div>
+                    </div>
+                    <div class="vase-body"></div>
+                </div>
+            </div>
+
+            <!-- HAI PHÁP KHÍ LỄ PHẬT TRỌNG TÂM: ĐẠI HỒNG CHUNG & MÕ GỖ -->
+            <div class="instruments-dock">
+                
+                <!-- ĐẠI HỒNG CHUNG (TEMPLE BELL) -->
+                <div class="instrument-box bell-box" id="bellTarget" role="button" tabindex="0" aria-label="Thỉnh Đại Hồng Chung (Phím C)" title="Nhấp hoặc ấn phím C để Thỉnh Chuông">
+                    <div class="bell-hang-rig">
+                        <div class="bell-chain"></div>
+                        <div class="bell-body" id="bellBody">
+                            <div class="bell-crown"></div>
+                            <div class="bell-metal">
+                                <span class="bell-engraving">卐</span>
+                            </div>
+                            <div class="bell-rim"></div>
+                        </div>
+                        <div class="bell-striker" id="bellStriker"></div>
+                    </div>
+                    <span class="instrument-label">ĐẠI HỒNG CHUNG <em>(Phím C)</em></span>
+                </div>
+
+                <!-- MÕ GỖ TỤNG KINH (WOODEN FISH / MUKTAK) -->
+                <div class="instrument-box mo-box" id="moTarget" role="button" tabindex="0" aria-label="Gõ Mõ Tụng Kinh (Phím M hoặc Phím Cách)" title="Nhấp hoặc ấn Space/M để Gõ Mõ">
+                    <div class="mo-cushion-rig">
+                        <div class="mo-mallet" id="moMallet">
+                            <div class="mallet-head"></div>
+                            <div class="mallet-stick"></div>
+                        </div>
+                        <div class="mo-body" id="moBody">
+                            <div class="mo-scale-pattern"></div>
+                            <div class="mo-hollow-mouth"></div>
+                        </div>
+                        <div class="mo-pillow"></div>
+                    </div>
+                    <span class="instrument-label">MÕ TỤNG KINH <em>(Phím Space / M)</em></span>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- KHU VỰC BỒ ĐOÀN ĐẠO TRÀNG (MEDITATION SEATS ARENA) -->
+        <section class="sanctuary-seats" aria-label="Hàng Bồ Đoàn Tu Học">
+            <div class="seats-header">
+                <h2 class="seats-title">BỒ ĐOÀN ĐẠO TRÀNG ĐỒNG TU</h2>
+                <p class="seats-hint">Chọn một Bồ đoàn thanh tịnh để an tọa tu tập (Bồ đoàn sáng vàng là vị trí của bạn)</p>
+            </div>
+
+            <div class="seats-grid" id="seatsGrid" role="region" aria-label="Danh sách 16 Bồ đoàn">
+                <!-- 16 Bồ đoàn sẽ được render động bằng JavaScript -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- THANH CÔNG CỤ THAO TÁC NHANH (ACTION BAR DƯỚI ĐÁY) -->
+    <nav class="bottom-action-bar" aria-label="Thanh Tu Tập">
+        <button type="button" class="action-btn" id="btnActionMo" title="Gõ Mõ (Phím Space / M)">
+            <span class="action-icon">🪵</span>
+            <span class="action-txt">Gõ Mõ</span>
+            <kbd class="action-kbd">Space</kbd>
+        </button>
+
+        <button type="button" class="action-btn" id="btnActionBell" title="Thỉnh Chuông (Phím C)">
+            <span class="action-icon">🔔</span>
+            <span class="action-txt">Thỉnh Chuông</span>
+            <kbd class="action-kbd">C</kbd>
+        </button>
+
+        <button type="button" class="action-btn" id="btnActionBow" title="Đảnh Lễ Phật (Phím L)">
+            <span class="action-icon">🙏</span>
+            <span class="action-txt">Đảnh Lễ</span>
+            <kbd class="action-kbd">L</kbd>
+        </button>
+
+        <button type="button" class="action-btn" id="btnActionScripture" title="Kinh Thư Tụng Niệm (Phím K)">
+            <span class="action-icon">📜</span>
+            <span class="action-txt">Kinh Thư</span>
+            <kbd class="action-kbd">K</kbd>
+        </button>
+
+        <button type="button" class="action-btn" id="btnActionOffering" title="Cúng Dường & Gieo Duyên (Phím H)">
+            <span class="action-icon">🪷</span>
+            <span class="action-txt">Cúng Dường</span>
+            <kbd class="action-kbd">H</kbd>
+        </button>
+
+        <button type="button" class="action-btn" id="btnActionMeritBook" title="Bảng Vàng Công Đức">
+            <span class="action-icon">✨</span>
+            <span class="action-txt">Công Đức</span>
+            <kbd class="action-kbd">B</kbd>
+        </button>
+    </nav>
+
+    <!-- ======================================================== -->
+    <!-- MODALS HỆ THỐNG -->
+    <!-- ======================================================== -->
+
+    <!-- 1. MODAL GHI DANH TU HỌC (FIRST TIME REGISTRATION) -->
+    <div id="modalRegister" class="temple-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="regModalTitle" style="display: none;">
+        <div class="temple-modal-card">
+            <div class="modal-gold-ornament">卐</div>
+            <h2 id="regModalTitle" class="modal-title">Ghi Danh Tu Học & Quy Hướng</h2>
+            <p class="modal-desc">Kính mời Quý hành giả hoan hỷ nhập thông tin để an tọa Bồ đoàn và bắt đầu thời khóa tu tập trang nghiêm tại Chùa An Nhiên.</p>
+
+            <form id="formRegister" class="temple-form" novalidate>
+                <div class="form-group">
+                    <label for="regFullName">Họ và Tên <span class="required">*</span></label>
+                    <input type="text" id="regFullName" class="form-input" placeholder="Ví dụ: Nguyễn Văn An" required autocomplete="name" maxlength="60">
+                    <div class="field-error" id="errRegFullName"></div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="regDharmaName">Pháp Danh (Nếu có)</label>
+                        <input type="text" id="regDharmaName" class="form-input" placeholder="Ví dụ: Nhuận Tâm, Diệu Âm" maxlength="50">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regBirthDate">Ngày Tháng Năm Sinh <span class="required">*</span></label>
+                        <input type="date" id="regBirthDate" class="form-input" required>
+                        <div class="field-error" id="errRegBirthDate"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Pháp Tướng / Hình Đại Diện</label>
+                    <div class="avatar-picker" id="regAvatarPicker" role="radiogroup">
+                        <label class="avatar-choice active">
+                            <input type="radio" name="regAvatar" value="male_layman" checked>
+                            <span class="choice-icon">🧘‍♂️</span>
+                            <span class="choice-label">Nam Cư Sĩ</span>
+                        </label>
+                        <label class="avatar-choice">
+                            <input type="radio" name="regAvatar" value="female_layman">
+                            <span class="choice-icon">🧘‍♀️</span>
+                            <span class="choice-label">Nữ Cư Sĩ</span>
+                        </label>
+                        <label class="avatar-choice">
+                            <input type="radio" name="regAvatar" value="monk">
+                            <span class="choice-icon">🦲</span>
+                            <span class="choice-label">Tăng Ni</span>
+                        </label>
+                        <label class="avatar-choice">
+                            <input type="radio" name="regAvatar" value="lotus">
+                            <span class="choice-icon">🪷</span>
+                            <span class="choice-label">Đài Sen</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="regPrayer">Tâm Nguyện / Lời Cầu Nguyện Gửi Lên Tam Bảo</label>
+                    <textarea id="regPrayer" class="form-textarea" rows="2" placeholder="Nguyện cầu gia đình bình an, quốc thái dân an, tật bệnh tiêu trừ..." maxlength="200"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn-sacred-primary" id="btnSubmitRegister">
+                        <span class="btn-sparkle">✨</span> Ghi Danh Vào Chánh Điện
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. MODAL CHỈNH SỬA HỒ SƠ TU HỌC -->
+    <div id="modalEditProfile" class="temple-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" style="display: none;">
+        <div class="temple-modal-card">
+            <button type="button" class="btn-close-modal" id="btnCloseEditModal" aria-label="Đóng">&times;</button>
+            <div class="modal-gold-ornament">卐</div>
+            <h2 id="editModalTitle" class="modal-title">Chỉnh Sửa Hồ Sơ Hành Giả</h2>
+            <p class="modal-desc">Cập nhật thông tin tu học. ID hành giả, Bồ đoàn và công đức tích lũy sẽ được bảo toàn nguyên vẹn.</p>
+
+            <form id="formEditProfile" class="temple-form" novalidate>
+                <div class="form-group">
+                    <label for="editFullName">Họ và Tên <span class="required">*</span></label>
+                    <input type="text" id="editFullName" class="form-input" required maxlength="60">
+                    <div class="field-error" id="errEditFullName"></div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="editDharmaName">Pháp Danh</label>
+                        <input type="text" id="editDharmaName" class="form-input" maxlength="50">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editBirthDate">Ngày Sinh <span class="required">*</span></label>
+                        <input type="date" id="editBirthDate" class="form-input" required>
+                        <div class="field-error" id="errEditBirthDate"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Pháp Tướng / Hình Đại Diện</label>
+                    <div class="avatar-picker" id="editAvatarPicker">
+                        <label class="avatar-choice">
+                            <input type="radio" name="editAvatar" value="male_layman">
+                            <span class="choice-icon">🧘‍♂️</span>
+                            <span class="choice-label">Nam Cư Sĩ</span>
+                        </label>
+                        <label class="avatar-choice">
+                            <input type="radio" name="editAvatar" value="female_layman">
+                            <span class="choice-icon">🧘‍♀️</span>
+                            <span class="choice-label">Nữ Cư Sĩ</span>
+                        </label>
+                        <label class="avatar-choice">
+                            <input type="radio" name="editAvatar" value="monk">
+                            <span class="choice-icon">🦲</span>
+                            <span class="choice-label">Tăng Ni</span>
+                        </label>
+                        <label class="avatar-choice">
+                            <input type="radio" name="editAvatar" value="lotus">
+                            <span class="choice-icon">🪷</span>
+                            <span class="choice-label">Đài Sen</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editPrayer">Tâm Nguyện Dâng Phật</label>
+                    <textarea id="editPrayer" class="form-textarea" rows="2" maxlength="200"></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-subtle" id="btnCancelEdit">Hủy Bỏ</button>
+                    <button type="submit" class="btn-sacred-primary" id="btnSubmitEdit">Lưu Thay Đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. MODAL KINH THƯ & TỤNG NIỆM TỰ ĐỘNG -->
+    <div id="modalScripture" class="temple-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="scriptureModalTitle" style="display: none;">
+        <div class="temple-modal-card modal-wide">
+            <button type="button" class="btn-close-modal" id="btnCloseScriptureModal" aria-label="Đóng">&times;</button>
+            
+            <div class="scripture-header">
+                <div class="scripture-titles">
+                    <h2 id="scriptureModalTitle" class="modal-title">Kinh Thư Tụng Niệm</h2>
+                    <p class="modal-desc" id="scriptureCategoryDesc">Chú Đại Bi – 84 câu thần chú oai lực vô biên</p>
+                </div>
+                <!-- BỘ CHUYỂN BÀI KINH -->
+                <div class="scripture-selector">
+                    <select id="selectScripture" class="form-select" aria-label="Chọn bài kinh">
+                        <!-- Options filled via JS -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- THANH ĐIỀU KHIỂN TỤNG KINH TỰ ĐỘNG THEO NHỊP MÕ -->
+            <div class="chanting-toolbar">
+                <button type="button" id="btnToggleAutoChant" class="btn-sacred-primary">
+                    <span id="autoChantIcon">▶</span> <span id="autoChantTxt">Tụng Tự Động & Gõ Mõ</span>
+                </button>
+                <div class="chant-speed-control">
+                    <label for="rangeChantSpeed">Tốc độ nhịp:</label>
+                    <input type="range" id="rangeChantSpeed" min="800" max="3000" step="200" value="1800">
+                    <span id="speedDisplayLabel">Vừa</span>
+                </div>
+                <button type="button" id="btnFontSize" class="btn-subtle" title="Phóng to / Thu nhỏ chữ">
+                    Aa Chữ
+                </button>
+            </div>
+
+            <!-- KHUNG KINH VĂN VỚI TÍNH NĂNG TỰ ĐỘNG CUỘN -->
+            <div class="scripture-viewport" id="scriptureViewport">
+                <div class="scripture-content" id="scriptureVerses">
+                    <!-- Verses populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. MODAL CÚNG DƯỜNG & LỄ VẬT (GIFT & MERIT) -->
+    <div id="modalOffering" class="temple-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="offeringModalTitle" style="display: none;">
+        <div class="temple-modal-card">
+            <button type="button" class="btn-close-modal" id="btnCloseOfferingModal" aria-label="Đóng">&times;</button>
+            <div class="modal-gold-ornament">🪷</div>
+            <h2 id="offeringModalTitle" class="modal-title">Cúng Dường & Gieo Duyên Phước Lành</h2>
+            <p class="modal-desc">Thành tâm dâng nén tâm hương, đóa sen thơm hay ngọn đèn trí tuệ lên ngôi Tam Bảo.</p>
+
+            <div class="offering-grid">
+                <div class="offering-card" id="cardOfferIncense">
+                    <div class="offering-icon">🪔</div>
+                    <h3>Dâng Hương Trầm</h3>
+                    <p>Khói trầm thanh khiết thấu mười phương cõi Phật (+15 Phước Đức)</p>
+                    <button type="button" class="btn-sacred-secondary" id="btnDoOfferIncense">Thắp Hương</button>
+                </div>
+
+                <div class="offering-card" id="cardOfferFlower">
+                    <div class="offering-icon">🌸</div>
+                    <h3>Dâng Hoa Sen</h3>
+                    <p>Tâm hoa thanh tịnh dâng lên đài sen Đức Thế Tôn (+20 Phước Đức)</p>
+                    <button type="button" class="btn-sacred-secondary" id="btnDoOfferFlower">Dâng Hoa</button>
+                </div>
+
+                <div class="offering-card" id="cardOfferCandle">
+                    <div class="offering-icon">🕯️</div>
+                    <h3>Thắp Đèn Tâm Đăng</h3>
+                    <p>Ánh sáng trí tuệ xua tan vô minh, rạng soi chính đạo (+25 Phước Đức)</p>
+                    <button type="button" class="btn-sacred-secondary" id="btnDoOfferCandle">Cúng Dường Đèn</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. MODAL BẢNG VÀNG CÔNG ĐỨC & LỊCH SỬ TU HỌC -->
+    <div id="modalMeritBook" class="temple-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="meritModalTitle" style="display: none;">
+        <div class="temple-modal-card">
+            <button type="button" class="btn-close-modal" id="btnCloseMeritModal" aria-label="Đóng">&times;</button>
+            <div class="modal-gold-ornament">📜</div>
+            <h2 id="meritModalTitle" class="modal-title">Sổ Vàng Công Đức & Tu Học</h2>
+            
+            <div class="merit-summary-box">
+                <div class="summary-item">
+                    <span class="sum-num" id="meritTotalPoints">0</span>
+                    <span class="sum-label">Tổng Phước Đức</span>
+                </div>
+                <div class="summary-item">
+                    <span class="sum-num" id="meritTotalTime">0 phút</span>
+                    <span class="sum-label">Tổng Thời Gian</span>
+                </div>
+                <div class="summary-item">
+                    <span class="sum-num" id="meritTotalMo">0</span>
+                    <span class="sum-label">Lượt Gõ Mõ</span>
+                </div>
+            </div>
+
+            <h3 class="logs-subtitle">Nhật Ký Tu Tập Gần Đây</h3>
+            <div class="merit-logs-list" id="meritLogsList">
+                <!-- Filled via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. MODAL HƯỚNG DẪN & PHÍM TẮT THAO TÁC -->
+    <div id="modalHelp" class="temple-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle" style="display: none;">
+        <div class="temple-modal-card">
+            <button type="button" class="btn-close-modal" id="btnCloseHelpModal" aria-label="Đóng">&times;</button>
+            <div class="modal-gold-ornament">💡</div>
+            <h2 id="helpModalTitle" class="modal-title">Hướng Dẫn & Phím Tắt</h2>
+            <p class="modal-desc">Bạn có thể dùng chuột bấm trực tiếp vào pháp khí trên màn hình hoặc thao tác nhanh qua bàn phím:</p>
+
+            <div class="shortcuts-table">
+                <div class="shortcut-row">
+                    <span class="kbd-badge">Space / M</span>
+                    <span class="shortcut-desc">Gõ Mõ định tâm</span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="kbd-badge">C</span>
+                    <span class="shortcut-desc">Thỉnh Đại Hồng Chung ngân vang</span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="kbd-badge">L</span>
+                    <span class="shortcut-desc">Đảnh Lễ Đức Phật</span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="kbd-badge">K</span>
+                    <span class="shortcut-desc">Mở Kinh Thư & Tụng Tự Động</span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="kbd-badge">H</span>
+                    <span class="shortcut-desc">Dâng Hoa / Thắp Hương / Dâng Đèn</span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="kbd-badge">B</span>
+                    <span class="shortcut-desc">Xem Sổ Vàng Công Đức</span>
+                </div>
+                <div class="shortcut-row">
+                    <span class="kbd-badge">Esc</span>
+                    <span class="shortcut-desc">Đóng cửa sổ thông tin</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NHÂN VẬT HÀNH GIẢ ĐẢNH LỄ (BOWING OVERLAY ANIMATION) -->
+    <div class="bowing-camera-overlay" id="bowingOverlay">
+        <div class="bowing-text">Chí Tâm Quy Mạng Lễ Mười Phương Thường Trụ Tam Bảo 🙏</div>
+    </div>
+
+    <!-- SCRIPTS CỦA HỆ THỐNG -->
+    <script src="js/audio.js"></script>
+    <script src="js/canvas-effects.js"></script>
+    <script src="js/scriptures.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
