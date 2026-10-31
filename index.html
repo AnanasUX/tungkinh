@@ -1077,6 +1077,41 @@
             </svg>
             <span>Thỉnh Chuông</span>
           </button>
+
+          <!-- 8. Thiền Thở Chánh Niệm (NEW) -->
+          <button onclick="openBreathingModal()"
+            class="px-2.5 py-1 rounded-full bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-400/55 text-[10px] sm:text-[11.5px] font-semibold text-emerald-200 flex items-center gap-1 shadow-md active:scale-95 transition">
+            <span class="text-xs">🌿</span>
+            <span>Thiền Thở</span>
+          </button>
+
+          <!-- 9. Lời Phật Dạy Tâm Trạng (NEW) -->
+          <button onclick="openDharmaWisdomModal()"
+            class="px-2.5 py-1 rounded-full bg-amber-950/85 hover:bg-amber-900 border border-amber-300/45 text-[10px] sm:text-[11.5px] font-medium text-amber-100 flex items-center gap-1 shadow-md active:scale-95 transition">
+            <span class="text-xs">💡</span>
+            <span>Lời Phật Dạy</span>
+          </button>
+
+          <!-- 10. Phóng Sanh Tự Do (NEW) -->
+          <button onclick="releaseDovesAction()"
+            class="px-2.5 py-1 rounded-full bg-sky-950/90 hover:bg-sky-900 border border-sky-400/55 text-[10px] sm:text-[11.5px] font-semibold text-sky-200 flex items-center gap-1 shadow-md active:scale-95 transition">
+            <span class="text-xs">🕊️</span>
+            <span>Phóng Sanh (+15Đ)</span>
+          </button>
+
+          <!-- 11. Sớ Cầu An & Cầu Siêu (NEW) -->
+          <button onclick="openPrayerSutraModal()"
+            class="px-2.5 py-1 rounded-full bg-amber-950/85 hover:bg-amber-900 border border-amber-300/45 text-[10px] sm:text-[11.5px] font-medium text-amber-100 flex items-center gap-1 shadow-md active:scale-95 transition">
+            <span class="text-xs">📜</span>
+            <span>Sớ Cầu An/Siêu</span>
+          </button>
+
+          <!-- 12. Bằng Công Đức (NEW) -->
+          <button onclick="openSessionTimerModal()"
+            class="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-600 to-yellow-600 hover:brightness-110 border border-amber-300 text-[10px] sm:text-[11.5px] font-bold text-stone-950 flex items-center gap-1 shadow-md active:scale-95 transition">
+            <span class="text-xs">🏆</span>
+            <span>Bằng Công Đức</span>
+          </button>
         </div>
 
         <div class="text-center leading-tight">
@@ -1445,10 +1480,205 @@
         </div>
       </div>
 
+      <!-- ======================================================================
+           10. MODAL 5: LỜI PHẬT DẠY THEO TÂM TRẠNG (DHARMA WISDOM)
+           ====================================================================== -->
+      <div id="dharma-wisdom-modal" class="hidden absolute inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-3 sm:p-5">
+        <div class="temple-panel w-full max-w-[620px] rounded-2xl p-4 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative">
+          <div class="flex items-center justify-between border-b border-amber-300/25 pb-2">
+            <div>
+              <div class="text-[9.5px] tracking-[0.2em] text-amber-300 uppercase font-bold">✦ PHÁP CÚ TRÍ TUỆ · THÂN TÂM AN LẠC ✦</div>
+              <h3 class="font-serif-title text-xl sm:text-2xl font-bold text-amber-100 title-glow">
+                Lời Phật Dạy Theo Tâm Trạng
+              </h3>
+            </div>
+            <button onclick="closeDharmaWisdomModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-200">
+              ✕
+            </button>
+          </div>
+
+          <p class="text-xs text-amber-200/80 mt-2">Hôm nay tâm trạng bạn thế nào? Hãy chọn để nhận lời dạy từ bi soi sáng tâm trí:</p>
+          
+          <!-- Mood Chips -->
+          <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 my-2.5">
+            <button type="button" onclick="selectDharmaMood('anxious')" id="mood-btn-anxious" class="mood-chip px-2 py-1.5 rounded-lg border border-amber-300/30 bg-black/45 text-[10px] text-amber-200 hover:bg-amber-500/25 transition active:scale-95 font-semibold">
+              😰 Lo âu
+            </button>
+            <button type="button" onclick="selectDharmaMood('angry')" id="mood-btn-angry" class="mood-chip px-2 py-1.5 rounded-lg border border-amber-300/30 bg-black/45 text-[10px] text-amber-200 hover:bg-amber-500/25 transition active:scale-95 font-semibold">
+              😡 Giận dữ
+            </button>
+            <button type="button" onclick="selectDharmaMood('sad')" id="mood-btn-sad" class="mood-chip px-2 py-1.5 rounded-lg border border-amber-300/30 bg-black/45 text-[10px] text-amber-200 hover:bg-amber-500/25 transition active:scale-95 font-semibold">
+              😢 Buồn bã
+            </button>
+            <button type="button" onclick="selectDharmaMood('tired')" id="mood-btn-tired" class="mood-chip px-2 py-1.5 rounded-lg border border-amber-300/30 bg-black/45 text-[10px] text-amber-200 hover:bg-amber-500/25 transition active:scale-95 font-semibold">
+              😫 Mệt mỏi
+            </button>
+            <button type="button" onclick="selectDharmaMood('peace')" id="mood-btn-peace" class="mood-chip px-2 py-1.5 rounded-lg border border-amber-300/30 bg-black/45 text-[10px] text-amber-200 hover:bg-amber-500/25 transition active:scale-95 font-semibold">
+              🌿 Cầu an
+            </button>
+            <button type="button" onclick="selectDharmaMood('grateful')" id="mood-btn-grateful" class="mood-chip px-2 py-1.5 rounded-lg border border-amber-300/30 bg-black/45 text-[10px] text-amber-200 hover:bg-amber-500/25 transition active:scale-95 font-semibold">
+              🙏 Tri ân
+            </button>
+          </div>
+
+          <!-- Wisdom Content Card -->
+          <div id="dharma-wisdom-card" class="rounded-xl bg-gradient-to-b from-amber-950/70 to-stone-950/90 border border-amber-300/40 p-4 text-center">
+            <p id="dharma-verse-text" class="text-sm sm:text-base font-scripture italic text-amber-100 leading-relaxed">
+              "Không có nỗi sợ nào cho người tâm không vướng bận. Khi tâm an trú nơi chánh niệm, sóng gió cuộc đời chỉ như bọt nước trôi sông."
+            </p>
+            <div id="dharma-source-text" class="text-[10px] sm:text-xs font-bold text-amber-300 mt-2">
+              — Kinh Pháp Cú (Dhammapada) —
+            </div>
+            <div id="dharma-practice-box" class="mt-3 p-2.5 rounded-lg bg-black/40 border border-amber-300/20 text-[11px] text-emerald-200 text-left">
+              <strong>🧘 Gợi ý thực hành:</strong> <span id="dharma-practice-text">Hãy thở chậm 3 hơi thật sâu. Nhận biết thân đang ngồi yên, tâm đang quan sát. Nhắc nhở mình: 'Hiện tại này tôi đang an toàn'.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================================
+           11. MODAL 6: THIỀN THỞ CHÁNH NIỆM (MINDFUL BREATHING)
+           ====================================================================== -->
+      <div id="mindful-breathing-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-3 sm:p-5">
+        <div class="temple-panel w-full max-w-[520px] rounded-2xl p-4 sm:p-6 border-2 border-emerald-400/60 text-amber-50 text-center relative">
+          <button onclick="closeBreathingModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-200">
+            ✕
+          </button>
+          <div class="text-[9.5px] tracking-[0.2em] text-emerald-300 uppercase font-bold">✦ CHÁNH NIỆM TRONG TỪNG HƠI THỞ ✦</div>
+          <h3 class="font-serif-title text-2xl font-bold text-amber-100 title-glow mt-0.5">
+            Thiền Thở 4 - 2 - 6
+          </h3>
+
+          <!-- Animated Breathing Circle -->
+          <div class="relative w-44 h-44 sm:w-52 sm:h-52 mx-auto my-5 flex items-center justify-center">
+            <div id="breathing-glow-ring" class="absolute inset-0 rounded-full border-4 border-emerald-400/40 bg-emerald-500/10 transition-all duration-1000"></div>
+            <div id="breathing-lotus-center" class="text-4xl sm:text-5xl transition-transform duration-1000">🪷</div>
+          </div>
+
+          <div id="breathing-prompt-label" class="text-sm sm:text-base font-semibold text-emerald-200 min-h-[32px]">
+            Nhấn Bắt Đầu để thực hành hơi thở chánh niệm
+          </div>
+          <p class="text-[10px] text-amber-200/60 mt-1">Hít vào 4 giây (Tĩnh lặng) · Giữ 2 giây (An trú) · Thở ra 6 giây (Mỉm cười)</p>
+
+          <div class="mt-4 flex items-center justify-center gap-3">
+            <button onclick="toggleBreathingGuide()" id="btn-breathing-toggle"
+              class="px-6 py-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 text-stone-950 font-bold text-xs shadow-lg hover:brightness-110 active:scale-95 transition">
+              Bắt Đầu Hơi Thở
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================================
+           12. MODAL 7: HẸN GIỜ KHÓA LỄ & XUẤT BẰNG CÔNG ĐỨC
+           ====================================================================== -->
+      <div id="session-timer-modal" class="hidden absolute inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-3 sm:p-5">
+        <div class="temple-panel w-full max-w-[580px] rounded-2xl p-4 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative">
+          <div class="flex items-center justify-between border-b border-amber-300/25 pb-2">
+            <div>
+              <div class="text-[9.5px] tracking-[0.2em] text-amber-300 uppercase font-bold">✦ KHÓA LỄ TỊNH TÂM & CHỨNG NHẬN ✦</div>
+              <h3 class="font-serif-title text-xl sm:text-2xl font-bold text-amber-100 title-glow">
+                Hẹn Giờ Tu Tập & Bằng Công Đức
+              </h3>
+            </div>
+            <button onclick="closeSessionTimerModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-200">
+              ✕
+            </button>
+          </div>
+
+          <!-- Section 1: Hẹn Giờ Khóa Lễ -->
+          <div class="my-3 p-3 rounded-xl bg-black/45 border border-amber-300/30">
+            <h4 class="text-xs font-bold text-amber-200 mb-2">⏱️ Chọn thời gian khóa lễ tu tập:</h4>
+            <div class="grid grid-cols-4 gap-2">
+              <button onclick="setMeditationDuration(300)" class="duration-pick-btn py-1.5 rounded-lg border border-amber-300/40 bg-amber-500/20 text-xs font-bold text-amber-100 hover:bg-amber-500/40 transition">
+                5 Phút
+              </button>
+              <button onclick="setMeditationDuration(900)" class="duration-pick-btn py-1.5 rounded-lg border border-amber-300/40 bg-amber-500/20 text-xs font-bold text-amber-100 hover:bg-amber-500/40 transition">
+                15 Phút
+              </button>
+              <button onclick="setMeditationDuration(1800)" class="duration-pick-btn py-1.5 rounded-lg border border-amber-300/40 bg-amber-500/20 text-xs font-bold text-amber-100 hover:bg-amber-500/40 transition">
+                30 Phút
+              </button>
+              <button onclick="setMeditationDuration(3600)" class="duration-pick-btn py-1.5 rounded-lg border border-amber-300/40 bg-amber-500/20 text-xs font-bold text-amber-100 hover:bg-amber-500/40 transition">
+                60 Phút
+              </button>
+            </div>
+            <div class="mt-2.5 flex items-center justify-between text-xs">
+              <span id="session-timer-status" class="text-amber-200/80">Thời lượng đã chọn: <strong>5 phút</strong></span>
+              <button onclick="startSessionCountdown()" id="btn-start-countdown" class="px-3.5 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-bold transition">
+                Bắt Đầu Đếm Giờ
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 2: Xuất Bằng Công Đức High-Res PNG -->
+          <div class="p-3 rounded-xl bg-gradient-to-r from-amber-950/80 to-stone-900 border border-amber-300/45 flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-bold text-amber-200">🏆 Bằng Chứng Nhận Công Đức Tu Học</div>
+              <div class="text-[10px] text-amber-100/75 mt-0.5">Xuất file ảnh chất lượng cao có pháp danh, số mõ và con dấu triện đỏ Chùa An Nhiên</div>
+            </div>
+            <button onclick="downloadMeritCertificateAction()"
+              class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-stone-950 font-extrabold text-xs shadow-lg flex items-center gap-1.5 shrink-0 transition active:scale-95">
+              <span>📥 Tải Bằng (PNG)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================================
+           13. MODAL 8: SỚ CẦU AN & CẦU SIÊU (PRAYER SUTRA)
+           ====================================================================== -->
+      <div id="prayer-sutra-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-3 sm:p-5">
+        <div class="temple-panel w-full max-w-[620px] rounded-2xl p-4 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative">
+          <div class="flex items-center justify-between border-b border-amber-300/25 pb-2">
+            <div>
+              <div class="text-[9.5px] tracking-[0.2em] text-amber-300 uppercase font-bold">✦ LÒNG THÀNH TÂM NGUYỆN · DÂNG LÊN TAM BẢO ✦</div>
+              <h3 class="font-serif-title text-xl sm:text-2xl font-bold text-amber-100 title-glow">
+                Sớ Cầu An & Cầu Siêu Đạo Tràng
+              </h3>
+            </div>
+            <button onclick="closePrayerSutraModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-200">
+              ✕
+            </button>
+          </div>
+
+          <div class="flex border-b border-amber-300/20 my-2 gap-2 text-xs">
+            <button type="button" onclick="switchSutraTab('an')" id="tab-sutra-an" class="pb-1 px-3 border-b-2 border-amber-400 font-bold text-amber-300">
+              🌸 Sớ Cầu An (Phúc Thọ)
+            </button>
+            <button type="button" onclick="switchSutraTab('sieu')" id="tab-sutra-sieu" class="pb-1 px-3 text-amber-200/60 font-semibold hover:text-amber-200">
+              🕊️ Sớ Cầu Siêu (Hương Linh)
+            </button>
+          </div>
+
+          <form onsubmit="submitPrayerSutra(event)" class="space-y-2 text-xs">
+            <div>
+              <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px]">Danh sách người cầu nguyện (hoặc Hương linh):</label>
+              <textarea id="sutra-names-input" rows="3" required placeholder="Ghi họ tên, năm sinh hoặc danh tánh hương linh..."
+                class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-amber-300/40 text-amber-50 text-xs focus:outline-none focus:border-amber-300"></textarea>
+            </div>
+            <div>
+              <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px]">Tâm nguyện dâng sớ:</label>
+              <input id="sutra-wish-input" type="text" value="Nguyện chư Phật mười phương chứng minh gia hộ bình an cát tường"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-amber-300/40 text-amber-50 text-xs focus:outline-none focus:border-amber-300" />
+            </div>
+            <div class="pt-2 text-right">
+              <button type="submit"
+                class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-stone-950 font-bold text-xs shadow-md transition active:scale-95">
+                📜 DÂNG SỚ LÊN TAM BẢO (+25 CÔNG ĐỨC)
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
     </main>
   </div>
 
   <script src="js/scriptures.js"></script>
+  <script src="js/dharma-wisdom.js"></script>
+  <script src="js/certificate.js"></script>
+  <script src="js/mindful-breathing.js"></script>
   <script>
     /**************************************************************************
      * 1. DỮ LIỆU 12 VỊ TRÍ BỒ ĐOÀN TRONG CHÁNH ĐIỆN
@@ -2750,15 +2980,26 @@
 
       setTimeout(() => {
         cyl.classList.remove('shaking-cylinder');
-        const pick = SACRED_ORACLES[Math.floor(Math.random() * SACRED_ORACLES.length)];
+        const pool = (window.SACRED_ORACLES_12 && window.SACRED_ORACLES_12.length > 0) ? window.SACRED_ORACLES_12 : SACRED_ORACLES;
+        const pick = pool[Math.floor(Math.random() * pool.length)];
         document.getElementById('oracle-number-badge').textContent = pick.num;
         document.getElementById('oracle-title').textContent = pick.title;
-        document.getElementById('oracle-poem').innerHTML = pick.poem;
-        document.getElementById('oracle-advice').innerHTML = `💡 <strong>Lời bàn cho ${currentUserProfile.fullName} (${currentUserProfile.element.split('·')[0].trim()}, quê ${currentUserProfile.hometown}):</strong> ${pick.advice}`;
+        document.getElementById('oracle-poem').innerHTML = pick.poem.replace(/\n/g, '<br/>');
+
+        let adviceHtml = `💡 <strong>Lời bàn cho ${currentUserProfile.fullName} (${(currentUserProfile.element || '').split('·')[0].trim()}, quê ${currentUserProfile.hometown}):</strong><br/>`;
+        if (pick.career) {
+          adviceHtml += `<span class="block mt-1">💼 <strong>Sự nghiệp:</strong> ${pick.career}</span>`;
+          adviceHtml += `<span class="block">❤️ <strong>Gia đạo:</strong> ${pick.family}</span>`;
+          adviceHtml += `<span class="block">🌿 <strong>Sức khỏe:</strong> ${pick.health}</span>`;
+          adviceHtml += `<span class="block font-semibold text-amber-300">✨ <strong>Lời Phật khuyên:</strong> ${pick.advice}</span>`;
+        } else {
+          adviceHtml += pick.advice;
+        }
+        document.getElementById('oracle-advice').innerHTML = adviceHtml;
 
         AudioEngine.playGiftChime();
-        triggerGoldenLotusRain(16);
-        addMeritPoints(currentUserProfile.fullName, 10, 'lotus', `Xin được ${pick.num}`, true);
+        triggerGoldenLotusRain(18);
+        addMeritPoints(currentUserProfile.fullName, 15, 'lotus', `Xin được ${pick.num}`, true);
       }, 950);
     }
 
@@ -2841,6 +3082,278 @@
       document.getElementById('scripture-play-icon').textContent = '▶';
       document.getElementById('scripture-play-text').textContent = 'Tự Động Cuộn Kinh & Gõ Mõ';
       document.querySelectorAll('.active-chant-verse').forEach(el => el.classList.remove('active-chant-verse'));
+    }
+
+    /**************************************************************************
+     * 7B. LỜI PHẬT DẠY THEO TÂM TRẠNG (DHARMA WISDOM)
+     **************************************************************************/
+    let currentDharmaMood = 'anxious';
+
+    function openDharmaWisdomModal() {
+      const modal = document.getElementById('dharma-wisdom-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      selectDharmaMood(currentDharmaMood);
+    }
+
+    function closeDharmaWisdomModal() {
+      const modal = document.getElementById('dharma-wisdom-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function selectDharmaMood(moodKey) {
+      currentDharmaMood = moodKey;
+      document.querySelectorAll('.mood-chip').forEach(btn => {
+        btn.classList.remove('border-amber-400', 'bg-amber-500/30', 'text-amber-100', 'shadow-[0_0_10px_rgba(250,204,21,0.5)]');
+        btn.classList.add('bg-black/45', 'text-amber-200');
+      });
+      const activeBtn = document.getElementById(`mood-btn-${moodKey}`);
+      if (activeBtn) {
+        activeBtn.classList.add('border-amber-400', 'bg-amber-500/30', 'text-amber-100', 'shadow-[0_0_10px_rgba(250,204,21,0.5)]');
+      }
+
+      const wisdomPool = (window.DHARMA_MOOD_WISDOM && window.DHARMA_MOOD_WISDOM[moodKey]) || [];
+      if (wisdomPool.length > 0) {
+        const item = wisdomPool[Math.floor(Math.random() * wisdomPool.length)];
+        const verseEl = document.getElementById('dharma-verse-text');
+        const sourceEl = document.getElementById('dharma-source-text');
+        const practiceEl = document.getElementById('dharma-practice-text');
+        if (verseEl) verseEl.textContent = `"${item.verse}"`;
+        if (sourceEl) sourceEl.textContent = `— ${item.source} —`;
+        if (practiceEl) practiceEl.textContent = item.practice;
+      }
+      if (window.AudioEngine) AudioEngine.playGiftChime();
+    }
+
+    /**************************************************************************
+     * 7C. THIỀN THỞ CHÁNH NIỆM 4 - 2 - 6 (MINDFUL BREATHING)
+     **************************************************************************/
+    function openBreathingModal() {
+      const modal = document.getElementById('mindful-breathing-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeBreathingModal() {
+      const modal = document.getElementById('mindful-breathing-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      if (window.mindfulEngine && window.mindfulEngine.isActive) {
+        toggleBreathingGuide();
+      }
+    }
+
+    function toggleBreathingGuide() {
+      const btn = document.getElementById('btn-breathing-toggle');
+      const label = document.getElementById('breathing-prompt-label');
+      const glowRing = document.getElementById('breathing-glow-ring');
+      const lotusCenter = document.getElementById('breathing-lotus-center');
+
+      if (!window.mindfulEngine.isActive) {
+        btn.textContent = 'Dừng Hơi Thở';
+        btn.classList.remove('from-emerald-500', 'to-teal-400');
+        btn.classList.add('from-red-600', 'to-rose-500');
+
+        window.mindfulEngine.startBreathing((phase, prompt, duration) => {
+          if (label) label.textContent = prompt;
+          if (glowRing && lotusCenter) {
+            glowRing.style.transitionDuration = `${duration}ms`;
+            lotusCenter.style.transitionDuration = `${duration}ms`;
+            if (phase === 'inhale') {
+              glowRing.style.transform = 'scale(1.35)';
+              glowRing.style.backgroundColor = 'rgba(16, 185, 129, 0.28)';
+              glowRing.style.boxShadow = '0 0 35px rgba(52, 211, 153, 0.6)';
+              lotusCenter.style.transform = 'scale(1.3)';
+              AudioEngine.playWoodenFish(1);
+            } else if (phase === 'hold') {
+              glowRing.style.transform = 'scale(1.35)';
+              glowRing.style.backgroundColor = 'rgba(234, 179, 8, 0.25)';
+              glowRing.style.boxShadow = '0 0 30px rgba(250, 204, 21, 0.5)';
+              lotusCenter.style.transform = 'scale(1.25)';
+            } else if (phase === 'exhale') {
+              glowRing.style.transform = 'scale(0.85)';
+              glowRing.style.backgroundColor = 'rgba(16, 185, 129, 0.08)';
+              glowRing.style.boxShadow = '0 0 15px rgba(52, 211, 153, 0.2)';
+              lotusCenter.style.transform = 'scale(0.9)';
+            }
+          }
+        });
+        addMeritPoints(currentUserProfile.fullName, 10, 'lotus', 'Thiền Thở Chánh Niệm 4-2-6', true);
+      } else {
+        window.mindfulEngine.stopBreathing();
+        btn.textContent = 'Bắt Đầu Hơi Thở';
+        btn.classList.remove('from-red-600', 'to-rose-500');
+        btn.classList.add('from-emerald-500', 'to-teal-400');
+        if (label) label.textContent = 'Đã dừng thực hành. Hãy giữ thân tâm an trú nhẹ nhàng.';
+        if (glowRing) {
+          glowRing.style.transform = 'scale(1)';
+          glowRing.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+          glowRing.style.boxShadow = 'none';
+        }
+        if (lotusCenter) lotusCenter.style.transform = 'scale(1)';
+      }
+    }
+
+    /**************************************************************************
+     * 7D. HẸN GIỜ KHÓA LỄ & XUẤT BẰNG CÔNG ĐỨC (SESSION & CERTIFICATE)
+     **************************************************************************/
+    let chosenSessionDuration = 300;
+    let isSessionCountdownActive = false;
+
+    function openSessionTimerModal() {
+      const modal = document.getElementById('session-timer-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeSessionTimerModal() {
+      const modal = document.getElementById('session-timer-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function setMeditationDuration(seconds) {
+      if (isSessionCountdownActive) return;
+      chosenSessionDuration = seconds;
+      document.querySelectorAll('.duration-pick-btn').forEach(b => {
+        b.classList.remove('bg-amber-400', 'text-stone-950');
+        b.classList.add('bg-amber-500/20', 'text-amber-100');
+      });
+      const el = document.getElementById('session-timer-status');
+      if (el) el.innerHTML = `Thời lượng đã chọn: <strong>${seconds / 60} phút</strong>`;
+    }
+
+    function startSessionCountdown() {
+      const btn = document.getElementById('btn-start-countdown');
+      const statusEl = document.getElementById('session-timer-status');
+
+      if (!isSessionCountdownActive) {
+        isSessionCountdownActive = true;
+        btn.textContent = 'Dừng Khóa Lễ';
+        btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+        btn.classList.add('bg-rose-600', 'hover:bg-rose-500');
+
+        AudioEngine.playTempleBell();
+        showLiveGiftBanner(currentUserProfile.fullName, `⏱️ Bắt đầu Khóa Lễ Tịnh Tâm ${chosenSessionDuration / 60} phút`, 'bell');
+
+        window.mindfulEngine.startSessionTimer(
+          chosenSessionDuration,
+          (timeStr, remainingSecs) => {
+            if (statusEl) statusEl.innerHTML = `Thời gian còn lại: <strong class="text-emerald-400 font-mono text-sm tracking-wider">${timeStr}</strong>`;
+            if (remainingSecs % 60 === 0) {
+              AudioEngine.playWoodenFish(1);
+            }
+          },
+          () => {
+            isSessionCountdownActive = false;
+            btn.textContent = 'Bắt Đầu Đếm Giờ';
+            btn.classList.remove('bg-rose-600', 'hover:bg-rose-500');
+            btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+            if (statusEl) statusEl.innerHTML = `🎉 <strong class="text-amber-300">Hoàn thành viên mãn khóa lễ!</strong>`;
+
+            AudioEngine.playTempleBell();
+            triggerGoldenLotusRain(30);
+            addMeritPoints(currentUserProfile.fullName, 50, 'bell', 'Viên mãn Khóa Lễ Tu Tập', true);
+            showLiveGiftBanner(currentUserProfile.fullName, '🎉 Đã hoàn thành viên mãn Khóa Lễ Tịnh Tâm! (+50 Công Đức)', 'bell');
+          }
+        );
+      } else {
+        isSessionCountdownActive = false;
+        window.mindfulEngine.stopSessionTimer();
+        btn.textContent = 'Bắt Đầu Đếm Giờ';
+        btn.classList.remove('bg-rose-600', 'hover:bg-rose-500');
+        btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+        if (statusEl) statusEl.innerHTML = `Đã dừng đếm giờ. Thời lượng: <strong>${chosenSessionDuration / 60} phút</strong>`;
+      }
+    }
+
+    function downloadMeritCertificateAction() {
+      try {
+        const dataUrl = TempleCertificateGenerator.generate(currentUserProfile, {
+          meritScore: currentUserProfile.meritScore,
+          moCount: currentUserProfile.woodenFishCount
+        });
+        const link = document.createElement('a');
+        const safeName = (currentUserProfile.fullName || 'Phat-Tu').replace(/\s+/g, '-');
+        link.download = `Bang-Cong-Duc-Chua-An-Nhien-${safeName}.png`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        AudioEngine.playGiftChime();
+        triggerGoldenLotusRain(20);
+        addMeritPoints(currentUserProfile.fullName, 20, 'lotus', 'Xuất Bằng Công Đức Tu Học', true);
+        showLiveGiftBanner(currentUserProfile.fullName, '🏆 Đã xuất Bằng Chứng Nhận Công Đức Tu Học (+20 Công Đức)', 'lotus');
+      } catch (err) {
+        console.error('Error generating certificate:', err);
+      }
+    }
+
+    /**************************************************************************
+     * 7E. SỚ CẦU AN & CẦU SIÊU (PRAYER SUTRA)
+     **************************************************************************/
+    let currentSutraTab = 'an';
+
+    function openPrayerSutraModal() {
+      const modal = document.getElementById('prayer-sutra-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closePrayerSutraModal() {
+      const modal = document.getElementById('prayer-sutra-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function switchSutraTab(tab) {
+      currentSutraTab = tab;
+      const btnAn = document.getElementById('tab-sutra-an');
+      const btnSieu = document.getElementById('tab-sutra-sieu');
+      const wishInput = document.getElementById('sutra-wish-input');
+      const namesInput = document.getElementById('sutra-names-input');
+
+      if (tab === 'an') {
+        btnAn.className = 'pb-1 px-3 border-b-2 border-amber-400 font-bold text-amber-300';
+        btnSieu.className = 'pb-1 px-3 text-amber-200/60 font-semibold hover:text-amber-200';
+        if (wishInput) wishInput.value = 'Nguyện chư Phật mười phương chứng minh gia hộ bình an cát tường, tật bệnh tiêu trừ';
+        if (namesInput) namesInput.placeholder = 'Ghi họ tên, năm sinh người cầu an (ví dụ: Nguyễn Văn A, 1996, Bính Tý)...';
+      } else {
+        btnSieu.className = 'pb-1 px-3 border-b-2 border-amber-400 font-bold text-amber-300';
+        btnAn.className = 'pb-1 px-3 text-amber-200/60 font-semibold hover:text-amber-200';
+        if (wishInput) wishInput.value = 'Nguyện vãng sanh Tây Phương Cực Lạc quốc, siêu sanh tịnh độ';
+        if (namesInput) namesInput.placeholder = 'Ghi danh tánh hương linh, ngày mất, hưởng thọ...';
+      }
+    }
+
+    function submitPrayerSutra(e) {
+      e.preventDefault();
+      const names = document.getElementById('sutra-names-input').value.trim();
+      const wish = document.getElementById('sutra-wish-input').value.trim();
+      if (!names) return;
+
+      AudioEngine.playTempleBell();
+      triggerGoldenLotusRain(25);
+      const sutraTypeName = currentSutraTab === 'an' ? 'Sớ Cầu An (Phúc Thọ)' : 'Sớ Cầu Siêu (Hương Linh)';
+      addMeritPoints(currentUserProfile.fullName, 25, 'lotus', `Dâng ${sutraTypeName}`, true);
+      showLiveGiftBanner(currentUserProfile.fullName, `📜 Đã thành tâm dâng ${sutraTypeName} lên Tam Bảo (+25 Công Đức)`, 'lotus');
+
+      closePrayerSutraModal();
+    }
+
+    /**************************************************************************
+     * 7F. NGHI THỨC PHÓNG SANH CHIM BỒ CÂU
+     **************************************************************************/
+    function releaseDovesAction() {
+      AudioEngine.playGiftChime();
+      const stage = document.getElementById('chuanhien-widescreen-stage') || document.body;
+      if (window.mindfulEngine) {
+        window.mindfulEngine.triggerReleaseDoves(stage);
+      }
+      addMeritPoints(currentUserProfile.fullName, 15, 'lotus', 'Nghi thức Phóng Sanh Bồ Câu', true);
+      showLiveGiftBanner(currentUserProfile.fullName, '🕊️ Nghi thức Phóng Sanh: Nguyện vạn loài đều được tự do, an lành (+15 Công Đức)', 'lotus');
     }
 
     /**************************************************************************
