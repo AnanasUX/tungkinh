@@ -823,28 +823,39 @@
       </header>
 
       <!-- ======================================================================
-           3D CAMERA VIEWPOINTS BAR (Active in 3D Mode)
+           3D CAMERA VIEWPOINTS & TOUR BAR (Active in 3D Mode)
            ====================================================================== -->
-      <div id="camera-presets-bar" class="hidden absolute top-14 left-1/2 -translate-x-1/2 z-30 temple-panel px-3 py-1.5 rounded-full items-center gap-1.5 text-[10px] sm:text-xs font-bold text-amber-200 shadow-2xl border border-amber-300/50 backdrop-blur-md pointer-events-auto">
-        <span class="text-[9px] uppercase tracking-wider text-amber-300/80 mr-1 hidden sm:inline">🎥 Góc Nhìn 3D:</span>
-        <button onclick="switch3DView('overview')" id="cam-btn-overview" class="cam-view-btn px-2.5 py-1 rounded-full bg-amber-500/40 border border-amber-300 text-amber-100 transition active:scale-95">
+      <div id="camera-presets-bar" class="hidden absolute top-14 left-1/2 -translate-x-1/2 z-30 temple-panel px-3 py-1.5 rounded-full items-center gap-1.5 text-[10px] sm:text-xs font-bold text-amber-200 shadow-2xl border border-amber-300/50 backdrop-blur-md pointer-events-auto flex-wrap justify-center max-w-[95vw]">
+        <button onclick="toggle3DCinematicTour()" id="cam-btn-tour" class="px-2.5 py-1 rounded-full bg-amber-500/25 hover:bg-amber-500/40 border border-amber-300/50 text-amber-100 transition active:scale-95 flex items-center gap-1 font-extrabold shadow-sm">
+          <span>🎥 Du Ngoạn 3D</span>
+        </button>
+        <div class="h-3.5 w-px bg-amber-300/30 mx-0.5 hidden sm:block"></div>
+        <span class="text-[9px] uppercase tracking-wider text-amber-300/80 mr-0.5 hidden md:inline">Góc Nhìn:</span>
+        <button onclick="switch3DView('overview')" id="cam-btn-overview" class="cam-view-btn px-2 py-1 rounded-full bg-amber-500/40 border border-amber-300 text-amber-100 transition active:scale-95">
           Toàn Cảnh
         </button>
-        <button onclick="switch3DView('userSeat')" id="cam-btn-userSeat" class="cam-view-btn px-2.5 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
-          Bồ Đoàn Của Tôi
+        <button onclick="switch3DView('userSeat')" id="cam-btn-userSeat" class="cam-view-btn px-2 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
+          Bồ Đoàn
         </button>
-        <button onclick="switch3DView('buddha')" id="cam-btn-buddha" class="cam-view-btn px-2.5 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
+        <button onclick="switch3DView('buddha')" id="cam-btn-buddha" class="cam-view-btn px-2 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
           Tượng Phật
         </button>
-        <button onclick="switch3DView('altar')" id="cam-btn-altar" class="cam-view-btn px-2.5 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
-          Bàn Tam Bảo
+        <button onclick="switch3DView('altar')" id="cam-btn-altar" class="cam-view-btn px-2 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
+          Tam Bảo
         </button>
-        <button onclick="switch3DView('bell')" id="cam-btn-bell" class="cam-view-btn px-2.5 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
-          Đại Hồng Chung
+        <button onclick="switch3DView('bell')" id="cam-btn-bell" class="cam-view-btn px-2 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
+          Chuông
         </button>
-        <button onclick="switch3DView('mo')" id="cam-btn-mo" class="cam-view-btn px-2.5 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
-          Mõ Gỗ
+        <button onclick="switch3DView('mo')" id="cam-btn-mo" class="cam-view-btn px-2 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
+          Mõ
         </button>
+        <div class="h-3.5 w-px bg-amber-300/30 mx-0.5 hidden lg:block"></div>
+        <span class="text-[9px] uppercase tracking-wider text-amber-300/80 mr-0.5 hidden lg:inline">Quang Cảnh:</span>
+        <button onclick="switch3DAmbience('dawn')" title="Bình Minh Thanh Tịnh" class="px-2 py-0.5 rounded-full hover:bg-amber-500/20 text-[10px] sm:text-xs text-amber-200/90 transition active:scale-95">🌅 Sáng</button>
+        <button onclick="switch3DAmbience('day')" title="Hoàng Kim Chính Điện" class="px-2 py-0.5 rounded-full hover:bg-amber-500/20 text-[10px] sm:text-xs text-amber-200/90 transition active:scale-95">☀️ Trưa</button>
+        <button onclick="switch3DAmbience('sunset')" title="Hoàng Hôn Trang Nghiêm" class="px-2 py-0.5 rounded-full hover:bg-amber-500/20 text-[10px] sm:text-xs text-amber-200/90 transition active:scale-95">🌇 Chiều</button>
+        <button onclick="switch3DAmbience('night')" title="Tịnh Dạ Trầm Lắng" class="px-2 py-0.5 rounded-full hover:bg-amber-500/20 text-[10px] sm:text-xs text-amber-200/90 transition active:scale-95">🌙 Tối</button>
+        <button onclick="toggle3DBodhiLeaves()" id="cam-btn-leaves" title="Bật/Tắt Lá Bồ Đề Rơi" class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-300/30 text-[10px] sm:text-xs text-amber-200 transition active:scale-95">🍃 Lá Rơi</button>
       </div>
 
       <!-- ======================================================================
@@ -1783,6 +1794,91 @@
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- ======================================================================
+           14. MODAL 9: HỒ SƠ CHI TIẾT HÀNH GIẢ 3D (PRACTITIONER PROFILE MODAL)
+           ====================================================================== -->
+      <div id="practitioner-profile-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-3 sm:p-5">
+        <div class="temple-panel w-full max-w-[540px] rounded-2xl p-4 sm:p-6 border-2 border-amber-300/65 text-amber-50 relative shadow-2xl">
+          <div class="flex items-center justify-between border-b border-amber-300/25 pb-3">
+            <div>
+              <div class="text-[9px] tracking-[0.2em] text-amber-300 uppercase font-bold">✦ ĐỒNG TU ĐẠO TRÀNG · PHIÊN TRỰC TUYẾN ✦</div>
+              <h3 class="font-serif-title text-xl sm:text-2xl font-bold text-amber-100 title-glow flex items-center gap-2">
+                <span>🪷 Hồ Sơ Hành Giả Tu Học</span>
+              </h3>
+            </div>
+            <button onclick="closePractitionerProfileModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-200 text-sm transition">
+              ✕
+            </button>
+          </div>
+
+          <!-- Top Devotee Header Card -->
+          <div class="mt-4 p-3 rounded-xl bg-gradient-to-r from-amber-950/70 via-stone-900/80 to-amber-950/70 border border-amber-300/35 flex items-center gap-3.5">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-amber-300/70 p-0.5 bg-black/60 shrink-0 flex items-center justify-center shadow-lg relative">
+              <span id="prof-modal-avatar" class="text-3xl">🧘</span>
+              <div class="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-emerald-600 border border-emerald-300 text-[8px] font-bold text-emerald-100 uppercase">Online</div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 id="prof-modal-name" class="font-serif-title text-lg sm:text-xl font-bold text-amber-100 truncate">Hành Giả</h4>
+                <span id="prof-modal-seat" class="px-2 py-0.5 rounded-full bg-amber-500/30 border border-amber-300/40 text-[9.5px] font-bold text-amber-200">Bồ Đoàn #1</span>
+              </div>
+              <p id="prof-modal-dharma" class="text-xs text-amber-300/90 font-medium">Pháp Danh: Tịnh Tâm</p>
+              <div id="prof-modal-ip" class="mt-1 text-[9px] font-semibold text-stone-300 flex items-center gap-1">
+                🔒 IP Thực Tế: 117.5.x.x • Phiên Đã Niêm Phong
+              </div>
+            </div>
+          </div>
+
+          <!-- Attributes Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 my-3.5 text-xs">
+            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
+              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Tuổi & Bản Mệnh</span>
+              <span id="prof-modal-age" class="font-bold text-amber-100 text-[11px] sm:text-xs">26 tuổi • Can Chi</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
+              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Quê Quán</span>
+              <span id="prof-modal-hometown" class="font-bold text-amber-100 text-[11px] sm:text-xs">Hà Nội</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
+              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Cảnh Giới Tu Học</span>
+              <span id="prof-modal-realm-badge" class="font-bold text-amber-200 text-[11px] sm:text-xs inline-block">Tịnh Tâm Sơ Khởi</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
+              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Công Đức Tích Lũy</span>
+              <span id="prof-modal-points" class="font-extrabold text-amber-300 text-[11px] sm:text-xs">45 Điểm</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
+              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Tiếng Mõ Tu Tập</span>
+              <span id="prof-modal-mo" class="font-bold text-amber-100 text-[11px] sm:text-xs">36 tiếng mõ</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
+              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Tràng Chuỗi Niệm</span>
+              <span id="prof-modal-beads" class="font-bold text-amber-100 text-[11px] sm:text-xs">54/108 hạt</span>
+            </div>
+          </div>
+
+          <!-- Wish quote box -->
+          <div class="p-3 rounded-xl bg-amber-950/40 border border-amber-300/25 mb-4">
+            <span class="text-[9.5px] text-amber-300/80 uppercase font-semibold block mb-1">Tâm Nguyện Dâng Lên Tam Bảo:</span>
+            <p id="prof-modal-wish" class="text-xs text-amber-100/90 italic font-serif leading-relaxed">
+              "Nguyện cho mười phương pháp giới chúng sanh đều được an lạc, phiền não đoạn trừ, bồ đề tăng trưởng."
+            </p>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center justify-between gap-3 pt-1 border-t border-amber-300/20">
+            <button type="button" onclick="closePractitionerProfileModal()"
+              class="px-4 py-2 rounded-xl bg-stone-800/80 hover:bg-stone-700 border border-stone-600 text-stone-300 font-semibold text-xs transition">
+              Đóng
+            </button>
+            <button type="button" onclick="rejoiceDevoteeMerit()"
+              class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-stone-950 font-bold text-xs shadow-lg transition active:scale-95 flex items-center gap-1.5">
+              <span>🌸 Tùy Hỷ Công Đức (+2 Điểm)</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -3023,6 +3119,7 @@
             } else {
               triggerDevoteeBow(seat.id, `Nam Mô A Di Đà Phật (${seat.name})`, 'lotus');
               AudioEngine.playWoodenFish();
+              openPractitionerProfileModal(seat);
             }
           });
         }
@@ -3155,7 +3252,17 @@
       triggerDevoteeBow(userSeat.id, `${phrase} (+${zenMultiplier}Đ)`, 'mo');
       addMeritPoints(userSeat.name, zenMultiplier, 'mo', phrase, true);
 
-      if (currentUserProfile.malaBeads % 18 === 0) {
+      if (currentUserProfile.malaBeads === 108) {
+        currentUserProfile.malaRounds = (currentUserProfile.malaRounds || 0) + 1;
+        saveRealUserSession();
+        AudioEngine.playTempleBell();
+        triggerGoldenLotusRain(48);
+        if (window.temple3D && is3DModeActive) {
+          window.temple3D.spawn3DSkyLantern(userSeat.name, `Viên Mãn 108 Hạt Chuỗi (Vòng ${currentUserProfile.malaRounds})`);
+        }
+        showLiveGiftBanner(userSeat.name, `🎉 VIÊN MÃN 108 HẠT CHUỖI NIỆM PHẬT (Vòng thứ ${currentUserProfile.malaRounds})! (+50 CÔNG ĐỨC)`, 'lotus');
+        addMeritPoints(userSeat.name, 50, 'lotus', `Viên mãn 108 hạt chuỗi niệm Phật (Vòng ${currentUserProfile.malaRounds})`, false);
+      } else if (currentUserProfile.malaBeads % 18 === 0) {
         AudioEngine.playGiftChime();
         triggerGoldenLotusRain(22);
         showLiveGiftBanner(userSeat.name, `🪷 Viên mãn ${currentUserProfile.malaBeads}/108 hạt chuỗi niệm Phật! (+15 Công Đức)`, 'lotus');
@@ -3184,6 +3291,11 @@
         closeOracleModal();
         closeSeatDirectoryModal();
         closeRegistrationModal();
+        closePractitionerProfileModal();
+        closeDharmaWisdomModal();
+        closePrayerSutraModal();
+        closeSessionTimerModal();
+        closeBreathingModal();
       }
     });
 
@@ -3802,6 +3914,131 @@
 
       AudioEngine.playGiftChime();
     }
+
+    function toggle3DCinematicTour() {
+      if (!window.temple3D || !is3DModeActive) return;
+      const isRunning = window.temple3D.toggleCinematicTour();
+      const btn = document.getElementById('cam-btn-tour');
+      if (btn) {
+        if (isRunning) {
+          btn.innerHTML = '<span>⏹️ Dừng Du Ngoạn</span>';
+          btn.className = 'px-2.5 py-1 rounded-full bg-red-600/70 border border-red-300 text-white font-bold transition active:scale-95 flex items-center gap-1 shadow-[0_0_12px_rgba(239,68,68,0.5)]';
+        } else {
+          btn.innerHTML = '<span>🎥 Du Ngoạn 3D</span>';
+          btn.className = 'px-2.5 py-1 rounded-full bg-amber-500/25 hover:bg-amber-500/40 border border-amber-300/50 text-amber-100 transition active:scale-95 flex items-center gap-1 font-extrabold shadow-sm';
+        }
+      }
+    }
+
+    window.onCinematicTourStopped = function() {
+      const btn = document.getElementById('cam-btn-tour');
+      if (btn) {
+        btn.innerHTML = '<span>🎥 Du Ngoạn 3D</span>';
+        btn.className = 'px-2.5 py-1 rounded-full bg-amber-500/25 hover:bg-amber-500/40 border border-amber-300/50 text-amber-100 transition active:scale-95 flex items-center gap-1 font-extrabold shadow-sm';
+      }
+    };
+
+    function switch3DAmbience(modeKey) {
+      if (window.temple3D && is3DModeActive) {
+        window.temple3D.setAmbienceMode(modeKey);
+        const labels = { dawn: 'Bình Minh', day: 'Hoàng Kim', sunset: 'Hoàng Hôn', night: 'Tịnh Dạ', rain: 'Mưa Thiền' };
+        showLiveGiftBanner('Không Gian 3D', `Đã chuyển quang cảnh sang: ${labels[modeKey] || modeKey}`, 'lotus');
+        if (window.AudioEngine) AudioEngine.playGiftChime();
+      }
+    }
+
+    function toggle3DBodhiLeaves() {
+      if (window.temple3D && is3DModeActive) {
+        const isVisible = window.temple3D.toggleBodhiLeaves();
+        const btn = document.getElementById('cam-btn-leaves');
+        if (btn) {
+          btn.className = isVisible 
+            ? 'px-2 py-0.5 rounded-full bg-amber-500/40 border border-amber-300 text-[10px] sm:text-xs text-amber-100 transition active:scale-95'
+            : 'px-2 py-0.5 rounded-full bg-stone-800/60 border border-stone-600 text-[10px] sm:text-xs text-stone-400 transition active:scale-95';
+        }
+        showLiveGiftBanner('Lá Bồ Đề 3D', isVisible ? 'Đã bật hiệu ứng lá Bồ Đề rơi' : 'Đã ẩn hiệu ứng lá rơi', 'lotus');
+      }
+    }
+
+    /**************************************************************************
+     * 7G. HỒ SƠ CHI TIẾT HÀNH GIẢ 3D & TÙY HỶ CÔNG ĐỨC
+     **************************************************************************/
+    function openPractitionerProfileModal(seatData) {
+      if (!seatData) return;
+      const modal = document.getElementById('practitioner-profile-modal');
+      if (!modal) return;
+
+      const isMe = seatData.isUser || (seatData.seatNo === currentUserProfile.assignedSeatNo);
+      const name = isMe ? currentUserProfile.fullName : (seatData.name || 'Hành Giả Đồng Tu');
+      const dharma = isMe ? currentUserProfile.dharmaName : (seatData.dharma || 'Tịnh Tâm');
+      const age = isMe ? currentUserProfile.age : (seatData.age || 26);
+      const birthYear = (new Date().getFullYear()) - age;
+      const canChiInfo = (typeof computeCanChiAndElement === 'function') ? computeCanChiAndElement(birthYear) : { canChi: 'Mậu Dần', elementObj: { label: 'Thổ' } };
+      const hometown = isMe ? currentUserProfile.hometown : (seatData.hometown || 'Chùa An Nhiên');
+      const ip = isMe ? (currentUserProfile.clientIp || '117.5.x.x') : (seatData.ip || '113.161.x.x');
+      const points = isMe ? currentUserProfile.meritScore : (seatData.points || (25 + seatData.seatNo * 7));
+      const realm = getRealmByPoints(points);
+      const moCount = isMe ? currentUserProfile.woodenFishCount : (seatData.moCount || (points * 2));
+      const beads = isMe ? currentUserProfile.malaBeads : ((points * 3) % 108 || 18);
+      const wish = isMe 
+        ? (currentUserProfile.userWish || 'Nguyện cầu bình an, tai qua nạn khỏi, tâm an trí sáng') 
+        : (seatData.wish || 'Nguyện cho mười phương pháp giới chúng sanh đều được an lạc, phiền não đoạn trừ.');
+
+      const avatarEl = document.getElementById('prof-modal-avatar');
+      if (avatarEl) {
+        avatarEl.textContent = (seatData.type === 'female') ? '🧕' : '🧘';
+      }
+
+      document.getElementById('prof-modal-name').textContent = name;
+      document.getElementById('prof-modal-seat').textContent = `Bồ Đoàn #${seatData.seatNo} ${isMe ? '(Của Bạn)' : ''}`;
+      document.getElementById('prof-modal-dharma').textContent = `Pháp Danh: ${dharma}`;
+      document.getElementById('prof-modal-ip').innerHTML = `🔒 IP Thực Tế: <span class="text-amber-300 font-mono">${ip}</span> • Phiên Đã Niêm Phong`;
+      document.getElementById('prof-modal-age').textContent = `${age} tuổi • ${canChiInfo.canChi} (${canChiInfo.elementObj.label})`;
+      document.getElementById('prof-modal-hometown').textContent = hometown;
+      
+      const realmEl = document.getElementById('prof-modal-realm-badge');
+      if (realmEl) {
+        realmEl.textContent = `Cấp ${realm.level}: ${realm.name}`;
+        realmEl.style.color = realm.color;
+      }
+
+      document.getElementById('prof-modal-points').textContent = `${points} Điểm Công Đức`;
+      document.getElementById('prof-modal-mo').textContent = `${moCount} tiếng mõ`;
+      document.getElementById('prof-modal-beads').textContent = `${beads}/108 hạt chuỗi`;
+      document.getElementById('prof-modal-wish').textContent = `"${wish}"`;
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (window.AudioEngine) AudioEngine.playGiftChime();
+    }
+
+    function closePractitionerProfileModal() {
+      const modal = document.getElementById('practitioner-profile-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function rejoiceDevoteeMerit() {
+      const name = document.getElementById('prof-modal-name').textContent || 'Đồng Tu';
+      triggerGoldenLotusRain(22);
+      if (window.AudioEngine) {
+        if (typeof AudioEngine.playBellChime === 'function') AudioEngine.playBellChime();
+        else AudioEngine.playGiftChime();
+      }
+      addMeritPoints(currentUserProfile.fullName, 2, 'lotus', `Tùy hỷ công đức với ${name}`, true);
+      showLiveGiftBanner('Tùy Hỷ Công Đức', `Tán thán công đức của ${name} (+2 Điểm Công Đức cho bạn)`, 'lotus');
+      closePractitionerProfileModal();
+    }
+
+    window.showSeatDetailBadge = openPractitionerProfileModal;
+    window.assignSanctuarySeat = function(seatNo) {
+      walkUserToSeat(seatNo, false);
+    };
+    window.showBuddhaWisdomModal = function() {
+      openDharmaWisdomModal();
+    };
 
     /**************************************************************************
      * 8. WEB AUDIO API SYNTHESIZER

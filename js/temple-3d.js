@@ -77,6 +77,13 @@ class Temple3DEngine {
     this.altarLight = null;
     this.haloLight = null;
     this.plaqueLight = null;
+
+    // Cinematic Tour Properties
+    this.isCinematicTour = false;
+    this.tourProgress = 0;
+    this.tourPosCurve = null;
+    this.tourTargetCurve = null;
+    this.leavesEnabled = true;
   }
 
   init(containerElement) {
@@ -123,6 +130,11 @@ class Temple3DEngine {
       this.controls.minDistance = 2.2;
       this.controls.maxDistance = 24;
       this.controls.target.copy(this.cameraViews.overview.target);
+      this.controls.addEventListener('start', () => {
+        if (this.isCinematicTour) {
+          this.stopCinematicTour();
+        }
+      });
     }
 
     // 5. Build 3D World
@@ -134,6 +146,7 @@ class Temple3DEngine {
     this.buildWoodenFish3D();
     this.buildIncenseBurner3D();
     this.initAtmosphereParticles();
+    this.setupCinematicTour();
 
     // 6. Interaction listeners
     this.setupEventListeners();
@@ -781,8 +794,11 @@ class Temple3DEngine {
       const crane = this.createCraneOnTurtleMesh();
       crane.position.set(cSide, 0, 0.3);
       crane.rotation.y = cSide > 0 ? -Math.PI / 5 : Math.PI / 5;
+      crane.userData.type = 'crane';
+      crane.userData.name = 'Kim Hạc Ngự Lưng Rùa 3D';
       altarGroup.add(crane);
       this.cranes3D.push(crane);
+      this.interactiveObjects.push(crane);
     }
 
     // Make Buddha interactive (click to view altar)
@@ -885,6 +901,7 @@ class Temple3DEngine {
     const flameLight = new THREE.PointLight(0xffaa33, 0.6, 3.5);
     flameLight.position.set(0, 2.96, 0.44);
     group.add(flameLight);
+    group.userData.flameLight = flameLight;
 
     return group;
   }
@@ -970,7 +987,13 @@ class Temple3DEngine {
         devotee: devoteeMesh
       };
 
+      cushionMesh.userData = cushionGroup.userData;
+      if (devoteeMesh) {
+        devoteeMesh.userData = cushionGroup.userData;
+      }
+
       this.cushions3D.push(cushionGroup);
+      this.interactiveObjects.push(cushionGroup);
       this.interactiveObjects.push(cushionMesh);
       this.scene.add(cushionGroup);
     });
@@ -1833,8 +1856,15 @@ class Temple3DEngine {
       const type = obj.userData.type;
       if (type === 'bell') {
         this.strikeBell3D();
+        if (window.AudioEngine) window.AudioEngine.playTempleBell();
+        if (window.showLiveGiftBanner) {
+          window.showLiveGiftBanner('Đại Hồng Chung 3D', 'Ngân vang thanh tịnh khắp pháp giới mười phương', 'bell');
+        }
       } else if (type === 'mo') {
         this.tapWoodenFish3D();
+        if (window.performUserWoodenFishTap) {
+          window.performUserWoodenFishTap(null, false);
+        }
       } else if (type === 'seat') {
         const seatData = obj.userData.data;
         if (seatData && !seatData.occupied && window.assignSanctuarySeat) {
@@ -1845,11 +1875,158 @@ class Temple3DEngine {
         if (obj.userData.devotee && obj.userData.devotee.userData && obj.userData.devotee.userData.bow) {
           obj.userData.devotee.userData.bow();
         }
-      } else if (type === 'buddha' || type === 'burner') {
-        this.setCameraView('buddha', true);
-        if (window.AudioEngine) window.AudioEngine.playGiftChime();
+      } else if (type === 'buddha') {
+        this.revereBuddha3D();
+      } else if (type === 'burner') {
+        this.puffIncenseBurner3D();
+      } else if (type === 'crane') {
+        this.blessCrane3D(obj);
       }
     }
+  }
+
+  // Reverence Buddha Interaction
+  revereBuddha3D() {
+    this.setCameraView('buddha', true);
+    if (this.haloLight) {
+      if (typeof window.TWEEN !== 'undefined') {
+        new window.TWEEN.Tween(this.haloLight)
+          .to({ intensity: 5.2 }, 400)
+          .yoyo(true)
+          .repeat(1)
+          .start();
+      } else {
+        this.haloLight.intensity = 5.0;
+        setTimeout(() => { if (this.haloLight) this.haloLight.intensity = 3.0; }, 800);
+      }
+    }
+    if (this.haloDisc) {
+      this.haloDisc.rotation.z += 0.45;
+    }
+
+    // Spawn 8 rising golden lotuses around Buddha altar
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const radius = 1.1 + Math.random() * 0.9;
+      this.spawn3DFloatingLotus(Math.cos(angle) * radius, 2.5 + Math.random() * 0.4, -4.5 + Math.sin(angle) * radius);
+    }
+
+    if (window.AudioEngine) window.AudioEngine.playGiftChime();
+    if (window.showLiveGiftBanner) {
+      window.showLiveGiftBanner('Đức Bổn Sư Thích Ca', 'Chiêm bái kim thân Thế Tôn • Khai mở tuệ giác vô lượng', 'lotus');
+    }
+    if (window.showBuddhaWisdomModal) {
+      window.showBuddhaWisdomModal();
+    } else if (window.openDharmaWisdomModal) {
+      window.openDharmaWisdomModal();
+    }
+  }
+
+  // Incense Burner Puff Interaction
+  puffIncenseBurner3D() {
+    if (this.smokeParticles3D) {
+      for (let i = 0; i < 18; i++) {
+        const puff = {
+          mesh: new THREE.Mesh(
+            new THREE.SphereGeometry(0.06 + Math.random() * 0.05, 8, 8),
+            new THREE.MeshBasicMaterial({ color: 0xecd0a5, transparent: true, opacity: 0.45 })
+          ),
+          vy: 0.024 + Math.random() * 0.02,
+          vx: (Math.random() - 0.5) * 0.015,
+          vz: (Math.random() - 0.5) * 0.015,
+          life: 0,
+          maxLife: 100 + Math.random() * 40
+        };
+        puff.mesh.position.set((Math.random() - 0.5) * 0.16, 2.0, -4.1 + (Math.random() - 0.5) * 0.16);
+        this.scene.add(puff.mesh);
+        this.smokeParticles3D.push(puff);
+      }
+    }
+    if (window.AudioEngine) window.AudioEngine.playGiftChime();
+    if (window.showLiveGiftBanner) {
+      window.showLiveGiftBanner('Lư Hương Trầm 3D', 'Nguyện đem lòng thành kính • Dâng nén tâm hương', 'lotus');
+    }
+    if (window.addMeritPoints && window.currentUserProfile) {
+      window.addMeritPoints(window.currentUserProfile.fullName, 1, 'lotus', 'Dâng hương Tam Bảo', true);
+    }
+  }
+
+  // Crane on Turtle Auspicious Blessing
+  blessCrane3D(craneObj) {
+    let flame = craneObj.userData && craneObj.userData.flameLight;
+    if (!flame) {
+      craneObj.traverse(child => {
+        if (child.isPointLight) flame = child;
+      });
+    }
+    if (flame) {
+      const origIntensity = flame.intensity;
+      flame.intensity = 2.4;
+      setTimeout(() => { if (flame) flame.intensity = origIntensity; }, 1400);
+    }
+    if (window.AudioEngine) window.AudioEngine.playGiftChime();
+    if (window.showLiveGiftBanner) {
+      window.showLiveGiftBanner('Kim Hạc Ngự Quy 3D', 'Biểu trưng thanh cao, trường thọ & cát tường an lạc', 'lotus');
+    }
+  }
+
+  // Cinematic 3D Sanctuary Tour Path Setup
+  setupCinematicTour() {
+    const points = [
+      new THREE.Vector3(0, 4.5, 9.8),     // 1. Chánh Điện Toàn Cảnh từ Tiền Đường
+      new THREE.Vector3(-4.2, 2.6, 4.2),  // 2. Lướt qua hàng Phật Tử Bên Trái
+      new THREE.Vector3(-1.4, 3.4, -2.0), // 3. Cận Cảnh Kim Thân Phật Tổ Thích Ca
+      new THREE.Vector3(2.2, 2.8, -2.4),  // 4. Bàn Tam Bảo & Cặp Hạc Ngự Quy
+      new THREE.Vector3(5.2, 2.4, -1.8),  // 5. Góc Đại Hồng Chung & Mõ Gỗ
+      new THREE.Vector3(3.6, 2.6, 3.8),   // 6. Hàng Phật Tử Bên Phải
+      new THREE.Vector3(0, 7.8, 8.5),     // 7. Thượng Thiên Toàn Cảnh Trang Nghiêm
+    ];
+    this.tourPosCurve = new THREE.CatmullRomCurve3(points, true, 'centripetal', 0.5);
+
+    const targets = [
+      new THREE.Vector3(0, 3.2, -4.5),
+      new THREE.Vector3(-0.6, 2.8, -4.5),
+      new THREE.Vector3(0, 4.2, -5.2),
+      new THREE.Vector3(0, 3.8, -4.5),
+      new THREE.Vector3(4.2, 2.2, -3.2),
+      new THREE.Vector3(0.6, 2.6, -4.5),
+      new THREE.Vector3(0, 2.5, -3.0),
+    ];
+    this.tourTargetCurve = new THREE.CatmullRomCurve3(targets, true, 'centripetal', 0.5);
+  }
+
+  toggleCinematicTour() {
+    if (this.isCinematicTour) {
+      this.stopCinematicTour();
+      return false;
+    } else {
+      this.startCinematicTour();
+      return true;
+    }
+  }
+
+  startCinematicTour() {
+    this.isCinematicTour = true;
+    this.tourProgress = 0;
+    if (window.showLiveGiftBanner) {
+      window.showLiveGiftBanner('Du Ngoạn 3D Tự Động', 'Đang lướt quanh Đại Hùng Bảo Điện • Chạm/kéo màn hình để dừng lại bất kỳ lúc nào', 'lotus');
+    }
+  }
+
+  stopCinematicTour() {
+    if (!this.isCinematicTour) return;
+    this.isCinematicTour = false;
+    if (window.onCinematicTourStopped) {
+      window.onCinematicTourStopped();
+    }
+  }
+
+  toggleBodhiLeaves() {
+    this.leavesEnabled = !this.leavesEnabled;
+    this.bodhiLeaves3D.forEach(l => {
+      l.mesh.visible = this.leavesEnabled;
+    });
+    return this.leavesEnabled;
   }
 
   start() {
@@ -1864,6 +2041,19 @@ class Temple3DEngine {
 
       const delta = this.clock.getDelta();
       const elapsed = this.clock.getElapsedTime();
+
+      // 0. Cinematic 3D Tour Drone Glide
+      if (this.isCinematicTour && this.tourPosCurve && this.tourTargetCurve) {
+        this.tourProgress = (this.tourProgress + delta * 0.022) % 1.0;
+        const targetCamPos = this.tourPosCurve.getPointAt(this.tourProgress);
+        const targetCamLook = this.tourTargetCurve.getPointAt(this.tourProgress);
+        this.camera.position.lerp(targetCamPos, 0.05);
+        if (this.controls) {
+          this.controls.target.lerp(targetCamLook, 0.05);
+        } else {
+          this.camera.lookAt(targetCamLook);
+        }
+      }
 
       // 1. Rotate Buddha Mandala Halo (Dual-layer rotation)
       if (this.haloDisc) {
