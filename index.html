@@ -1892,20 +1892,42 @@
      * 1. DỮ LIỆU 12 VỊ TRÍ BỒ ĐOÀN TRONG CHÁNH ĐIỆN
      **************************************************************************/
     const sanctuarySeats = [
-      { seatNo: 1,  id: 'seat-1',  x: 19,   y: 8,  scale: 0.86, occupied: true,  isUser: false, name: 'Bình An',   dharma: 'Tịnh An',  age: 24, hometown: 'Huế',       type: 'female', points: 40, ip: '113.161.45.12' },
-      { seatNo: 2,  id: 'seat-2',  x: 29.5, y: 8,  scale: 0.86, occupied: false, isUser: false, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'monk',   points: 0,  ip: '' },
-      { seatNo: 3,  id: 'seat-3',  x: 40,   y: 8,  scale: 0.86, occupied: true,  isUser: false, name: 'Hoa Sen',   dharma: 'Liên Tâm', age: 19, hometown: 'Hà Nội',    type: 'monk',   points: 60, ip: '27.68.12.90' },
-      { seatNo: 4,  id: 'seat-4',  x: 60,   y: 8,  scale: 0.86, occupied: false, isUser: false, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'monk',   points: 0,  ip: '' },
-      { seatNo: 5,  id: 'seat-5',  x: 70.5, y: 8,  scale: 0.86, occupied: true,  isUser: false, name: 'Gia Hân',   dharma: 'Tuệ Hân',  age: 22, hometown: 'Đà Nẵng',   type: 'monk',   points: 35, ip: '42.112.88.34' },
-      { seatNo: 6,  id: 'seat-6',  x: 81,   y: 8,  scale: 0.86, occupied: false, isUser: false, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'female', points: 0,  ip: '' },
-      { seatNo: 7,  id: 'seat-7',  x: 16,   y: 42, scale: 0.98, occupied: true,  isUser: false, name: 'Ngọc Mai',  dharma: 'Diệu Mai', age: 27, hometown: 'TP.HCM',    type: 'female', points: 50, ip: '14.162.201.76' },
-      { seatNo: 8,  id: 'seat-8',  x: 27.5, y: 42, scale: 0.98, occupied: true,  isUser: false, name: 'Thiện Tâm', dharma: 'Chánh Tâm',age: 16, hometown: 'Nam Định',  type: 'monk',   points: 90, ip: '171.244.5.18' },
-      { seatNo: 9,  id: 'seat-9',  x: 39,   y: 42, scale: 0.98, occupied: true,  isUser: false, name: 'Hải Yến',   dharma: 'Tịnh Yến', age: 29, hometown: 'Hải Phòng', type: 'female', points: 45, ip: '123.24.119.55' },
-      { seatNo: 10, id: 'seat-10', x: 61,   y: 42, scale: 0.98, occupied: false, isUser: false, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'monk',   points: 0,  ip: '' },
-      { seatNo: 11, id: 'seat-11', x: 72.5, y: 42, scale: 0.98, occupied: true,  isUser: false, name: 'Bảo Trân',  dharma: 'Ngọc Trân',age: 23, hometown: 'Cần Thơ',   type: 'female', points: 55, ip: '116.108.92.21' },
-      { seatNo: 12, id: 'seat-12', x: 84,   y: 42, scale: 0.98, occupied: false, isUser: false, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'female', points: 0,  ip: '' }
+      { seatNo: 1,  id: 'seat-1',  x: 19,   y: 8,  scale: 0.86, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Bình An',   dharma: 'Tịnh An',  age: 24, hometown: 'Huế',       type: 'female', points: 40, ip: '113.161.45.12' },
+      { seatNo: 2,  id: 'seat-2',  x: 29.5, y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'monk',   points: 0,  ip: '' },
+      { seatNo: 3,  id: 'seat-3',  x: 40,   y: 8,  scale: 0.86, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Hoa Sen',   dharma: 'Liên Tâm', age: 19, hometown: 'Hà Nội',    type: 'monk',   points: 60, ip: '27.68.12.90' },
+      { seatNo: 4,  id: 'seat-4',  x: 60,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'monk',   points: 0,  ip: '' },
+      { seatNo: 5,  id: 'seat-5',  x: 70.5, y: 8,  scale: 0.86, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Gia Hân',   dharma: 'Tuệ Hân',  age: 22, hometown: 'Đà Nẵng',   type: 'monk',   points: 35, ip: '42.112.88.34' },
+      { seatNo: 6,  id: 'seat-6',  x: 81,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'female', points: 0,  ip: '' },
+      { seatNo: 7,  id: 'seat-7',  x: 16,   y: 42, scale: 0.98, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Ngọc Mai',  dharma: 'Diệu Mai', age: 27, hometown: 'TP.HCM',    type: 'female', points: 50, ip: '14.162.201.76' },
+      { seatNo: 8,  id: 'seat-8',  x: 27.5, y: 42, scale: 0.98, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Thiện Tâm', dharma: 'Chánh Tâm',age: 16, hometown: 'Nam Định',  type: 'monk',   points: 90, ip: '171.244.5.18' },
+      { seatNo: 9,  id: 'seat-9',  x: 39,   y: 42, scale: 0.98, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Hải Yến',   dharma: 'Tịnh Yến', age: 29, hometown: 'Hải Phòng', type: 'female', points: 45, ip: '123.24.119.55' },
+      { seatNo: 10, id: 'seat-10', x: 61,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'monk',   points: 0,  ip: '' },
+      { seatNo: 11, id: 'seat-11', x: 72.5, y: 42, scale: 0.98, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Bảo Trân',  dharma: 'Ngọc Trân',age: 23, hometown: 'Cần Thơ',   type: 'female', points: 55, ip: '116.108.92.21' },
+      { seatNo: 12, id: 'seat-12', x: 84,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'female', points: 0,  ip: '' }
     ];
     window.sanctuarySeats = sanctuarySeats;
+
+    function isSeatTakenByRemote(seatNo) {
+      const s = sanctuarySeats.find(item => item.seatNo === seatNo);
+      return !!(s && s.remoteClientId);
+    }
+
+    function pickBestAvailableSeat(preferSeatNo = null) {
+      if (preferSeatNo) {
+        const pref = sanctuarySeats.find(s => s.seatNo === preferSeatNo);
+        if (pref && !pref.isUser && !pref.remoteClientId) return pref.seatNo;
+      }
+      // 1. Look for empty seats (seats 2, 4, 6, 10, 12)
+      const emptySeat = sanctuarySeats.find(s => !s.occupied && !s.isUser && !s.remoteClientId);
+      if (emptySeat) return emptySeat.seatNo;
+
+      // 2. Look for dummy placeholder seats (human devotees replace dummy AI)
+      const dummySeat = sanctuarySeats.find(s => s.isDummy && !s.remoteClientId && !s.isUser);
+      if (dummySeat) return dummySeat.seatNo;
+
+      // Fallback
+      return 10;
+    }
 
     const CHUA_AN_NHIEN_SESSION_KEY = 'chua_an_nhien_real_user_session';
     let currentDetectedIP = '';
@@ -2105,12 +2127,14 @@
         applyProfileLockState(true);
 
         let targetSeat = sanctuarySeats.find(s => s.seatNo === currentUserProfile.assignedSeatNo);
-        if (!targetSeat) {
-          targetSeat = sanctuarySeats.find(s => !s.occupied) || sanctuarySeats[9];
+        if (!targetSeat || targetSeat.remoteClientId) {
+          const bestNo = pickBestAvailableSeat(currentUserProfile.assignedSeatNo);
+          targetSeat = sanctuarySeats.find(s => s.seatNo === bestNo) || sanctuarySeats[9];
         }
         sanctuarySeats.forEach(s => { if (s.isUser) { s.isUser = false; s.occupied = false; } });
         targetSeat.occupied = true;
         targetSeat.isUser = true;
+        targetSeat.isDummy = false;
         targetSeat.name = currentUserProfile.fullName;
         targetSeat.dharma = currentUserProfile.dharmaName;
         targetSeat.age = currentUserProfile.age;
@@ -2450,13 +2474,15 @@
         if (s.occupied) {
           const realm = getRealmByPoints(s.points || 0);
           return `
-            <div class="p-2 rounded-lg border ${s.isUser ? 'bg-amber-500/25 border-amber-300' : 'bg-black/45 border-amber-300/25'} flex items-center justify-between">
+            <div class="p-2 rounded-lg border ${s.isUser ? 'bg-amber-500/25 border-amber-300' : (s.remoteClientId ? 'bg-emerald-950/60 border-emerald-400/80 shadow-[0_0_10px_rgba(52,211,153,0.2)]' : 'bg-black/45 border-amber-300/25')} flex items-center justify-between">
               <div>
-                <div class="text-[11px] font-bold text-amber-200">Bồ đoàn #${s.seatNo} ${s.isUser ? '(BẠN - 🔒 ĐÃ NIÊM PHONG)' : ''}</div>
+                <div class="text-[11px] font-bold text-amber-200">
+                  Bồ đoàn #${s.seatNo} ${s.isUser ? '(BẠN - 🔒 ĐÃ NIÊM PHONG)' : (s.remoteClientId ? '<span class="text-emerald-300 font-extrabold">(🟢 LIVE TRỰC TUYẾN)</span>' : '')}
+                </div>
                 <div class="text-[10px] text-amber-50 font-semibold">${s.name} ${s.dharma ? `• PD: ${s.dharma}` : ''}</div>
                 <div class="text-[9px] text-amber-200/75">${s.age}t • ${s.hometown} • <span class="text-emerald-300 font-mono">🔒 IP: ${s.ip || '113.161.x.x'}</span></div>
               </div>
-              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span class="w-2 h-2 rounded-full ${s.remoteClientId ? 'bg-emerald-400 animate-pulse ring-2 ring-emerald-300' : 'bg-emerald-400'}"></span>
             </div>
           `;
         } else {
@@ -2525,10 +2551,11 @@
       closeRegistrationModal();
 
       if (window.RealtimeSanctuary) {
-        window.RealtimeSanctuary.broadcastJoin();
+        window.RealtimeSanctuary.broadcastHelloSync();
       }
 
-      const targetSeatNo = currentUserProfile.assignedSeatNo || 10;
+      const targetSeatNo = pickBestAvailableSeat(currentUserProfile.assignedSeatNo);
+      currentUserProfile.assignedSeatNo = targetSeatNo;
       walkUserToSeat(targetSeatNo, true);
     }
 
@@ -2572,10 +2599,10 @@
         previousUserSeat.isUser = false;
       }
 
-      let targetSeat = sanctuarySeats.find(s => s.seatNo === targetSeatNo && !s.occupied);
+      let targetSeat = sanctuarySeats.find(s => s.seatNo === targetSeatNo && (!s.occupied || s.isDummy) && !s.remoteClientId);
       if (!targetSeat) {
-        const emptyList = sanctuarySeats.filter(s => !s.occupied);
-        targetSeat = emptyList.length > 0 ? emptyList[0] : sanctuarySeats[9];
+        const bestNo = pickBestAvailableSeat(targetSeatNo);
+        targetSeat = sanctuarySeats.find(s => s.seatNo === bestNo) || sanctuarySeats[9];
       }
 
       currentUserProfile.isWalking = true;
@@ -2619,6 +2646,8 @@
         walkLayer.innerHTML = '';
         targetSeat.occupied = true;
         targetSeat.isUser = true;
+        targetSeat.isDummy = false;
+        targetSeat.remoteClientId = null;
         targetSeat.name = currentUserProfile.fullName;
         targetSeat.dharma = currentUserProfile.dharmaName;
         targetSeat.age = currentUserProfile.age;
@@ -2855,7 +2884,7 @@
       }
       if (currentUserProfile.isWalking) return;
 
-      const emptySeats = sanctuarySeats.filter(s => !s.occupied && !s.isUser);
+      const emptySeats = sanctuarySeats.filter(s => !s.occupied && !s.isUser && !s.remoteClientId);
       if (emptySeats.length === 0) {
         showLiveGiftBanner('Chánh Điện Đầy', 'Hiện không còn Bồ Đoàn trống', 'lotus');
         return;
@@ -2869,8 +2898,11 @@
     }
 
     function updatePractitionerHUD() {
-      const occupiedCount = sanctuarySeats.filter(s => s.occupied).length;
-      document.getElementById('hud-online-count').textContent = occupiedCount;
+      const onlineCount = (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.getOnlineCount === 'function')
+        ? window.RealtimeSanctuary.getOnlineCount()
+        : sanctuarySeats.filter(s => s.occupied).length;
+      const countEl = document.getElementById('hud-online-count');
+      if (countEl) countEl.textContent = onlineCount;
       document.getElementById('hud-session-code').textContent = currentUserProfile.sessionCode;
 
       const realm = getRealmByPoints(currentUserProfile.meritScore);
@@ -3105,17 +3137,24 @@
             ? `<div class="user-lotus-aura absolute bottom-3 left-1/2 w-28 h-8 rounded-full border-2 pointer-events-none" style="background:${seatRealm.color}33; border-color:${seatRealm.ringStroke}; box-shadow: 0 0 18px ${seatRealm.color};"></div>`
             : '';
 
+          const isRemoteHuman = !!seat.remoteClientId;
           const badgeClasses = seat.isUser
             ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-stone-950 border-white font-extrabold ring-1 ring-amber-200/90'
-            : 'bg-[#261c14]/92 text-[#f5ebd6] border-amber-200/30 font-semibold';
+            : (isRemoteHuman 
+                ? 'bg-emerald-950/95 text-emerald-100 border-emerald-400 font-bold ring-1 ring-emerald-400/60 shadow-[0_0_10px_rgba(52,211,153,0.35)]'
+                : 'bg-[#261c14]/92 text-[#f5ebd6] border-amber-200/30 font-semibold');
 
           const metaSubtitle = seat.isUser
             ? `<span class="block text-[7.5px] font-bold text-stone-900/95 leading-none mt-0.5 truncate max-w-[76px]">Bạn • PD: ${currentUserProfile.dharmaName || 'Minh Tâm'}</span>`
-            : `<span class="block text-[7px] font-semibold text-amber-200/80 leading-none mt-0.5 truncate max-w-[76px]">PD: ${seat.dharma || 'Tịnh Tâm'}</span>`;
+            : (isRemoteHuman
+                ? `<span class="inline-flex items-center gap-1 text-[7px] font-bold text-emerald-300 leading-none mt-0.5 truncate max-w-[76px]"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>Live • PD: ${seat.dharma || 'Tịnh Tâm'}</span>`
+                : `<span class="block text-[7px] font-semibold text-amber-200/80 leading-none mt-0.5 truncate max-w-[76px]">PD: ${seat.dharma || 'Tịnh Tâm'}</span>`);
 
           wrapper.title = seat.isUser
             ? `Bồ đoàn #${seat.seatNo} (CỦA BẠN - ĐÃ NIÊM PHONG) • IP: ${currentUserProfile.clientIp || '117.5.x.x'}`
-            : `Bồ đoàn #${seat.seatNo} • ${seat.name} (PD: ${seat.dharma || 'Tịnh Tâm'}) • IP: ${seat.ip || '113.161.x.x'} • ${seat.hometown}`;
+            : (isRemoteHuman
+                ? `🟢 Bồ đoàn #${seat.seatNo} (ĐỒNG TU LIVE ĐANG TRỰC TUYẾN) • ${seat.name} • PD: ${seat.dharma || 'Tịnh Tâm'} • IP: ${seat.ip || '113.161.x.x'} • ${seat.hometown}`
+                : `Bồ đoàn #${seat.seatNo} • ${seat.name} (PD: ${seat.dharma || 'Tịnh Tâm'}) • IP: ${seat.ip || '113.161.x.x'} • ${seat.hometown}`);
 
           wrapper.innerHTML = `
             ${spotlightHTML}
@@ -4663,7 +4702,19 @@
       // 2. Tải phiên thực tế đã lưu và khôi phục trạng thái niêm phong
       const restored = loadRealUserSession();
       if (!restored) {
-        renderSanctuaryFloor();
+        // Tự động phân bổ bồ đoàn còn trống cho khách đồng tu để hiện diện ngay lập tức
+        const guestSeatNo = pickBestAvailableSeat();
+        currentUserProfile.assignedSeatNo = guestSeatNo;
+        const guestSeat = sanctuarySeats.find(s => s.seatNo === guestSeatNo);
+        if (guestSeat) {
+          guestSeat.occupied = true;
+          guestSeat.isUser = true;
+          guestSeat.isDummy = false;
+          guestSeat.name = currentUserProfile.fullName || 'Đồng Tu Mới';
+          guestSeat.dharma = currentUserProfile.dharmaName || 'Tịnh Tâm';
+          guestSeat.ip = currentDetectedIP || '117.5.x.x';
+        }
+        renderSanctuaryFloor(guestSeatNo);
         openRegistrationModal(false);
       }
 

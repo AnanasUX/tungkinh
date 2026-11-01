@@ -1,14 +1,15 @@
 /**
- * Chùa An Nhiên — Real-time Sanctuary Synchronization System
- * Đồng Bộ Hóa Đạo Tràng Trực Tuyến Đa Thiết Bị Thời Gian Thực
+ * Chùa An Nhiên — Real-time Sanctuary Synchronization System (v2.0)
+ * Đạo Tràng Trực Tuyến Đa Thiết Bị Thời Gian Thực
  *
- * Cho phép người dùng A và B từ các thiết bị khác nhau (Điện thoại, Máy tính, Tablet)
- * cùng hiện diện trong một Chánh Điện chung thời gian thực:
- * - Nhìn thấy nhau trên các Bồ Đoàn 2D và 3D.
- * - Thấy đồng tu gõ mõ, cúi lạy, tụng kinh.
- * - Thấy tiếng chuông Đại Hồng Chung ngân vang khi đồng tu thỉnh.
- * - Thấy Đèn Hoa Đăng và Lời Chúc bay lên không gian chung.
- * - Tự động phát hiện đồng tu tham gia và rời khỏi đạo tràng.
+ * Cho phép mọi người dùng truy cập https://ananasux.github.io/tungkinh/
+ * từ các thiết bị khác nhau (Điện thoại, Máy tính, Máy tính bảng)
+ * cùng chung 1 không gian Chánh Điện thời gian thực:
+ * - Tự động đồng bộ trạng thái khi vào (HELLO_SYNC & STATE_ANNOUNCE handshake).
+ * - Giải quyết xung đột vị trí Bồ Đoàn (Seat Conflict Resolution), ưu tiên người dùng thật.
+ * - Hiển thị huy hiệu "🟢 Đồng tu Live" cho người thật đang trực tuyến.
+ * - Đồng bộ mọi hành vi: Gõ mõ, Thỉnh chuông, Thả hoa đăng, Dâng sớ, Tùy hỷ công đức.
+ * - Tự động khôi phục kết nối khi chuyển tab hoặc mở khóa màn hình điện thoại.
  */
 
 (function () {
@@ -16,26 +17,27 @@
 
   const BROKERS = [
     { host: 'broker.emqx.io', port: 8084, path: '/mqtt', ssl: true, label: 'EMQX Global Broker' },
-    { host: 'broker.hivemq.com', port: 8884, path: '/mqtt', ssl: true, label: 'HiveMQ AWS Broker' }
+    { host: 'broker.hivemq.com', port: 8884, path: '/mqtt', ssl: true, label: 'HiveMQ Global Broker' }
   ];
 
-  const SANCTUARY_TOPIC = 'chuanhien/sanctuary/global/v1';
+  const SANCTUARY_TOPIC = 'chuanhien/sanctuary/global/v2';
   let currentBrokerIndex = 0;
   let pahoClient = null;
   let isConnected = false;
+  let isConnecting = false;
   let reconnectTimer = null;
   let heartbeatTimer = null;
   let pruneTimer = null;
 
-  // Local BroadcastChannel for multi-tab sync on same device
+  // Local BroadcastChannel for instant zero-latency multi-tab sync on same device
   const localChannel = (typeof window.BroadcastChannel !== 'undefined')
-    ? new window.BroadcastChannel('chua_an_nhien_realtime_channel')
+    ? new window.BroadcastChannel('chua_an_nhien_realtime_channel_v2')
     : null;
 
-  // Unique Client Identity per tab/device
+  // Unique client identity per browser session
   const clientId = 'phattu_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36);
 
-  // Map of active remote devotees: clientId -> { data, lastSeen }
+  // Map of active remote devotees: clientId -> { clientId, seatNo, data, lastSeen }
   const remoteDevotees = new Map();
 
   const RealtimeSanctuary = {
@@ -43,6 +45,7 @@
     isConnected: false,
 
     init() {
+      console.log(`[RealtimeSanctuary] Initializing with clientId: ${clientId}`);
       this.connectBroker();
       this.setupLocalChannel();
       this.startHeartbeatLoop();
@@ -50,24 +53,35 @@
       this.setupWindowEvents();
     },
 
+    getOnlineCount() {
+      // 1 (current local user) + number of verified active remote devotees
+      return Math.max(1, remoteDevotees.size + 1);
+    },
+
     connectBroker() {
       if (typeof window.Paho === 'undefined' || !window.Paho.MQTT) {
         console.warn('[RealtimeSanctuary] Paho MQTT library not loaded, using local cross-tab channel fallback.');
         return;
       }
+      if (isConnected || isConnecting) return;
 
+      isConnecting = true;
       const broker = BROKERS[currentBrokerIndex];
+      console.log(`[RealtimeSanctuary] Connecting to ${broker.label} (${broker.host}:${broker.port})...`);
+
       const client = new window.Paho.MQTT.Client(broker.host, broker.port, broker.path, clientId);
 
       client.onConnectionLost = (responseObject) => {
         isConnected = false;
+        isConnecting = false;
         RealtimeSanctuary.isConnected = false;
         RealtimeSanctuary.updateConnectionHUD(false);
         console.warn('[RealtimeSanctuary] Connection lost:', responseObject.errorMessage);
-        // Switch to next broker and reconnect
+
+        // Switch to alternative broker and reconnect
         currentBrokerIndex = (currentBrokerIndex + 1) % BROKERS.length;
         clearTimeout(reconnectTimer);
-        reconnectTimer = setTimeout(() => RealtimeSanctuary.connectBroker(), 4000);
+        reconnectTimer = setTimeout(() => RealtimeSanctuary.connectBroker(), 3500);
       };
 
       client.onMessageArrived = (message) => {
@@ -82,36 +96,40 @@
       const options = {
         useSSL: broker.ssl,
         timeout: 6,
-        keepAliveInterval: 30,
+        keepAliveInterval: 25,
         cleanSession: true,
         onSuccess: () => {
           isConnected = true;
+          isConnecting = false;
           pahoClient = client;
           RealtimeSanctuary.isConnected = true;
           RealtimeSanctuary.updateConnectionHUD(true);
-          console.log(`[RealtimeSanctuary] Connected to ${broker.label} (${broker.host})`);
+          console.log(`[RealtimeSanctuary] Connected successfully to ${broker.label}!`);
 
-          // Subscribe to sanctuary topic
+          // Subscribe to shared sanctuary channel
           client.subscribe(SANCTUARY_TOPIC, { qos: 0 });
 
-          // Broadcast Join & Request state
-          RealtimeSanctuary.broadcastJoin();
+          // Broadcast Join Handshake immediately
+          RealtimeSanctuary.broadcastHelloSync();
         },
         onFailure: (err) => {
           isConnected = false;
+          isConnecting = false;
           RealtimeSanctuary.isConnected = false;
           RealtimeSanctuary.updateConnectionHUD(false);
           console.warn(`[RealtimeSanctuary] Failed to connect ${broker.host}:`, err.errorMessage || err);
+
           currentBrokerIndex = (currentBrokerIndex + 1) % BROKERS.length;
           clearTimeout(reconnectTimer);
-          reconnectTimer = setTimeout(() => RealtimeSanctuary.connectBroker(), 5000);
+          reconnectTimer = setTimeout(() => RealtimeSanctuary.connectBroker(), 4000);
         }
       };
 
       try {
         client.connect(options);
       } catch (err) {
-        console.error('[RealtimeSanctuary] Connect error:', err);
+        isConnecting = false;
+        console.error('[RealtimeSanctuary] Connect exception:', err);
       }
     },
 
@@ -125,12 +143,32 @@
     },
 
     setupWindowEvents() {
+      // Notify leaving when closing page
       window.addEventListener('beforeunload', () => {
+        const mySeat = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
         RealtimeSanctuary.publishMessage({
           type: 'LEAVE',
           senderId: clientId,
-          seatNo: (window.currentUserProfile && window.currentUserProfile.assignedSeatNo) || null
+          seatNo: mySeat || null
         });
+      });
+
+      // Mobile lifecycle: resume on screen unlock or tab focus
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          if (!isConnected && !isConnecting) {
+            RealtimeSanctuary.connectBroker();
+          } else if (isConnected) {
+            RealtimeSanctuary.broadcastHelloSync();
+          }
+        }
+      });
+
+      // Network online event
+      window.addEventListener('online', () => {
+        if (!isConnected && !isConnecting) {
+          RealtimeSanctuary.connectBroker();
+        }
       });
     },
 
@@ -138,7 +176,7 @@
       payload.senderId = clientId;
       payload.timestamp = Date.now();
 
-      // 1. Send via local BroadcastChannel for instant local tab sync
+      // 1. Broadcast locally for multi-tab testing
       if (localChannel) {
         try {
           localChannel.postMessage(payload);
@@ -147,7 +185,7 @@
         }
       }
 
-      // 2. Send via MQTT WebSocket broker to internet
+      // 2. Publish to MQTT WebSocket broker for global internet sync
       if (pahoClient && isConnected) {
         try {
           const pahoMsg = new window.Paho.MQTT.Message(JSON.stringify(payload));
@@ -160,24 +198,38 @@
       }
     },
 
-    broadcastJoin() {
+    buildUserProfilePayload() {
       const profile = window.currentUserProfile || {};
+      return {
+        sessionCode: profile.sessionCode || '#AN-8899',
+        ip: profile.clientIp || '',
+        seatNo: profile.assignedSeatNo || null,
+        name: profile.fullName || 'Đồng Tu Mới',
+        dharma: profile.dharmaName || 'Tịnh Tâm',
+        age: profile.age || 26,
+        hometown: profile.hometown || 'Chùa An Nhiên',
+        gender: profile.avatarType || profile.gender || 'monk',
+        points: profile.meritScore || 20,
+        realm: profile.realmLevel || 1,
+        wish: profile.wish || profile.userWish || 'Cầu bình an vạn sự',
+        registered: !!profile.registered
+      };
+    },
+
+    broadcastHelloSync() {
       this.publishMessage({
-        type: 'JOIN',
+        type: 'HELLO_SYNC',
         senderId: clientId,
-        data: {
-          sessionCode: profile.sessionCode || '#AN-8899',
-          ip: profile.clientIp || '',
-          seatNo: profile.assignedSeatNo || 10,
-          name: profile.fullName || 'Hành Giả Đồng Tu',
-          dharma: profile.dharmaName || 'Tịnh Tâm',
-          age: profile.age || 26,
-          hometown: profile.hometown || 'Chùa An Nhiên',
-          gender: profile.gender || 'monk',
-          points: profile.meritScore || 20,
-          realm: profile.realmLevel || 1,
-          wish: profile.userWish || 'Cầu bình an vạn sự'
-        }
+        data: this.buildUserProfilePayload()
+      });
+    },
+
+    broadcastStateAnnounce(targetId = null) {
+      this.publishMessage({
+        type: 'STATE_ANNOUNCE',
+        senderId: clientId,
+        targetId: targetId,
+        data: this.buildUserProfilePayload()
       });
     },
 
@@ -193,10 +245,11 @@
           dharma: userProfile.dharmaName,
           age: userProfile.age,
           hometown: userProfile.hometown,
-          gender: userProfile.gender || 'monk',
+          gender: userProfile.avatarType || userProfile.gender || 'monk',
           points: userProfile.meritScore,
           realm: userProfile.realmLevel,
-          wish: userProfile.userWish
+          wish: userProfile.wish || userProfile.userWish,
+          registered: true
         }
       });
     },
@@ -206,7 +259,7 @@
       this.publishMessage({
         type: 'TAP_MO',
         senderId: clientId,
-        seatNo: profile.assignedSeatNo || 10,
+        seatNo: profile.assignedSeatNo,
         phrase: phrase,
         multiplier: zenMultiplier,
         points: profile.meritScore,
@@ -257,9 +310,21 @@
       if (!msg || !msg.type || msg.senderId === clientId) return;
 
       switch (msg.type) {
+        case 'HELLO_SYNC':
+          // Remote devotee joined, answer with our current state
+          this.handleDevoteePresence(msg.senderId, msg.data, true);
+          this.broadcastStateAnnounce(msg.senderId);
+          break;
+
+        case 'STATE_ANNOUNCE':
+          // If targeted to someone else, we still can learn about their presence
+          if (!msg.targetId || msg.targetId === clientId) {
+            this.handleDevoteePresence(msg.senderId, msg.data, false);
+          }
+          break;
+
         case 'HEARTBEAT':
-        case 'JOIN':
-          this.handleDevoteePresence(msg.senderId, msg.data, msg.type === 'JOIN');
+          this.handleDevoteePresence(msg.senderId, msg.data, false);
           break;
 
         case 'CLAIM_SEAT':
@@ -292,38 +357,98 @@
       }
     },
 
+    /**
+     * Resolve seat assignment for remote devotee.
+     * Ensures real human devotees are ALWAYS visible and never dropped due to collisions!
+     */
+    findBestSeatForRemoteDevotee(senderId, requestedSeatNo) {
+      if (!window.sanctuarySeats) return null;
+      const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
+
+      // 1. If this remote client is already assigned to a valid seat, preserve it unless requested new
+      const existingRecord = remoteDevotees.get(senderId);
+      if (existingRecord && existingRecord.seatNo && existingRecord.seatNo !== mySeatNo) {
+        const currentSeat = window.sanctuarySeats.find(s => s.seatNo === existingRecord.seatNo);
+        if (currentSeat && (!requestedSeatNo || requestedSeatNo === existingRecord.seatNo)) {
+          return currentSeat;
+        }
+      }
+
+      // 2. Try the requested seat if provided and not local user's seat
+      if (requestedSeatNo && requestedSeatNo !== mySeatNo) {
+        const candidate = window.sanctuarySeats.find(s => s.seatNo === requestedSeatNo);
+        if (candidate) {
+          // If empty or already owned by this remote client, take it
+          if (!candidate.occupied || candidate.remoteClientId === senderId) {
+            return candidate;
+          }
+          // If occupied by an AI dummy devotee, real devotee takes priority!
+          if (candidate.isDummy && !candidate.remoteClientId) {
+            return candidate;
+          }
+        }
+      }
+
+      // 3. Fallback: Search for any completely unoccupied seat (that is not local user's)
+      const emptySeat = window.sanctuarySeats.find(s => !s.occupied && !s.isUser && s.seatNo !== mySeatNo);
+      if (emptySeat) return emptySeat;
+
+      // 4. Fallback: Replace an AI dummy placeholder devotee
+      const dummySeat = window.sanctuarySeats.find(s => s.isDummy && !s.remoteClientId && !s.isUser && s.seatNo !== mySeatNo);
+      if (dummySeat) return dummySeat;
+
+      // 5. Ultimate fallback: Any seat not currently occupied by local user
+      const anyOther = window.sanctuarySeats.find(s => !s.isUser && s.seatNo !== mySeatNo);
+      return anyOther || null;
+    },
+
     handleDevoteePresence(senderId, data, isNewJoin) {
       if (!data) return;
       const isExisting = remoteDevotees.has(senderId);
+
+      const targetSeat = this.findBestSeatForRemoteDevotee(senderId, data.seatNo);
+      const assignedSeatNo = targetSeat ? targetSeat.seatNo : data.seatNo;
+
       remoteDevotees.set(senderId, {
         clientId: senderId,
+        seatNo: assignedSeatNo,
         data: data,
         lastSeen: Date.now()
       });
 
-      // Assign to seat in sanctuarySeats
-      if (data.seatNo && window.sanctuarySeats) {
-        const mySeatNo = (window.currentUserProfile && window.currentUserProfile.assignedSeatNo);
-        // Do not overwrite local user's seat
-        if (data.seatNo !== mySeatNo) {
-          const seat = window.sanctuarySeats.find(s => s.seatNo === data.seatNo);
-          if (seat && (!seat.occupied || seat.remoteClientId === senderId)) {
-            seat.occupied = true;
-            seat.isUser = false;
-            seat.name = data.name;
-            seat.dharma = data.dharma;
-            seat.age = data.age || 25;
-            seat.hometown = data.hometown || 'Chùa An Nhiên';
-            seat.ip = data.ip || '113.161.x.x';
-            seat.points = data.points || 30;
-            seat.type = data.gender || 'monk';
-            seat.remoteClientId = senderId;
-            seat.wish = data.wish || '';
-            
-            if (isNewJoin && !isExisting && window.showLiveGiftBanner) {
-              window.showLiveGiftBanner('Đồng Tu Nhập Tọa', `${data.name} (PD: ${data.dharma}) vừa vào Chánh Điện`, 'lotus');
-              if (window.AudioEngine && window.AudioEngine.enabled) window.AudioEngine.playGiftChime();
-            }
+      if (targetSeat) {
+        // Free any previous seat held by this remote client
+        window.sanctuarySeats.forEach(s => {
+          if (s.remoteClientId === senderId && s.seatNo !== targetSeat.seatNo) {
+            s.occupied = false;
+            s.remoteClientId = null;
+            s.name = '';
+            s.dharma = '';
+          }
+        });
+
+        // Occupy seat with remote devotee data
+        targetSeat.occupied = true;
+        targetSeat.isUser = false;
+        targetSeat.isDummy = false;
+        targetSeat.remoteClientId = senderId;
+        targetSeat.name = data.name || 'Đồng Tu Online';
+        targetSeat.dharma = data.dharma || 'Tịnh Tâm';
+        targetSeat.age = data.age || 26;
+        targetSeat.hometown = data.hometown || 'Chùa An Nhiên';
+        targetSeat.ip = data.ip || '113.161.x.x';
+        targetSeat.points = data.points || 30;
+        targetSeat.type = data.gender || 'monk';
+        targetSeat.wish = data.wish || '';
+
+        if (isNewJoin && !isExisting && window.showLiveGiftBanner) {
+          window.showLiveGiftBanner(
+            'Đồng Tu Nhập Tọa',
+            `🟢 ${data.name} (PD: ${data.dharma}) vừa vào Chánh Điện`,
+            'lotus'
+          );
+          if (window.AudioEngine && window.AudioEngine.enabled && typeof window.AudioEngine.playGiftChime === 'function') {
+            window.AudioEngine.playGiftChime();
           }
         }
       }
@@ -335,21 +460,22 @@
     handleDevoteeSeatClaim(senderId, seatNo, data) {
       if (!window.sanctuarySeats || !seatNo) return;
       const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
-      if (seatNo === mySeatNo) return;
 
       // Free previous seat held by this remote client
       window.sanctuarySeats.forEach(s => {
-        if (s.remoteClientId === senderId && s.seatNo !== seatNo) {
+        if (s.remoteClientId === senderId) {
           s.occupied = false;
           s.remoteClientId = null;
           s.name = '';
         }
       });
 
-      const targetSeat = window.sanctuarySeats.find(s => s.seatNo === seatNo);
+      const targetSeat = this.findBestSeatForRemoteDevotee(senderId, seatNo);
       if (targetSeat) {
         targetSeat.occupied = true;
         targetSeat.isUser = false;
+        targetSeat.isDummy = false;
+        targetSeat.remoteClientId = senderId;
         targetSeat.name = data.name;
         targetSeat.dharma = data.dharma;
         targetSeat.age = data.age || 26;
@@ -357,18 +483,18 @@
         targetSeat.ip = data.ip || '113.161.x.x';
         targetSeat.points = data.points || 35;
         targetSeat.type = data.gender || 'monk';
-        targetSeat.remoteClientId = senderId;
         targetSeat.wish = data.wish || '';
-      }
 
-      remoteDevotees.set(senderId, {
-        clientId: senderId,
-        data: Object.assign({}, data, { seatNo: seatNo }),
-        lastSeen: Date.now()
-      });
+        remoteDevotees.set(senderId, {
+          clientId: senderId,
+          seatNo: targetSeat.seatNo,
+          data: Object.assign({}, data, { seatNo: targetSeat.seatNo }),
+          lastSeen: Date.now()
+        });
 
-      if (window.showLiveGiftBanner) {
-        window.showLiveGiftBanner('Đổi Bồ Đoàn', `${data.name} đã an tọa Bồ đoàn #${seatNo}`, 'lotus');
+        if (window.showLiveGiftBanner) {
+          window.showLiveGiftBanner('Đổi Bồ Đoàn', `🟢 ${data.name} đã an tọa Bồ đoàn #${targetSeat.seatNo}`, 'lotus');
+        }
       }
 
       this.updateOnlineCountHUD();
@@ -376,27 +502,31 @@
     },
 
     handleDevoteeMoTap(seatNo, phrase, multiplier, senderId) {
-      if (!seatNo) return;
+      // Find actual seat where this remote devotee is placed
+      let actualSeatNo = seatNo;
+      if (senderId && remoteDevotees.has(senderId)) {
+        actualSeatNo = remoteDevotees.get(senderId).seatNo || seatNo;
+        remoteDevotees.get(senderId).lastSeen = Date.now();
+      }
+      if (!actualSeatNo) return;
+
+      // 2D Chibi Bow & Speech Bubble
       if (window.triggerDevoteeBow) {
-        window.triggerDevoteeBow(`seat-${seatNo}`, phrase || 'Nam Mô A Di Đà Phật', 'mo');
+        window.triggerDevoteeBow(`seat-${actualSeatNo}`, phrase || 'Nam Mô A Di Đà Phật', 'mo');
       }
 
-      // Also animate 3D Devotee if 3D mode is active
+      // 3D Devotee Bow
       if (window.temple3D && window.is3DModeActive) {
-        const devoteeItem = window.temple3D.devotees3D.find(d => d.seatNo === seatNo);
+        const devoteeItem = window.temple3D.devotees3D.find(d => d.seatNo === actualSeatNo);
         if (devoteeItem && devoteeItem.group && devoteeItem.group.userData && devoteeItem.group.userData.bow) {
           devoteeItem.group.userData.bow();
         }
         window.temple3D.tapWoodenFish3D();
       }
 
+      // Audio tap
       if (window.AudioEngine && window.AudioEngine.enabled) {
         window.AudioEngine.playWoodenFish(multiplier || 1);
-      }
-
-      // Touch heartbeat
-      if (senderId && remoteDevotees.has(senderId)) {
-        remoteDevotees.get(senderId).lastSeen = Date.now();
       }
     },
 
@@ -411,7 +541,7 @@
         window.AudioEngine.playTempleBell();
       }
       if (window.showLiveGiftBanner) {
-        window.showLiveGiftBanner('Đại Hồng Chung Ngân Vang', `Đồng tu ${name || 'ẩn danh'} vừa thỉnh chuông`, 'bell');
+        window.showLiveGiftBanner('Đại Hồng Chung Ngân Vang', `🟢 Đồng tu ${name || 'ẩn danh'} vừa thỉnh chuông`, 'bell');
       }
     },
 
@@ -423,7 +553,7 @@
         window.temple3D.spawn3DSkyLantern(sender, wish);
       }
       if (window.showLiveGiftBanner) {
-        window.showLiveGiftBanner(sender, `Đã thả đèn hoa đăng: "${wish}"`, 'lantern');
+        window.showLiveGiftBanner(sender, `🟢 Đã thả đèn hoa đăng: "${wish}"`, 'lantern');
       }
       if (window.AudioEngine && window.AudioEngine.enabled) {
         window.AudioEngine.playGiftChime();
@@ -432,7 +562,7 @@
 
     handleDevoteePrayerSutra(sender, wish) {
       if (window.showLiveGiftBanner) {
-        window.showLiveGiftBanner('Dâng Sớ Đạo Tràng', `${sender} dâng sớ: "${wish}"`, 'lotus');
+        window.showLiveGiftBanner('Dâng Sớ Đạo Tràng', `🟢 ${sender} dâng sớ: "${wish}"`, 'lotus');
       }
       if (window.triggerGoldenLotusRain) {
         window.triggerGoldenLotusRain(18);
@@ -445,7 +575,7 @@
     handleDevoteeRejoice(targetName, fromName) {
       if (window.currentUserProfile && window.currentUserProfile.fullName === targetName) {
         if (window.showLiveGiftBanner) {
-          window.showLiveGiftBanner('Tùy Hỷ Công Đức', `${fromName} đã tùy hỷ công đức với bạn (+2 Điểm)!`, 'lotus');
+          window.showLiveGiftBanner('Tùy Hỷ Công Đức', `🟢 ${fromName} đã tùy hỷ công đức với bạn (+2 Điểm)!`, 'lotus');
         }
         if (window.addMeritPoints) {
           window.addMeritPoints(targetName, 2, 'lotus', `Nhận tùy hỷ từ ${fromName}`, false);
@@ -476,23 +606,11 @@
     startHeartbeatLoop() {
       clearInterval(heartbeatTimer);
       heartbeatTimer = setInterval(() => {
-        const profile = window.currentUserProfile || {};
+        if (!isConnected && !localChannel) return;
         RealtimeSanctuary.publishMessage({
           type: 'HEARTBEAT',
           senderId: clientId,
-          data: {
-            sessionCode: profile.sessionCode,
-            ip: profile.clientIp,
-            seatNo: profile.assignedSeatNo,
-            name: profile.fullName,
-            dharma: profile.dharmaName,
-            age: profile.age,
-            hometown: profile.hometown,
-            gender: profile.gender || 'monk',
-            points: profile.meritScore,
-            realm: profile.realmLevel,
-            wish: profile.userWish
-          }
+          data: RealtimeSanctuary.buildUserProfilePayload()
         });
       }, 3500);
     },
@@ -505,8 +623,8 @@
         const mySeatNo = (window.currentUserProfile && window.currentUserProfile.assignedSeatNo);
 
         remoteDevotees.forEach((devotee, sId) => {
-          // If no heartbeat for 11 seconds, mark as disconnected
-          if (now - devotee.lastSeen > 11000) {
+          // If no message or heartbeat for 12 seconds, consider client disconnected
+          if (now - devotee.lastSeen > 12000) {
             remoteDevotees.delete(sId);
             changed = true;
             if (window.sanctuarySeats) {
@@ -530,7 +648,7 @@
     },
 
     updateOnlineCountHUD() {
-      const totalOnline = Math.max(1, remoteDevotees.size + 1);
+      const totalOnline = this.getOnlineCount();
       const onlineEl = document.getElementById('hud-online-count');
       if (onlineEl) {
         onlineEl.textContent = totalOnline;
@@ -543,7 +661,7 @@
         statusDot.className = connected 
           ? 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse'
           : 'w-2 h-2 rounded-full bg-amber-400';
-        statusDot.title = connected ? 'Đang kết nối Máy Chủ Đạo Tràng Toàn Cầu' : 'Đang kết nối lại...';
+        statusDot.title = connected ? 'Đang kết nối Máy Chủ Đạo Tràng Toàn Cầu (Thời gian thực)' : 'Đang kết nối lại...';
       }
     },
 
