@@ -98,7 +98,7 @@ class Temple3DEngine {
 
     // 2. Camera setup
     const aspect = this.container.clientWidth / this.container.clientHeight;
-    const fov = aspect < 1.0 ? 65 : 46;
+    const fov = aspect < 1.0 ? 68 : 46;
     this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 120);
     this.setCameraView('overview', false);
 
@@ -1809,7 +1809,7 @@ class Temple3DEngine {
       const h = this.container.clientHeight;
       const aspect = w / h;
       this.camera.aspect = aspect;
-      this.camera.fov = aspect < 1.0 ? 65 : 46;
+      this.camera.fov = aspect < 1.0 ? 68 : 46;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(w, h);
     });
