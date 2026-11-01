@@ -59,9 +59,10 @@ class Temple3DEngine {
     this.mouse = new THREE.Vector2();
     this.hoveredObject = null;
 
-    // Camera view presets
+    // Camera view presets (responsive for mobile portrait vs landscape)
+    const isPortrait = (typeof window !== 'undefined' && window.innerWidth < window.innerHeight);
     this.cameraViews = {
-      overview: { pos: new THREE.Vector3(0, 6.2, 14.8),  target: new THREE.Vector3(0, 3.2, -3.5) },
+      overview: { pos: isPortrait ? new THREE.Vector3(0, 7.2, 17.5) : new THREE.Vector3(0, 6.2, 14.8),  target: new THREE.Vector3(0, 3.2, -3.5) },
       userSeat: { pos: new THREE.Vector3(0, 1.9, 4.2),    target: new THREE.Vector3(0, 3.8, -4.5) },
       buddha:   { pos: new THREE.Vector3(0, 4.2, -1.8),   target: new THREE.Vector3(0, 4.6, -5.4) },
       altar:    { pos: new THREE.Vector3(0, 3.0, 0.5),    target: new THREE.Vector3(0, 3.2, -4.8) },
@@ -97,7 +98,8 @@ class Temple3DEngine {
 
     // 2. Camera setup
     const aspect = this.container.clientWidth / this.container.clientHeight;
-    this.camera = new THREE.PerspectiveCamera(46, aspect, 0.1, 120);
+    const fov = aspect < 1.0 ? 65 : 46;
+    this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 120);
     this.setCameraView('overview', false);
 
     // 3. Renderer setup
@@ -1805,7 +1807,9 @@ class Temple3DEngine {
       if (!this.container || !this.camera || !this.renderer) return;
       const w = this.container.clientWidth;
       const h = this.container.clientHeight;
-      this.camera.aspect = w / h;
+      const aspect = w / h;
+      this.camera.aspect = aspect;
+      this.camera.fov = aspect < 1.0 ? 65 : 46;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(w, h);
     });
