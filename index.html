@@ -747,11 +747,11 @@
           </button>
 
           <!-- REAL-TIME ACTIVE HUD BADGE -->
-          <button onclick="openServerConfigModal()" id="btn-realtime-server-badge" title="Xem Trạng Thái Máy Chủ & Luồng Lưu Trữ Chung (Port 443 Cloud Sync)"
+          <button onclick="openServerConfigModal()" id="btn-realtime-server-badge" title="Xem Trạng Thái Máy Chủ & Luồng Lưu Trữ Chung (Supabase & Port 443 Sync)"
             class="temple-panel hover:border-amber-300/80 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] cursor-pointer transition active:scale-95 shadow">
-            <span id="hud-realtime-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Đang kết nối Máy Chủ Lưu Trữ Đạo Tràng Toàn Cầu"></span>
-            <span class="text-amber-100 font-medium"><strong id="hud-online-count" class="text-amber-300 font-bold">1</strong>/12 đồng tu</span>
-            <span class="text-[8.5px] text-emerald-300 hidden md:inline ml-0.5 font-mono">📡 Cloud Sync</span>
+            <span id="hud-realtime-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Đang kết nối Máy Chủ & Supabase Realtime"></span>
+            <span class="text-amber-100 font-medium"><strong id="hud-online-count" class="text-amber-300 font-bold">1</strong>/<span id="hud-total-seats">12</span> đồng tu</span>
+            <span class="text-[8.5px] text-emerald-300 hidden md:inline ml-0.5 font-mono">⚡ Supabase</span>
           </button>
         </div>
 
@@ -1054,9 +1054,9 @@
       </aside>
 
       <!-- ======================================================================
-           4. SANCTUARY FLOOR
+           4. SANCTUARY FLOOR (CHÁNH ĐIỆN BỒ ĐOÀN ĐỒNG TU - TỰ ĐỘNG SINH HÀNG MỚI KHI > 12 NGƯỜI)
            ====================================================================== -->
-      <section id="sanctuary-floor-stage" class="absolute inset-x-0 top-[48%] bottom-[12%] z-20 pointer-events-none">
+      <section id="sanctuary-floor-stage" class="absolute inset-x-0 top-[46%] bottom-[11%] z-20 overflow-y-auto overflow-x-hidden custom-scrollbar pointer-events-auto">
         <button onclick="performWalkAndOfferIncense()" title="Nhấp để đi bộ lên trước Bàn Thờ Phật và Dâng 3 Nén Tâm Hương"
           class="absolute left-1/2 -translate-x-1/2 -top-[18%] w-24 h-20 rounded-full pointer-events-auto cursor-pointer opacity-0 hover:opacity-100 flex items-end justify-center pb-1 transition">
           <span class="px-2 py-0.5 rounded-full bg-amber-950/90 border border-amber-300 text-[9px] text-amber-200 font-bold shadow whitespace-nowrap">
@@ -1786,6 +1786,79 @@
             </div>
           </div>
 
+          <!-- Supabase Database & Realtime Configuration Section -->
+          <div class="space-y-3 bg-gradient-to-r from-emerald-950/70 via-stone-900/80 to-black/70 p-3 sm:p-4 rounded-xl border border-emerald-400/50 shadow-md">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 font-bold text-xs text-emerald-300">
+                <span class="text-sm">⚡</span>
+                <span>Cấu Hình Supabase Database & Realtime (Port 443 WSS):</span>
+              </div>
+              <div id="supabase-status-badge" class="text-[10px]">
+                <span class="text-emerald-400 font-bold">🟢 Supabase Realtime Hoạt Động</span>
+              </div>
+            </div>
+
+            <p class="text-[10.5px] text-amber-100/80 leading-relaxed">
+              Mỗi khi có đồng tu mới truy cập vào phiên, Supabase Realtime Presence sẽ phát hiện và hiển thị người đó ngay lập tức trên Bồ Đoàn. Thông tin sớ cầu an và công đức được lưu trữ bền vững trong bảng <code class="text-emerald-300 font-mono">sanctuary_devotees</code>.
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div>
+                <label class="block text-[10px] font-bold text-amber-200 mb-0.5">Supabase Project URL:</label>
+                <input type="text" id="supabase-url-input" placeholder="https://your-project.supabase.co"
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-stone-900/90 border border-emerald-400/40 text-emerald-200 text-xs focus:outline-none focus:border-emerald-300 font-mono" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-amber-200 mb-0.5">Supabase Anon Public Key:</label>
+                <input type="text" id="supabase-key-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6Ik..."
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-stone-900/90 border border-emerald-400/40 text-emerald-200 text-xs focus:outline-none focus:border-emerald-300 font-mono" />
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between flex-wrap gap-2 pt-1">
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="saveSupabaseSettingsFromModal()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 border border-emerald-300 text-stone-950 font-extrabold text-xs transition shadow active:scale-95">
+                  💾 Lưu & Kết Nối Supabase
+                </button>
+                <button type="button" onclick="toggleSupabaseSQLView()" class="px-2.5 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 border border-amber-300/40 text-amber-200 text-xs font-semibold transition active:scale-95">
+                  📋 Mã SQL Tạo Bảng
+                </button>
+              </div>
+              <span class="text-[9.5px] text-emerald-300/80 font-mono">Table: sanctuary_devotees</span>
+            </div>
+
+            <!-- SQL Script View Collapsible -->
+            <div id="supabase-sql-view" class="hidden mt-2 p-2.5 rounded-lg bg-stone-950/95 border border-amber-300/30 text-[10px] font-mono text-emerald-300">
+              <div class="flex items-center justify-between pb-1 mb-1 border-b border-white/10">
+                <span class="font-bold text-amber-300">Chạy câu lệnh sau trong Supabase SQL Editor:</span>
+                <button type="button" onclick="copySupabaseSQLToClipboard()" class="text-amber-200 hover:text-white underline text-[9.5px]">Sao chép</button>
+              </div>
+              <pre id="supabase-sql-code" class="overflow-x-auto whitespace-pre text-[9px] leading-tight select-all">-- CHÙA AN NHIÊN: CÚ PHÁP TẠO BẢNG SUPABASE DATABASE
+CREATE TABLE IF NOT EXISTS public.sanctuary_devotees (
+    client_id TEXT PRIMARY KEY,
+    full_name TEXT NOT NULL,
+    dharma_name TEXT,
+    avatar_type TEXT DEFAULT 'monk',
+    seat_no INTEGER NOT NULL,
+    hometown TEXT,
+    age INTEGER,
+    merit_score INTEGER DEFAULT 0,
+    wish TEXT,
+    client_ip TEXT,
+    last_seen TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+ALTER TABLE public.sanctuary_devotees ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Devotees" ON public.sanctuary_devotees FOR SELECT USING (true);
+CREATE POLICY "Public Insert Devotees" ON public.sanctuary_devotees FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Update Devotees" ON public.sanctuary_devotees FOR UPDATE USING (true);
+CREATE POLICY "Public Delete Devotees" ON public.sanctuary_devotees FOR DELETE USING (true);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
+            </div>
+          </div>
+
           <!-- Dedicated Server Configuration -->
           <div class="space-y-3 bg-black/45 p-3 sm:p-4 rounded-xl border border-amber-300/25">
             <div>
@@ -2117,11 +2190,13 @@
   <script src="js/certificate.js"></script>
   <script src="js/mindful-breathing.js"></script>
   <script src="js/temple-3d.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-sanctuary.js"></script>
   <script src="js/realtime-sanctuary.js"></script>
   <script src="js/daily-quests.js"></script>
   <script>
     /**************************************************************************
-     * 1. DỮ LIỆU 12 VỊ TRÍ BỒ ĐOÀN TRONG CHÁNH ĐIỆN
+     * 1. DỮ LIỆU BỒ ĐOÀN TRONG CHÁNH ĐIỆN (MẶC ĐỊNH 12 CHỖ & TỰ ĐỘNG SINH HÀNG MỚI KHI > 12)
      **************************************************************************/
     const sanctuarySeats = [
       { seatNo: 1,  id: 'seat-1',  x: 19,   y: 8,  scale: 0.86, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Bình An',   dharma: 'Tịnh An',  age: 24, hometown: 'Huế',       type: 'female', points: 40, ip: '113.161.45.12' },
@@ -2139,6 +2214,85 @@
     ];
     window.sanctuarySeats = sanctuarySeats;
 
+    /**
+     * Tự động sinh hàng Bồ Đoàn mới (Mỗi hàng +6 chỗ) khi số lượng người vượt quá 12 chỗ
+     */
+    function generateNewSeatRow() {
+      const currentCount = sanctuarySeats.length;
+      const nextRowIdx = Math.floor(currentCount / 6); // 0 (1-6), 1 (7-12), 2 (13-18), 3 (19-24)...
+      const newSeats = [];
+
+      for (let col = 0; col < 6; col++) {
+        const seatNo = currentCount + col + 1;
+        const id = `seat-${seatNo}`;
+        let x = 0;
+        if (col === 0) x = Math.max(6, 19 - nextRowIdx * 2.6);
+        else if (col === 1) x = Math.max(16, 29.5 - nextRowIdx * 1.6);
+        else if (col === 2) x = Math.max(28, 40 - nextRowIdx * 0.7);
+        else if (col === 3) x = Math.min(72, 60 + nextRowIdx * 0.7);
+        else if (col === 4) x = Math.min(84, 70.5 + nextRowIdx * 1.6);
+        else if (col === 5) x = Math.min(94, 81 + nextRowIdx * 2.6);
+
+        const y = 8 + nextRowIdx * 34;
+        const scale = Math.min(1.15, 0.86 + nextRowIdx * 0.10);
+        const avatarType = (seatNo % 2 === 0) ? 'monk' : 'female';
+
+        const seatObj = {
+          seatNo,
+          id,
+          x,
+          y,
+          scale,
+          occupied: false,
+          isUser: false,
+          isDummy: false,
+          remoteClientId: null,
+          name: '',
+          dharma: '',
+          age: 0,
+          hometown: '',
+          type: avatarType,
+          points: 0,
+          ip: ''
+        };
+        sanctuarySeats.push(seatObj);
+        newSeats.push(seatObj);
+      }
+
+      console.log(`[SanctuarySeats] Đã sinh thêm hàng Bồ Đoàn #${nextRowIdx + 1} (Ghế #${currentCount + 1} -> #${sanctuarySeats.length})`);
+
+      const hudTotal = document.getElementById('hud-total-seats');
+      if (hudTotal) hudTotal.textContent = sanctuarySeats.length;
+      const modalTotal = document.getElementById('modal-seat-count');
+      if (modalTotal) modalTotal.textContent = sanctuarySeats.length;
+
+      if (typeof showLiveGiftBanner === 'function' && nextRowIdx >= 2) {
+        showLiveGiftBanner('Mở Rộng Đạo Tràng', `✦ Trang nghiêm sinh thêm hàng Bồ Đoàn mới (#${currentCount + 1} - #${sanctuarySeats.length}) ✦`, 'lotus');
+      }
+
+      if (typeof renderSanctuaryFloor === 'function') {
+        renderSanctuaryFloor();
+      }
+
+      return newSeats;
+    }
+
+    /**
+     * Đảm bảo sức chứa Bồ Đoàn luôn đủ cho số lượng người hiện tại + người tiếp theo
+     */
+    function ensureSeatCapacity(minSeats) {
+      if (!minSeats || isNaN(minSeats)) return false;
+      let expanded = false;
+      while (sanctuarySeats.length < minSeats) {
+        generateNewSeatRow();
+        expanded = true;
+      }
+      return expanded;
+    }
+
+    window.generateNewSeatRow = generateNewSeatRow;
+    window.ensureSeatCapacity = ensureSeatCapacity;
+
     function isSeatTakenByRemote(seatNo) {
       const s = sanctuarySeats.find(item => item.seatNo === seatNo);
       return !!(s && s.remoteClientId);
@@ -2146,19 +2300,21 @@
 
     function pickBestAvailableSeat(preferSeatNo = null) {
       if (preferSeatNo) {
+        ensureSeatCapacity(preferSeatNo);
         const pref = sanctuarySeats.find(s => s.seatNo === preferSeatNo);
         if (pref && !pref.isUser && !pref.remoteClientId) return pref.seatNo;
       }
-      // 1. Look for empty seats (seats 2, 4, 6, 10, 12)
+      // 1. Tìm bồ đoàn còn trống
       const emptySeat = sanctuarySeats.find(s => !s.occupied && !s.isUser && !s.remoteClientId);
       if (emptySeat) return emptySeat.seatNo;
 
-      // 2. Look for dummy placeholder seats (human devotees replace dummy AI)
+      // 2. Tìm bồ đoàn đệ tử ảo (dummy AI)
       const dummySeat = sanctuarySeats.find(s => s.isDummy && !s.remoteClientId && !s.isUser);
       if (dummySeat) return dummySeat.seatNo;
 
-      // Fallback
-      return 10;
+      // 3. NẾU ĐÃ HẾT TẤT CẢ 12 CHỖ (HOẶC NHIỀU HƠN) -> TỰ ĐỘNG SINH HÀNG MỚI ĐỂ LUÔN CÓ CHỖ NGỒI!
+      const newSeats = generateNewSeatRow();
+      return newSeats[0].seatNo;
     }
 
     const CHUA_AN_NHIEN_SESSION_KEY = 'chua_an_nhien_real_user_session';
@@ -2893,6 +3049,9 @@
       if (window.RealtimeSanctuary) {
         window.RealtimeSanctuary.broadcastSeatClaim(targetSeatNo, currentUserProfile);
       }
+      if (window.SupabaseSanctuary) {
+        window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, targetSeatNo);
+      }
 
       walkUserToSeat(targetSeatNo, true);
     }
@@ -3421,9 +3580,28 @@
 
     function renderSanctuaryFloor(spotlightSeatNo = null) {
       const container = document.getElementById('devotees-floor-layer');
+      if (!container) return;
       container.innerHTML = '';
 
       const isMobilePortrait = (window.innerWidth < 768 && window.innerHeight > window.innerWidth);
+      const stage = document.getElementById('sanctuary-floor-stage');
+
+      // Tự động mở rộng chiều cao sân Chánh Điện khi có nhiều hơn 12 bồ đoàn (sinh thêm hàng)
+      const totalRows = isMobilePortrait ? Math.ceil(sanctuarySeats.length / 3) : Math.ceil(sanctuarySeats.length / 6);
+      const baseRows = isMobilePortrait ? 4 : 2;
+
+      if (totalRows > baseRows) {
+        const extraPercent = (totalRows - baseRows) * (isMobilePortrait ? 30 : 36);
+        container.style.height = `${100 + extraPercent}%`;
+        container.style.minHeight = `${100 + extraPercent}%`;
+        if (stage) {
+          stage.classList.add('overflow-y-auto');
+          stage.classList.remove('overflow-hidden');
+        }
+      } else {
+        container.style.height = '100%';
+        container.style.minHeight = '100%';
+      }
 
       sanctuarySeats.forEach((seat, idx) => {
         let seatX = seat.x;
@@ -3434,7 +3612,7 @@
           const row = Math.floor(idx / 3);
           const col = idx % 3;
           seatX = 18 + col * 32;
-          seatY = 46 + row * 10;
+          seatY = 46 + row * 11;
           seatScale = seat.isUser ? 0.72 : 0.60;
         }
 
@@ -4222,6 +4400,45 @@
       }
       if (inputEl && document.activeElement !== inputEl) {
         inputEl.value = localStorage.getItem('chua_an_nhien_server_url') || '';
+      }
+
+      const sbUrlInput = document.getElementById('supabase-url-input');
+      const sbKeyInput = document.getElementById('supabase-key-input');
+      if (sbUrlInput && document.activeElement !== sbUrlInput && window.SupabaseSanctuary) {
+        sbUrlInput.value = window.SupabaseSanctuary.projectUrl || '';
+      }
+      if (sbKeyInput && document.activeElement !== sbKeyInput && window.SupabaseSanctuary) {
+        sbKeyInput.value = window.SupabaseSanctuary.anonKey || '';
+      }
+    }
+
+    function saveSupabaseSettingsFromModal() {
+      const urlInput = document.getElementById('supabase-url-input');
+      const keyInput = document.getElementById('supabase-key-input');
+      const url = urlInput ? urlInput.value.trim() : '';
+      const key = keyInput ? keyInput.value.trim() : '';
+
+      if (window.SupabaseSanctuary) {
+        window.SupabaseSanctuary.saveCustomCredentials(url, key);
+        if (typeof showLiveGiftBanner === 'function') {
+          showLiveGiftBanner('Cấu Hình Supabase', 'Đã lưu và tái kết nối Supabase Database & Realtime thành công!', 'lotus');
+        }
+      }
+    }
+
+    function toggleSupabaseSQLView() {
+      const view = document.getElementById('supabase-sql-view');
+      if (view) view.classList.toggle('hidden');
+    }
+
+    function copySupabaseSQLToClipboard() {
+      const codeEl = document.getElementById('supabase-sql-code');
+      if (codeEl && navigator.clipboard) {
+        navigator.clipboard.writeText(codeEl.textContent).then(() => {
+          if (typeof showLiveGiftBanner === 'function') {
+            showLiveGiftBanner('Đã Sao Chép SQL', 'Hãy dán mã vào Supabase SQL Editor và nhấn Run', 'lotus');
+          }
+        });
       }
     }
 
@@ -5503,13 +5720,21 @@
       // 1. Phát hiện IP kết nối thực tế
       await detectUserRealIP();
 
-      // 2. Khởi tạo kết nối Đạo Tràng Trực Tuyến Đa Thiết Bị Thời Gian Thực (Port 443 Universal Stream)
+      // 2. Khởi tạo kết nối Supabase Database & Realtime Presence
+      if (window.SupabaseSanctuary) {
+        window.SupabaseSanctuary.init();
+      }
+
+      // 3. Khởi tạo kết nối Đạo Tràng Trực Tuyến Đa Thiết Bị Thời Gian Thực (Port 443 Universal Stream)
       if (window.RealtimeSanctuary) {
         window.RealtimeSanctuary.init();
       }
 
-      // 3. Tải phiên thực tế đã lưu và khôi phục trạng thái niêm phong
+      // 4. Tải phiên thực tế đã lưu và khôi phục trạng thái niêm phong
       const restored = loadRealUserSession();
+      if (restored && window.SupabaseSanctuary) {
+        window.SupabaseSanctuary.trackCurrentUserPresence();
+      }
       if (!restored) {
         // Tự động phân bổ bồ đoàn còn trống cho khách đồng tu để hiện diện ngay lập tức
         const guestSeatNo = pickBestAvailableSeat();

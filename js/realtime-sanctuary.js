@@ -419,6 +419,13 @@
           pahoClient.send(pahoMsg);
         } catch (err) {}
       }
+
+      // 5. Broadcast to Supabase Realtime if active
+      if (window.SupabaseSanctuary && window.SupabaseSanctuary.isRealtimeActive) {
+        try {
+          window.SupabaseSanctuary.broadcast(payload.type, payload);
+        } catch (err) {}
+      }
     },
 
     buildUserProfilePayload() {
@@ -927,6 +934,9 @@
       }
 
       if (requestedSeatNo && requestedSeatNo !== mySeatNo) {
+        if (typeof window.ensureSeatCapacity === 'function') {
+          window.ensureSeatCapacity(requestedSeatNo);
+        }
         const candidate = window.sanctuarySeats.find(s => s.seatNo === requestedSeatNo);
         if (candidate) {
           if (!candidate.occupied || candidate.remoteClientId === senderId) {
@@ -943,6 +953,14 @@
 
       const dummySeat = window.sanctuarySeats.find(s => s.isDummy && !s.remoteClientId && !s.isUser && s.seatNo !== mySeatNo);
       if (dummySeat) return dummySeat;
+
+      // Nếu đã hết toàn bộ 12 chỗ (hoặc số chỗ hiện tại) -> Tự động sinh hàng mới (+6 chỗ) để luôn có chỗ cho người tiếp theo
+      if (typeof window.generateNewSeatRow === 'function') {
+        const newSeats = window.generateNewSeatRow();
+        if (newSeats && newSeats.length > 0) {
+          return newSeats[0];
+        }
+      }
 
       const anyOther = window.sanctuarySeats.find(s => !s.isUser && s.seatNo !== mySeatNo);
       return anyOther || null;
