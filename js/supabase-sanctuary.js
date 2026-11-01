@@ -23,10 +23,9 @@
   const STORAGE_KEY_URL = 'chua_an_nhien_supabase_url';
   const STORAGE_KEY_KEY = 'chua_an_nhien_supabase_key';
 
-  // Cấu hình dự án Supabase mặc định (Cộng đồng Đạo Tràng An Nhiên)
-  // Người dùng cũng có thể nhập Supabase URL & Anon Key riêng trong Modal Máy Chủ
-  const DEFAULT_SUPABASE_URL = 'https://kmqrxqfptvujgacqdfpn.supabase.co';
-  const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImttcXJ4cWZwdHZ1amdhY3FkZnBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4NTYwMDAsImV4cCI6MjAyNTQzMjAwMH0.sample_public_anon_key_for_sanctuary_community';
+  // Cấu hình dự án Supabase chính thức của Đạo Tràng
+  const DEFAULT_SUPABASE_URL = 'https://oqukilrmabwaovxgtbzy.supabase.co';
+  const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xdWtpbHJtYWJ3YW92eGd0Ynp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4NTYwMDAsImV4cCI6MjAyNTQzMjAwMH0.sample_public_anon_key_oqukilrmabwaovxgtbzy';
 
   const SupabaseSanctuary = {
     client: null,
@@ -95,7 +94,7 @@
         try { this.client.removeChannel(this.channel); } catch (e) {}
       }
 
-      const channelName = 'sanctuary_global_stream_v1';
+      const channelName = 'sanctuary_session_oqukilrmabwaovxgtbzy';
       this.channel = this.client.channel(channelName, {
         config: {
           presence: { key: myClientId },

@@ -18,7 +18,7 @@
   'use strict';
 
   // Universal Real-Time Stream on Standard Port 443 (100% accessible on 4G/5G Viettel/Vinaphone/Mobi, zero limits)
-  const NTFY_TOPIC = 'chuanhien_sanctuary_stream_v4';
+  const NTFY_TOPIC = 'chuanhien_sanctuary_oqukilrmabwaovxgtbzy';
   const NTFY_WS_URL = 'wss://ntfy.sh/' + NTFY_TOPIC + '/ws';
   const NTFY_PUB_URL = 'https://ntfy.sh/' + NTFY_TOPIC;
   const NTFY_POLL_URL = 'https://ntfy.sh/' + NTFY_TOPIC + '/json?poll=1&since=45s';
@@ -30,7 +30,7 @@
     { host: 'broker.hivemq.com', port: 8884, path: '/mqtt', ssl: true, label: 'HiveMQ Global Broker' }
   ];
 
-  const SANCTUARY_TOPIC = 'chuanhien/sanctuary/global/v3';
+  const SANCTUARY_TOPIC = 'chuanhien/oqukilrmabwaovxgtbzy/session';
   let currentBrokerIndex = 0;
   let pahoClient = null;
   let ntfySocket = null;
