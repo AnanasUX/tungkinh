@@ -1490,77 +1490,80 @@
       <!-- ======================================================================
            6. MODAL 1: CỔNG TAM QUAN — SỚ GHI DANH ĐỊNH DANH IP THỰC TẾ
            ====================================================================== -->
-      <div id="registration-gate-modal" class="absolute inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
-        <div class="temple-panel w-full max-w-[740px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-5 border-2 border-amber-300/65 shadow-[0_0_70px_rgba(245,180,60,0.35)] text-amber-50 relative">
+      <div id="registration-gate-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+        <div class="temple-panel w-full max-w-[680px] max-h-[94vh] max-h-[94dvh] overflow-y-auto merit-scroll rounded-2xl p-2.5 sm:p-4 border-2 border-amber-300/65 shadow-[0_0_50px_rgba(245,180,60,0.3)] text-amber-50 relative my-auto">
           
-          <div class="flex items-center justify-between border-b border-amber-300/25 pb-2">
+          <!-- Top Close Button for Mobile Dismissal -->
+          <button type="button" onclick="closeRegistrationModal()"
+            class="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-amber-300/40 text-amber-200 flex items-center justify-center text-xs font-bold transition active:scale-90 cursor-pointer z-10"
+            title="Đóng cửa sổ">
+            ✕
+          </button>
+
+          <div class="flex items-center justify-between border-b border-amber-300/25 pb-1.5 pr-8">
             <div>
-              <div class="text-[9px] sm:text-[10.5px] tracking-[0.22em] text-amber-300 uppercase font-bold flex items-center gap-1.5">
-                <span>✦ CỔNG TAM QUAN · ĐỊNH DANH PHIÊN IP THỰC TẾ ✦</span>
+              <div class="text-[8.5px] sm:text-[10px] tracking-[0.2em] text-amber-300 uppercase font-bold flex items-center gap-1">
+                <span>✦ CỔNG TAM QUAN · SỚ CẦU AN HÀNH GIẢ ✦</span>
               </div>
-              <h2 id="reg-modal-title" class="font-serif-title text-xl sm:text-2xl font-bold text-[#fff6db] title-glow leading-tight">
-                Chùa An Nhiên — Ghi Danh Hành Giả & Khởi Tạo Phiên Online
+              <h2 id="reg-modal-title" class="font-serif-title text-base sm:text-xl font-bold text-[#fff6db] title-glow leading-snug">
+                Chùa An Nhiên — Ghi Danh & An Tọa Bồ Đoàn
               </h2>
             </div>
             <button type="button" id="btn-reg-quick-sample" onclick="fillSamplePractitioner()"
-              class="px-2.5 py-1 rounded-lg bg-amber-400/20 hover:bg-amber-400/35 border border-amber-300/50 text-[10px] sm:text-xs text-amber-200 font-semibold shrink-0 transition">
-              ⚡ Điền mẫu nhanh
+              class="px-2 py-0.5 rounded-lg bg-amber-400/20 hover:bg-amber-400/35 border border-amber-300/50 text-[9.5px] sm:text-[10.5px] text-amber-200 font-semibold shrink-0 transition active:scale-95">
+              ⚡ Điền mẫu
             </button>
           </div>
 
           <!-- REAL IP & SESSION IDENTIFICATION BADGE -->
-          <div id="reg-real-ip-badge" class="mt-2 mb-1.5 p-2 rounded-xl bg-gradient-to-r from-emerald-950/80 via-black/75 to-emerald-950/80 border border-emerald-400/50 flex items-center justify-between text-[11px] shadow-inner">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-              <div>
-                <span class="text-amber-200 font-bold">📡 IP Kết Nối Thực Tế: </span>
-                <span id="detected-ip-val" class="text-emerald-300 font-mono font-bold tracking-wider">Đang phát hiện...</span>
-                <span id="detected-location-val" class="text-amber-100/80 text-[10px] ml-1"></span>
-              </div>
+          <div id="reg-real-ip-badge" class="mt-1.5 mb-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-950/80 via-black/75 to-emerald-950/80 border border-emerald-400/50 flex items-center justify-between text-[10px] sm:text-[11px] shadow-inner">
+            <div class="flex items-center gap-1.5 truncate">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+              <span class="text-amber-200 font-bold shrink-0">IP Kết Nối: </span>
+              <span id="detected-ip-val" class="text-emerald-300 font-mono font-bold tracking-wider truncate">Đang phát hiện...</span>
+              <span id="detected-location-val" class="text-amber-100/80 text-[9.5px] ml-0.5 hidden sm:inline truncate"></span>
             </div>
-            <div id="ip-lock-status-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 font-bold text-[9.5px] flex items-center gap-1">
-              <span>🌐 1 IP = 1 Nhân Vật Thật</span>
+            <div id="ip-lock-status-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 font-bold text-[8.5px] sm:text-[9px] shrink-0">
+              <span>🌐 1 IP = 1 Vị Trí Thật</span>
             </div>
           </div>
 
           <!-- LOCK WARNING BANNER (Shown when profile is locked) -->
-          <div id="reg-locked-notice" class="hidden mt-1 mb-2 p-2.5 rounded-xl bg-gradient-to-r from-amber-950/95 via-red-950/70 to-amber-950/95 border-2 border-amber-400/60 text-[11px] text-amber-100 flex items-start gap-2 shadow-lg">
-            <span class="text-lg leading-none shrink-0 mt-0.5">🔒</span>
-            <div class="leading-snug">
-              <div class="font-extrabold text-amber-300 uppercase tracking-wide text-[10.5px]">HỒ SƠ ĐỒNG TU ĐÃ ĐƯỢC NIÊM PHONG TRANG NGHIÊM</div>
-              <div class="text-[10px] text-amber-100/90 mt-0.5">
-                Hệ thống đã ghi nhớ phiên tu tập của bạn theo IP thực tế <strong id="locked-ip-display" class="text-emerald-300 font-mono">...</strong>. Thông tin cá nhân đã được cố định vĩnh viễn trên Bồ Đoàn để bảo toàn công đức, không thể chỉnh sửa.
-              </div>
+          <div id="reg-locked-notice" class="hidden mt-1 mb-1.5 p-2 rounded-xl bg-gradient-to-r from-amber-950/95 via-red-950/70 to-amber-950/95 border border-amber-400/60 text-[10px] text-amber-100 flex items-start gap-1.5 shadow">
+            <span class="text-base leading-none shrink-0">🔒</span>
+            <div class="leading-tight text-[9.5px]">
+              <span class="font-extrabold text-amber-300 uppercase tracking-wide">HỒ SƠ ĐÃ NIÊM PHONG: </span>
+              Phiên tu tập đã cố định theo IP <strong id="locked-ip-display" class="text-emerald-300 font-mono">...</strong> trên Bồ Đoàn.
             </div>
           </div>
 
-          <form id="entry-registration-form" onsubmit="handleEnterTempleSubmit(event)" class="mt-2 space-y-2 text-xs">
+          <form id="entry-registration-form" onsubmit="handleEnterTempleSubmit(event)" class="mt-1.5 space-y-1.5 text-xs">
             
-            <div class="grid grid-cols-12 gap-2">
-              <div class="col-span-12 sm:col-span-4">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px] flex items-center justify-between">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+              <div>
+                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px] flex items-center justify-between">
                   <span>1. Họ và tên đạo hữu <span class="text-red-400">*</span></span>
-                  <button type="button" onclick="rollSuggestedFullName()" class="text-[9.5px] text-amber-300 hover:underline">🎲 Gợi ý tên</button>
+                  <button type="button" onclick="rollSuggestedFullName()" class="text-[9px] text-amber-300 hover:underline">🎲 Gợi ý</button>
                 </label>
-                <input id="reg-fullname" type="text" required maxlength="28" value="" placeholder="Nhập tên đạo hữu (VD: Trần Văn Nam)"
-                  class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 placeholder-amber-200/40 focus:outline-none focus:border-amber-300 text-xs font-semibold transition" />
+                <input id="reg-fullname" type="text" required maxlength="28" value="" placeholder="Trần Văn Nam"
+                  class="w-full px-2.5 py-1 sm:py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 placeholder-amber-200/40 focus:outline-none focus:border-amber-300 text-[11px] sm:text-xs font-semibold transition" />
               </div>
 
-              <div class="col-span-12 sm:col-span-4">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px] flex items-center justify-between">
-                  <span>2. Pháp danh (Tự chọn / Gợi ý)</span>
-                  <button type="button" id="btn-reg-roll-dharma" onclick="rollSuggestedDharmaName()" class="text-[9.5px] text-emerald-300 hover:underline">🎲 Đổi gợi ý</button>
+              <div>
+                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px] flex items-center justify-between">
+                  <span>2. Pháp danh</span>
+                  <button type="button" id="btn-reg-roll-dharma" onclick="rollSuggestedDharmaName()" class="text-[9px] text-emerald-300 hover:underline">🎲 Đổi</button>
                 </label>
-                <input id="reg-dharma-name" type="text" maxlength="20" value="" placeholder="VD: Minh Tâm, Diệu Hoa..."
-                  class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-emerald-400/45 text-emerald-200 placeholder-amber-200/40 focus:outline-none focus:border-emerald-300 text-xs font-bold transition" />
+                <input id="reg-dharma-name" type="text" maxlength="20" value="" placeholder="Minh Tâm"
+                  class="w-full px-2.5 py-1 sm:py-1.5 rounded-lg bg-black/60 border border-emerald-400/45 text-emerald-200 placeholder-amber-200/40 focus:outline-none focus:border-emerald-300 text-[11px] sm:text-xs font-bold transition" />
               </div>
 
-              <div class="col-span-12 sm:col-span-4">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px]">
+              <div>
+                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
                   3. Quê quán <span class="text-red-400">*</span>
                 </label>
-                <input id="reg-hometown" list="vn-provinces-list" type="text" required maxlength="30" value="Hà Nội" placeholder="Nhập hoặc chọn tỉnh/thành..."
-                  class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 placeholder-amber-200/35 focus:outline-none focus:border-amber-300 text-xs font-semibold transition" />
+                <input id="reg-hometown" list="vn-provinces-list" type="text" required maxlength="30" value="Hà Nội" placeholder="Tỉnh/Thành..."
+                  class="w-full px-2.5 py-1 sm:py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 placeholder-amber-200/35 focus:outline-none focus:border-amber-300 text-[11px] sm:text-xs font-semibold transition" />
                 <datalist id="vn-provinces-list">
                   <option value="Hà Nội"></option>
                   <option value="TP. Hồ Chí Minh"></option>
@@ -1578,120 +1581,84 @@
               </div>
             </div>
 
-            <div id="hometown-quick-chips" class="flex items-center gap-1 flex-wrap">
-              <span class="text-[9.5px] text-amber-200/70 mr-1">Chọn nhanh quê quán:</span>
-              <button type="button" onclick="setHometownChip('Hà Nội')" class="px-1.5 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/35 border border-amber-300/30 text-[9.5px] text-amber-200">Hà Nội</button>
-              <button type="button" onclick="setHometownChip('TP.HCM')" class="px-1.5 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/35 border border-amber-300/30 text-[9.5px] text-amber-200">TP.HCM</button>
-              <button type="button" onclick="setHometownChip('Đà Nẵng')" class="px-1.5 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/35 border border-amber-300/30 text-[9.5px] text-amber-200">Đà Nẵng</button>
-              <button type="button" onclick="setHometownChip('Huế')" class="px-1.5 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/35 border border-amber-300/30 text-[9.5px] text-amber-200">Huế</button>
-              <button type="button" onclick="setHometownChip('Hải Phòng')" class="px-1.5 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/35 border border-amber-300/30 text-[9.5px] text-amber-200">Hải Phòng</button>
-              <button type="button" onclick="setHometownChip('Cần Thơ')" class="px-1.5 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/35 border border-amber-300/30 text-[9.5px] text-amber-200">Cần Thơ</button>
-            </div>
-
-            <div class="grid grid-cols-12 gap-2 items-start">
-              <div class="col-span-7 sm:col-span-7">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px]">
-                  4. Ngày · Tháng · Năm sinh <span class="text-amber-300/80 font-normal">(Gõ tự nhiên VD: 31 / 10 / 1996)</span>
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-1.5 items-center">
+              <div class="sm:col-span-7">
+                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
+                  4. Ngày · Tháng · Năm sinh
                 </label>
-                <div class="grid grid-cols-3 gap-1.5">
-                  <div>
-                    <input id="reg-day" type="text" inputmode="numeric" autocomplete="off" required placeholder="Ngày" value="31"
-                      class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-center text-amber-50 font-bold text-xs sm:text-sm focus:outline-none focus:border-amber-300 transition" />
-                    <span class="block text-[8.5px] text-center text-amber-200/60 mt-0.5">Ngày (01-31)</span>
-                  </div>
-                  <div>
-                    <input id="reg-month" type="text" inputmode="numeric" autocomplete="off" required placeholder="Tháng" value="10"
-                      class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-center text-amber-50 font-bold text-xs sm:text-sm focus:outline-none focus:border-amber-300 transition" />
-                    <span class="block text-[8.5px] text-center text-amber-200/60 mt-0.5">Tháng (01-12)</span>
-                  </div>
-                  <div>
-                    <input id="reg-year" type="text" inputmode="numeric" autocomplete="off" required placeholder="Năm" value="1996"
-                      class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-center text-amber-50 font-bold text-xs sm:text-sm focus:outline-none focus:border-amber-300 transition" />
-                    <span class="block text-[8.5px] text-center text-amber-200/60 mt-0.5">Năm (1920-2026)</span>
-                  </div>
+                <div class="grid grid-cols-3 gap-1">
+                  <input id="reg-day" type="text" inputmode="numeric" autocomplete="off" required placeholder="Ngày" value="31"
+                    class="w-full px-2 py-1 rounded-lg bg-black/60 border border-amber-300/45 text-center text-amber-50 font-bold text-[11px] sm:text-xs focus:outline-none focus:border-amber-300 transition" />
+                  <input id="reg-month" type="text" inputmode="numeric" autocomplete="off" required placeholder="Tháng" value="10"
+                    class="w-full px-2 py-1 rounded-lg bg-black/60 border border-amber-300/45 text-center text-amber-50 font-bold text-[11px] sm:text-xs focus:outline-none focus:border-amber-300 transition" />
+                  <input id="reg-year" type="text" inputmode="numeric" autocomplete="off" required placeholder="Năm" value="1996"
+                    class="w-full px-2 py-1 rounded-lg bg-black/60 border border-amber-300/45 text-center text-amber-50 font-bold text-[11px] sm:text-xs focus:outline-none focus:border-amber-300 transition" />
                 </div>
               </div>
 
-              <div class="col-span-5 sm:col-span-5">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px]">
-                  5. Tuổi & Bản Mệnh Ngũ Hành
+              <div class="sm:col-span-5">
+                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
+                  5. Tuổi & Bản Mệnh
                 </label>
                 <div class="flex items-center gap-1.5">
-                  <div class="relative w-20 shrink-0">
+                  <div class="relative w-16 shrink-0">
                     <input id="reg-age" type="number" min="1" max="120" required value="30"
-                      class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-300 font-extrabold text-xs sm:text-sm focus:outline-none focus:border-amber-300 transition" />
-                    <span class="absolute right-1.5 top-1/2 -translate-y-1/2 text-amber-200/70 text-[9.5px] pointer-events-none">tuổi</span>
+                      class="w-full px-2 py-1 rounded-lg bg-black/60 border border-amber-300/45 text-amber-300 font-extrabold text-[11px] sm:text-xs focus:outline-none focus:border-amber-300 transition" />
+                    <span class="absolute right-1 top-1/2 -translate-y-1/2 text-amber-200/70 text-[8.5px] pointer-events-none">t</span>
                   </div>
-                  <div id="destiny-element-badge" class="flex-1 px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-300/40 text-[10px] leading-tight">
-                    <div id="destiny-canchi" class="font-bold text-amber-200">Bính Tý (1996)</div>
-                    <div id="destiny-element" class="text-emerald-300 font-semibold">Mệnh Thủy · Giản Hạ Thủy</div>
+                  <div id="destiny-element-badge" class="flex-1 px-2 py-0.5 rounded-lg bg-amber-500/15 border border-amber-300/40 text-[9.5px] leading-tight truncate">
+                    <span id="destiny-canchi" class="font-bold text-amber-200">Bính Tý</span> · 
+                    <span id="destiny-element" class="text-emerald-300 font-semibold">Mệnh Thủy</span>
                   </div>
                 </div>
-                <span id="dob-preview-badge" class="block text-[9px] text-amber-200/75 mt-0.5 truncate">
-                  Sinh ngày: 31/10/1996
-                </span>
               </div>
             </div>
 
-            <div class="grid grid-cols-12 gap-2">
-              <div class="col-span-12 sm:col-span-7">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px]">
-                  6. Chọn hình tướng Chibi hành lễ:
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-1.5">
+              <div class="sm:col-span-7">
+                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
+                  6. Chọn hình tướng Chibi:
                 </label>
-                <div class="grid grid-cols-3 gap-1.5">
+                <div class="grid grid-cols-3 gap-1">
                   <label class="cursor-pointer">
                     <input type="radio" name="regAvatarType" value="monk" checked class="peer hidden" />
-                    <div class="p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1.5 transition">
-                      <div class="w-6 h-6 rounded-full bg-amber-400/20 border border-amber-300/50 flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4 text-amber-200" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="5" /><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7H5z" /></svg>
-                      </div>
-                      <div class="leading-tight">
-                        <div class="font-bold text-[10px] text-amber-100">Chú Tiểu</div>
-                        <div class="text-[8.5px] text-amber-200/70">Áo lam · Y vàng</div>
+                    <div class="p-1 sm:p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1 transition active:scale-95">
+                      <span class="text-sm">🧘</span>
+                      <div class="leading-none truncate">
+                        <div class="font-bold text-[9.5px] text-amber-100 truncate">Chú Tiểu</div>
                       </div>
                     </div>
                   </label>
 
                   <label class="cursor-pointer">
                     <input type="radio" name="regAvatarType" value="female" class="peer hidden" />
-                    <div class="p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1.5 transition">
-                      <div class="w-6 h-6 rounded-full bg-pink-400/20 border border-pink-300/50 flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4 text-pink-200" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.5" /><circle cx="8" cy="7" r="2.5" /><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7H5z" /></svg>
-                      </div>
-                      <div class="leading-tight">
-                        <div class="font-bold text-[10px] text-amber-100">Phật Tử</div>
-                        <div class="text-[8.5px] text-amber-200/70">Áo lam · Tóc búi</div>
+                    <div class="p-1 sm:p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1 transition active:scale-95">
+                      <span class="text-sm">🧕</span>
+                      <div class="leading-none truncate">
+                        <div class="font-bold text-[9.5px] text-amber-100 truncate">Phật Tử</div>
                       </div>
                     </div>
                   </label>
 
                   <label class="cursor-pointer">
                     <input type="radio" name="regAvatarType" value="layman" class="peer hidden" />
-                    <div class="p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1.5 transition">
-                      <div class="w-6 h-6 rounded-full bg-amber-700/30 border border-amber-400/50 flex items-center justify-center shrink-0">
-                        <svg class="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="5" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7H4z" /></svg>
-                      </div>
-                      <div class="leading-tight">
-                        <div class="font-bold text-[10px] text-amber-100">Cư Sĩ</div>
-                        <div class="text-[8.5px] text-amber-200/70">Áo tràng nâu</div>
+                    <div class="p-1 sm:p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1 transition active:scale-95">
+                      <span class="text-sm">🟤</span>
+                      <div class="leading-none truncate">
+                        <div class="font-bold text-[9.5px] text-amber-100 truncate">Cư Sĩ</div>
                       </div>
                     </div>
                   </label>
                 </div>
               </div>
 
-              <div class="col-span-12 sm:col-span-5">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px] flex items-center justify-between">
-                  <span>7. Chọn Vị Trí Bồ Đoàn Tọa Lạc:</span>
-                  <span id="reg-selected-seat-badge" class="text-[10px] font-bold text-amber-300">Bồ đoàn #2</span>
+              <div class="sm:col-span-5">
+                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px] flex items-center justify-between">
+                  <span>7. Vị Trí Bồ Đoàn:</span>
+                  <span id="reg-selected-seat-badge" class="text-[9.5px] font-bold text-amber-300">#2</span>
                 </label>
-                <div class="bg-black/60 p-2 rounded-lg border border-amber-300/40">
-                  <div class="text-[9px] text-amber-200/80 mb-1 flex items-center justify-between">
-                    <span>Nhấp để chọn chỗ ngồi của bạn:</span>
-                    <span class="text-emerald-300 font-semibold text-[8.5px]" id="reg-empty-seats-count">🟢 5 chỗ sẵn sàng</span>
-                  </div>
-                  <!-- Visual 12 cushions grid (2 rows x 6 cushions) -->
-                  <div class="grid grid-cols-6 gap-1" id="reg-seats-selector-grid">
+                <div class="bg-black/60 p-1.5 rounded-lg border border-amber-300/40">
+                  <div class="grid grid-cols-6 gap-0.5" id="reg-seats-selector-grid">
                     <!-- Populated dynamically via renderRegSeatsSelector() -->
                   </div>
                 </div>
@@ -1699,25 +1666,25 @@
             </div>
 
             <div>
-              <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px]">
-                8. Lời nguyện cầu khi bước vào Chánh Điện:
+              <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
+                8. Tâm nguyện khi bước vào Chánh Điện:
               </label>
               <input id="reg-wish" type="text" maxlength="55" value="Cầu bình an, sức khỏe dồi dào & gia đình sum vầy"
-                class="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 focus:outline-none focus:border-amber-300 text-xs transition" />
+                class="w-full px-2.5 py-1 sm:py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 focus:outline-none focus:border-amber-300 text-[11px] sm:text-xs transition" />
             </div>
 
-            <div class="pt-1 flex items-center justify-center gap-3">
+            <div class="pt-1 flex items-center justify-center gap-2">
               <button type="button" id="btn-cancel-edit" onclick="closeRegistrationModal()"
-                class="hidden px-4 py-2 rounded-xl border border-amber-300/40 text-amber-200 hover:bg-white/5 text-xs font-semibold">
+                class="hidden px-3.5 py-1.5 rounded-xl border border-amber-300/40 text-amber-200 hover:bg-white/5 text-xs font-semibold transition active:scale-95">
                 Đóng
               </button>
-              <div id="btn-reg-submit-wrap">
+              <div id="btn-reg-submit-wrap" class="w-full sm:w-auto">
                 <button type="submit" id="btn-reg-submit-btn"
-                  class="w-full sm:w-auto min-w-[290px] px-7 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-stone-950 font-extrabold text-xs sm:text-sm tracking-wide shadow-[0_0_25px_rgba(245,190,70,0.65)] flex items-center justify-center gap-2 transition active:scale-95">
+                  class="w-full sm:w-auto min-w-[200px] px-6 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-stone-950 font-extrabold text-xs sm:text-sm tracking-wide shadow-[0_0_20px_rgba(245,190,70,0.55)] flex items-center justify-center gap-1.5 transition active:scale-95">
                   <svg class="w-4 h-4 text-stone-950" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2L9 9l-7 3 7 3 3 7 3-7 7-3-7-3-3-7z" />
                   </svg>
-                  <span>VÀO CHÙA & BƯỚC LÊN THẢM ĐỎ</span>
+                  <span>XÁC NHẬN AN TỌA CHÁNH ĐIỆN</span>
                 </button>
               </div>
             </div>

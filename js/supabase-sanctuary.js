@@ -374,6 +374,36 @@
           if (typeof window.handleRemoteDevoteeSwap === 'function') {
             window.handleRemoteDevoteeSwap(payload);
           }
+        })
+        .on('broadcast', { event: 'HELLO_SANCTUARY' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          console.log('[SupabaseSanctuary] Nhận broadcast HELLO_SANCTUARY từ đồng tu mới:', payload);
+          // 1. Nếu đồng tu mới gửi thông tin vị trí của họ, an tọa họ ngay trên sàn
+          if (payload.seatNo && (payload.data || payload.fullName)) {
+            const d = payload.data || payload;
+            this.applyPresenceDevoteeToSeat({
+              clientId: payload.senderId,
+              seatNo: payload.seatNo,
+              fullName: d.fullName || d.name,
+              dharmaName: d.dharmaName || d.dharma,
+              avatarType: d.avatarType || d.gender || 'monk',
+              age: d.age,
+              hometown: d.hometown,
+              meritScore: d.meritScore || d.points,
+              clientIp: d.clientIp || d.ip,
+              wish: d.wish
+            });
+            if (typeof window.renderSanctuaryFloor === 'function') window.renderSanctuaryFloor();
+          }
+
+          // 2. Lập tức phản hồi bằng CLAIM_SEAT của chính mình để đồng tu mới thấy mình ngay lập tức
+          if (window.currentUserProfile && window.currentUserProfile.assignedSeatNo) {
+            this.broadcast('CLAIM_SEAT', {
+              seatNo: window.currentUserProfile.assignedSeatNo,
+              senderId: this.getClientId(),
+              data: window.currentUserProfile
+            });
+          }
         });
 
       // C. LẮNG NGHE POSTGRES CHANGES (Cập nhật tức thì khi có bản ghi mới trong bảng)
@@ -407,6 +437,15 @@
             console.log('[SupabaseSanctuary] Realtime Channel đã SUBSCRIBED thành công!');
             if (window.currentUserProfile && window.currentUserProfile.assignedSeatNo) {
               await this.trackCurrentUserPresence();
+              this.broadcast('HELLO_SANCTUARY', {
+                seatNo: window.currentUserProfile.assignedSeatNo,
+                senderId: this.getClientId(),
+                data: window.currentUserProfile
+              });
+            } else {
+              this.broadcast('HELLO_SANCTUARY', {
+                senderId: this.getClientId()
+              });
             }
             this.updateHUDStatus(true);
             done(true);
@@ -492,19 +531,6 @@
             onlineDevotees.push(dev);
           }
         }
-      }
-
-      // Xóa tất cả các ghế remoteClientId KHÔNG CÒN nằm trong onlineDevotees
-      const onlineClientIds = new Set(onlineDevotees.map(d => d.clientId));
-      if (window.sanctuarySeats) {
-        window.sanctuarySeats.forEach(s => {
-          if (s.remoteClientId && !onlineClientIds.has(s.remoteClientId) && !s.isUser) {
-            s.occupied = false;
-            s.remoteClientId = null;
-            s.name = '';
-            s.dharma = '';
-          }
-        });
       }
 
       // 1. KIỂM TRA SỐ LƯỢNG NGƯỜI DÙNG: NẾU VƯỢT QUÁ SỐ CHỖ HIỆN TẠI -> TỰ ĐỘNG SINH HÀNG MỚI!
