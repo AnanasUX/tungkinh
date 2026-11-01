@@ -17,9 +17,12 @@
 (function () {
   'use strict';
 
-  // Cloud Storage Stream Endpoint on Standard Port 443 (Never blocked by mobile 4G/5G carriers)
-  const CLOUD_STORAGE_OBJECT_ID = 'ff808181a09d98f701a19653c3797d5c';
-  const CLOUD_STORAGE_URL = 'https://api.restful-api.dev/objects/' + CLOUD_STORAGE_OBJECT_ID;
+  // Universal Real-Time Stream on Standard Port 443 (100% accessible on 4G/5G Viettel/Vinaphone/Mobi, zero limits)
+  const NTFY_TOPIC = 'chuanhien_sanctuary_stream_v4';
+  const NTFY_WS_URL = 'wss://ntfy.sh/' + NTFY_TOPIC + '/ws';
+  const NTFY_PUB_URL = 'https://ntfy.sh/' + NTFY_TOPIC;
+  const NTFY_POLL_URL = 'https://ntfy.sh/' + NTFY_TOPIC + '/json?poll=1&since=45s';
+  const NTFY_SSE_URL = 'https://ntfy.sh/' + NTFY_TOPIC + '/sse';
 
   // Global MQTT Brokers as high-speed speed accelerators
   const BROKERS = [
@@ -30,6 +33,9 @@
   const SANCTUARY_TOPIC = 'chuanhien/sanctuary/global/v3';
   let currentBrokerIndex = 0;
   let pahoClient = null;
+  let ntfySocket = null;
+  let ntfySSE = null;
+  let ntfyReconnectTimer = null;
   let isConnected = false;
   let isConnecting = false;
   let reconnectTimer = null;
@@ -75,7 +81,7 @@
     init() {
       console.log(`[RealtimeSanctuary v3.0] Initializing with clientId: ${clientId}`);
       this.detectAndInitServerConnection();
-      this.initCloudStorageStream();
+      this.initUniversalStream();
       this.connectBroker();
       this.setupLocalChannel();
       this.startHeartbeatLoop();
@@ -88,178 +94,114 @@
     },
 
     /**************************************************************************
-     * 1. GIẢI PHÁP LƯU TRỮ SERVER CHUNG LUỒNG (CLOUD STORAGE ON PORT 443)
+     * 1. GIẢI PHÁP LƯU TRỮ SERVER CHUNG LUỒNG (PORT 443 UNIVERSAL STREAM)
      **************************************************************************/
 
-    initCloudStorageStream() {
-      // 1. Initial immediate pull from shared cloud storage
-      this.fetchCloudSanctuaryState();
+    initUniversalStream() {
+      // 1. Initial catchup poll for recent state from last 45s
+      this.pollUniversalCatchup();
 
-      // 2. Periodic sync with cloud storage (every 2.5s) to guarantee unified state across all 4G/5G devices
+      // 2. Connect WebSocket over Port 443 (sub-millisecond instant synchronization)
+      this.connectUniversalWebSocket();
+
+      // 3. Fallback SSE
+      this.setupUniversalSSE();
+
+      // 4. Periodic catchup sync every 4 seconds to guarantee no packets missed
       clearInterval(cloudSyncTimer);
       cloudSyncTimer = setInterval(() => {
-        RealtimeSanctuary.syncWithCloudSanctuary();
-      }, 2500);
+        RealtimeSanctuary.pollUniversalCatchup();
+      }, 4000);
     },
 
-    async fetchCloudSanctuaryState() {
+    pollUniversalCatchup() {
       const t0 = (typeof performance !== 'undefined') ? performance.now() : Date.now();
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500);
-        const res = await fetch(CLOUD_STORAGE_URL, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          const json = await res.json();
-          if (json && json.data) {
-            this.syncLatency = Math.round(((typeof performance !== 'undefined') ? performance.now() : Date.now()) - t0);
-            this.lastSyncTime = Date.now();
-            this.applyCloudSanctuaryData(json.data);
-            this.isConnected = true;
-            this.updateConnectionHUD(true);
-          }
-        }
-      } catch (err) {
-        // Silent catch for offline or network switch
-      }
+      fetch(NTFY_POLL_URL)
+        .then(r => r.text())
+        .then(text => {
+          if (!text) return;
+          this.syncLatency = Math.round(((typeof performance !== 'undefined') ? performance.now() : Date.now()) - t0);
+          this.lastSyncTime = Date.now();
+          const lines = text.trim().split('\n');
+          lines.forEach(line => {
+            try {
+              const item = JSON.parse(line);
+              if (item.event === 'message' && item.message) {
+                const msg = JSON.parse(item.message);
+                if (msg && msg.senderId && msg.senderId !== clientId) {
+                  RealtimeSanctuary.handleIncomingMessage(msg);
+                }
+              }
+            } catch (e) {}
+          });
+          this.isConnected = true;
+          this.updateConnectionHUD(true);
+        })
+        .catch(() => {});
     },
 
-    async syncWithCloudSanctuary() {
-      const now = Date.now();
-      const myProfile = this.buildUserProfilePayload();
-      const t0 = (typeof performance !== 'undefined') ? performance.now() : Date.now();
-
+    connectUniversalWebSocket() {
+      if (typeof WebSocket === 'undefined') return;
       try {
-        // Fetch current cloud state
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3200);
-        const res = await fetch(CLOUD_STORAGE_URL, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (!res.ok) return;
-        const currentDoc = await res.json();
-        const serverData = (currentDoc && currentDoc.data) ? currentDoc.data : {};
-
-        this.syncLatency = Math.round(((typeof performance !== 'undefined') ? performance.now() : Date.now()) - t0);
-        this.lastSyncTime = now;
-
-        // 1. Process remote devotees from server database
-        const devoteesMap = serverData.devotees || {};
-        for (const rId in devoteesMap) {
-          if (rId !== clientId) {
-            const dev = devoteesMap[rId];
-            if (dev && (now - (dev.lastSeen || 0) < 14000)) {
-              this.handleDevoteePresence(rId, dev.data || dev, false);
-            }
-          }
+        if (ntfySocket) {
+          ntfySocket.onclose = null;
+          ntfySocket.close();
         }
-
-        // 2. Process communal chant from server
-        if (serverData.communalChant && serverData.communalChant.isActive) {
-          const cChant = serverData.communalChant;
-          if (!this.sharedChanting.isActive || (this.sharedChanting.leaderId !== clientId && this.sharedChanting.verseIndex !== cChant.verseIndex)) {
-            this.sharedChanting.isActive = true;
-            this.sharedChanting.leaderId = cChant.leaderId;
-            this.sharedChanting.leaderName = cChant.leaderName;
-            this.sharedChanting.scriptureId = cChant.scriptureId;
-            this.sharedChanting.scriptureTitle = cChant.scriptureTitle;
-            this.sharedChanting.verseIndex = cChant.verseIndex;
-            this.sharedChanting.verseText = cChant.verseText;
-            this.sharedChanting.totalVerses = cChant.totalVerses;
-            this.sharedChanting.intervalMs = cChant.intervalMs || 3000;
-            this.sharedChanting.isParticipant = true;
-            this.onCommunalVerseAdvanced(cChant.verseIndex, cChant.verseText, false);
-          }
-        } else if (serverData.communalChant && !serverData.communalChant.isActive && this.sharedChanting.isActive && this.sharedChanting.leaderId !== clientId) {
-          this.sharedChanting.isActive = false;
-          this.hideCommunalBanner();
-        }
-
-        // 3. Attach our updated presence to write back
-        devoteesMap[clientId] = {
-          clientId: clientId,
-          seatNo: myProfile.seatNo,
-          name: myProfile.name,
-          dharma: myProfile.dharma,
-          ip: myProfile.ip,
-          points: myProfile.points,
-          gender: myProfile.gender,
-          lastSeen: now,
-          data: myProfile
+        ntfySocket = new WebSocket(NTFY_WS_URL);
+        ntfySocket.onopen = () => {
+          console.log('[RealtimeSanctuary] Port 443 WSS Connected to Universal Stream!');
+          this.isConnected = true;
+          this.updateConnectionHUD(true);
+          clearTimeout(ntfyReconnectTimer);
+          // Broadcast presence immediately so all existing devotees see us
+          this.broadcastHelloSync();
         };
-
-        // Prune stale records (>18s) in object before writing back
-        for (const id in devoteesMap) {
-          if (now - devoteesMap[id].lastSeen > 18000) {
-            delete devoteesMap[id];
-          }
-        }
-
-        serverData.devotees = devoteesMap;
-        serverData.serverTime = now;
-
-        if (this.sharedChanting.isActive && this.sharedChanting.leaderId === clientId) {
-          serverData.communalChant = {
-            isActive: true,
-            leaderId: this.sharedChanting.leaderId,
-            leaderName: this.sharedChanting.leaderName,
-            scriptureId: this.sharedChanting.scriptureId,
-            scriptureTitle: this.sharedChanting.scriptureTitle,
-            verseIndex: this.sharedChanting.verseIndex,
-            verseText: this.sharedChanting.verseText,
-            totalVerses: this.sharedChanting.totalVerses,
-            intervalMs: this.sharedChanting.intervalMs
-          };
-        } else if (!this.sharedChanting.isActive && serverData.communalChant && serverData.communalChant.leaderId === clientId) {
-          serverData.communalChant.isActive = false;
-        }
-
-        // Write updated presence to cloud database on Port 443
-        fetch(CLOUD_STORAGE_URL, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: 'ChuaAnNhien_Sanctuary_State',
-            data: serverData
-          })
-        }).catch(() => {});
-
-        this.isConnected = true;
-        this.updateConnectionHUD(true);
+        ntfySocket.onmessage = (event) => {
+          try {
+            const item = JSON.parse(event.data);
+            if (item.event === 'message' && item.message) {
+              const msg = JSON.parse(item.message);
+              if (msg && msg.senderId && msg.senderId !== clientId) {
+                this.lastSyncTime = Date.now();
+                this.handleIncomingMessage(msg);
+              }
+            }
+          } catch (e) {}
+        };
+        ntfySocket.onclose = () => {
+          this.isConnected = false;
+          this.updateConnectionHUD(false);
+          clearTimeout(ntfyReconnectTimer);
+          ntfyReconnectTimer = setTimeout(() => {
+            RealtimeSanctuary.connectUniversalWebSocket();
+          }, 3000);
+        };
+        ntfySocket.onerror = () => {
+          try { ntfySocket.close(); } catch (e) {}
+        };
       } catch (err) {
-        // Network fallback
+        console.warn('[RealtimeSanctuary] WSS connection failed:', err);
       }
     },
 
-    applyCloudSanctuaryData(cloudData) {
-      if (!cloudData) return;
-      const now = Date.now();
-      const devoteesMap = cloudData.devotees || {};
-
-      for (const rId in devoteesMap) {
-        if (rId !== clientId) {
-          const dev = devoteesMap[rId];
-          if (dev && (now - (dev.lastSeen || 0) < 14000)) {
-            this.handleDevoteePresence(rId, dev.data || dev, false);
-          }
-        }
-      }
-
-      if (cloudData.communalChant && cloudData.communalChant.isActive && !this.sharedChanting.isActive) {
-        const c = cloudData.communalChant;
-        this.sharedChanting.isActive = true;
-        this.sharedChanting.leaderId = c.leaderId;
-        this.sharedChanting.leaderName = c.leaderName;
-        this.sharedChanting.scriptureId = c.scriptureId;
-        this.sharedChanting.scriptureTitle = c.scriptureTitle;
-        this.sharedChanting.verseIndex = c.verseIndex;
-        this.sharedChanting.verseText = c.verseText;
-        this.sharedChanting.totalVerses = c.totalVerses;
-        this.sharedChanting.intervalMs = c.intervalMs || 3000;
-        this.sharedChanting.isParticipant = true;
-        this.onCommunalVerseAdvanced(c.verseIndex, c.verseText, false);
-      }
+    setupUniversalSSE() {
+      if (typeof EventSource === 'undefined') return;
+      try {
+        if (ntfySSE) ntfySSE.close();
+        ntfySSE = new EventSource(NTFY_SSE_URL);
+        ntfySSE.onmessage = (event) => {
+          try {
+            const item = JSON.parse(event.data);
+            if (item.event === 'message' && item.message) {
+              const msg = JSON.parse(item.message);
+              if (msg && msg.senderId && msg.senderId !== clientId) {
+                this.lastSyncTime = Date.now();
+                this.handleIncomingMessage(msg);
+              }
+            }
+          } catch (e) {}
+        };
+      } catch (e) {}
     },
 
     /**************************************************************************
@@ -423,14 +365,14 @@
 
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-          RealtimeSanctuary.fetchCloudSanctuaryState();
+          RealtimeSanctuary.pollUniversalCatchup();
           RealtimeSanctuary.broadcastHelloSync();
         }
       });
 
       window.addEventListener('online', () => {
-        RealtimeSanctuary.fetchCloudSanctuaryState();
-        RealtimeSanctuary.connectBroker();
+        RealtimeSanctuary.pollUniversalCatchup();
+        RealtimeSanctuary.connectUniversalWebSocket();
       });
     },
 
@@ -445,7 +387,18 @@
         } catch (e) {}
       }
 
-      // 2. Publish to dedicated Node server if configured
+      // 2. Publish to Universal Stream on Port 443 (ntfy.sh)
+      try {
+        fetch(NTFY_PUB_URL, {
+          method: 'POST',
+          headers: { 'Title': 'ChuaAnNhien' },
+          body: JSON.stringify(payload)
+        }).then(() => {
+          this.lastSyncTime = Date.now();
+        }).catch(() => {});
+      } catch (e) {}
+
+      // 3. Publish to dedicated Node server if configured
       const customUrl = localStorage.getItem('chua_an_nhien_server_url');
       const isLocal = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
       const serverBase = customUrl || (isLocal ? window.location.origin : '');
@@ -457,7 +410,7 @@
         }).catch(() => {});
       }
 
-      // 3. Publish to MQTT broker
+      // 4. Publish to MQTT broker
       if (pahoClient && isConnected) {
         try {
           const pahoMsg = new window.Paho.MQTT.Message(JSON.stringify(payload));
@@ -998,9 +951,22 @@
     handleDevoteePresence(senderId, data, isNewJoin) {
       if (!data) return;
       const isExisting = remoteDevotees.has(senderId);
+      const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
 
-      const targetSeat = this.findBestSeatForRemoteDevotee(senderId, data.seatNo);
-      const assignedSeatNo = targetSeat ? targetSeat.seatNo : data.seatNo;
+      let requestedSeatNo = data.seatNo;
+      // If requested seat is already taken by the local registered user, re-assert and let remote find best
+      if (requestedSeatNo === mySeatNo && window.currentUserProfile && window.currentUserProfile.registered) {
+        this.publishMessage({
+          type: 'CLAIM_SEAT',
+          senderId: clientId,
+          seatNo: mySeatNo,
+          data: this.buildUserProfilePayload()
+        });
+        requestedSeatNo = null;
+      }
+
+      const targetSeat = this.findBestSeatForRemoteDevotee(senderId, requestedSeatNo);
+      const assignedSeatNo = targetSeat ? targetSeat.seatNo : requestedSeatNo;
 
       remoteDevotees.set(senderId, {
         clientId: senderId,
@@ -1009,7 +975,7 @@
         lastSeen: Date.now()
       });
 
-      if (targetSeat) {
+      if (targetSeat && !targetSeat.isUser) {
         window.sanctuarySeats.forEach(s => {
           if (s.remoteClientId === senderId && s.seatNo !== targetSeat.seatNo) {
             s.occupied = false;
@@ -1035,7 +1001,7 @@
         if (isNewJoin && !isExisting && window.showLiveGiftBanner) {
           window.showLiveGiftBanner(
             'Đồng Tu Nhập Tọa',
-            `🟢 ${data.name} (PD: ${data.dharma}) vừa vào Chánh Điện`,
+            `🟢 ${targetSeat.name} (PD: ${targetSeat.dharma}) vừa vào Bồ đoàn #${targetSeat.seatNo}`,
             'lotus'
           );
           if (window.AudioEngine && window.AudioEngine.enabled && typeof window.AudioEngine.playGiftChime === 'function') {
@@ -1046,28 +1012,45 @@
 
       this.updateOnlineCountHUD();
       this.refreshSanctuaryViews();
+      if (window.renderRegSeatsSelector) {
+        window.renderRegSeatsSelector();
+      }
     },
 
     handleDevoteeSeatClaim(senderId, seatNo, data) {
-      if (!window.sanctuarySeats || !seatNo) return;
+      if (!window.sanctuarySeats || !seatNo || !data) return;
       const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
 
+      // If remote claims the seat I am currently occupying as registered user:
+      if (seatNo === mySeatNo && window.currentUserProfile && window.currentUserProfile.registered) {
+        // Re-assert my claim so the sender knows I already own this seat
+        this.publishMessage({
+          type: 'CLAIM_SEAT',
+          senderId: clientId,
+          seatNo: mySeatNo,
+          data: this.buildUserProfilePayload()
+        });
+        return;
+      }
+
+      // Free previous seat held by this remote client
       window.sanctuarySeats.forEach(s => {
-        if (s.remoteClientId === senderId) {
+        if (s.remoteClientId === senderId && s.seatNo !== seatNo) {
           s.occupied = false;
           s.remoteClientId = null;
           s.name = '';
+          s.dharma = '';
         }
       });
 
-      const targetSeat = this.findBestSeatForRemoteDevotee(senderId, seatNo);
-      if (targetSeat) {
+      const targetSeat = window.sanctuarySeats.find(s => s.seatNo === seatNo);
+      if (targetSeat && !targetSeat.isUser) {
         targetSeat.occupied = true;
         targetSeat.isUser = false;
         targetSeat.isDummy = false;
         targetSeat.remoteClientId = senderId;
-        targetSeat.name = data.name;
-        targetSeat.dharma = data.dharma;
+        targetSeat.name = data.name || 'Đồng Tu Mới';
+        targetSeat.dharma = data.dharma || 'Tịnh Tâm';
         targetSeat.age = data.age || 26;
         targetSeat.hometown = data.hometown || 'Chùa An Nhiên';
         targetSeat.ip = data.ip || '113.161.x.x';
@@ -1083,12 +1066,15 @@
         });
 
         if (window.showLiveGiftBanner) {
-          window.showLiveGiftBanner('Đổi Bồ Đoàn', `🟢 ${data.name} đã an tọa Bồ đoàn #${targetSeat.seatNo}`, 'lotus');
+          window.showLiveGiftBanner('Đổi Bồ Đoàn', `🟢 ${targetSeat.name} (PD: ${targetSeat.dharma}) đã an tọa Bồ đoàn #${targetSeat.seatNo}`, 'lotus');
         }
       }
 
       this.updateOnlineCountHUD();
       this.refreshSanctuaryViews();
+      if (window.renderRegSeatsSelector) {
+        window.renderRegSeatsSelector();
+      }
     },
 
     handleDevoteeMoTap(seatNo, phrase, multiplier, senderId) {

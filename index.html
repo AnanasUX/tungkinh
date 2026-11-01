@@ -1314,11 +1314,12 @@
             
             <div class="grid grid-cols-12 gap-2">
               <div class="col-span-12 sm:col-span-4">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px]">
-                  1. Họ và tên đạo hữu <span class="text-red-400">*</span>
+                <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px] flex items-center justify-between">
+                  <span>1. Họ và tên đạo hữu <span class="text-red-400">*</span></span>
+                  <button type="button" onclick="rollSuggestedFullName()" class="text-[9.5px] text-amber-300 hover:underline">🎲 Gợi ý tên</button>
                 </label>
-                <input id="reg-fullname" type="text" required maxlength="28" value="Nguyễn Bá Ngọc" placeholder="VD: Nguyễn Bá Ngọc"
-                  class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 placeholder-amber-200/35 focus:outline-none focus:border-amber-300 text-xs font-semibold transition" />
+                <input id="reg-fullname" type="text" required maxlength="28" value="" placeholder="Nhập tên đạo hữu (VD: Trần Văn Nam)"
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 placeholder-amber-200/40 focus:outline-none focus:border-amber-300 text-xs font-semibold transition" />
               </div>
 
               <div class="col-span-12 sm:col-span-4">
@@ -1326,8 +1327,8 @@
                   <span>2. Pháp danh (Tự chọn / Gợi ý)</span>
                   <button type="button" id="btn-reg-roll-dharma" onclick="rollSuggestedDharmaName()" class="text-[9.5px] text-emerald-300 hover:underline">🎲 Đổi gợi ý</button>
                 </label>
-                <input id="reg-dharma-name" type="text" maxlength="20" value="Minh Tâm" placeholder="VD: Minh Tâm, Tịnh Thủy..."
-                  class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-emerald-400/45 text-emerald-200 placeholder-amber-200/35 focus:outline-none focus:border-emerald-300 text-xs font-bold transition" />
+                <input id="reg-dharma-name" type="text" maxlength="20" value="" placeholder="VD: Minh Tâm, Diệu Hoa..."
+                  class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-emerald-400/45 text-emerald-200 placeholder-amber-200/40 focus:outline-none focus:border-emerald-300 text-xs font-bold transition" />
               </div>
 
               <div class="col-span-12 sm:col-span-4">
@@ -1456,19 +1457,19 @@
               </div>
 
               <div class="col-span-12 sm:col-span-5">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px]">
-                  7. Phiên Online Tu Tập:
+                <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px] flex items-center justify-between">
+                  <span>7. Chọn Vị Trí Bồ Đoàn Tọa Lạc:</span>
+                  <span id="reg-selected-seat-badge" class="text-[10px] font-bold text-amber-300">Bồ đoàn #2</span>
                 </label>
-                <div class="flex items-center gap-1.5 bg-black/55 p-1.5 rounded-lg border border-emerald-400/40">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0 ml-1"></span>
-                  <div class="flex-1 leading-tight">
-                    <div class="text-[10px] text-emerald-300 font-bold">Phiên: <span id="reg-session-code-display">#AN-8899</span></div>
-                    <div class="text-[8.5px] text-amber-100/75">Còn 5 Bồ Đoàn trống chờ xếp chỗ</div>
+                <div class="bg-black/60 p-2 rounded-lg border border-amber-300/40">
+                  <div class="text-[9px] text-amber-200/80 mb-1 flex items-center justify-between">
+                    <span>Nhấp để chọn chỗ ngồi của bạn:</span>
+                    <span class="text-emerald-300 font-semibold text-[8.5px]" id="reg-empty-seats-count">🟢 5 chỗ sẵn sàng</span>
                   </div>
-                  <button type="button" id="btn-reg-roll-session" onclick="generateNewOnlineSessionCode()"
-                    class="px-2 py-1 rounded bg-emerald-500/25 hover:bg-emerald-500/40 border border-emerald-400/50 text-[9px] text-emerald-200 font-semibold shrink-0 transition">
-                    + Đổi mã
-                  </button>
+                  <!-- Visual 12 cushions grid (2 rows x 6 cushions) -->
+                  <div class="grid grid-cols-6 gap-1" id="reg-seats-selector-grid">
+                    <!-- Populated dynamically via renderRegSeatsSelector() -->
+                  </div>
                 </div>
               </div>
             </div>
@@ -2669,11 +2670,111 @@
       }
     }
 
+    const SAMPLE_NAMES = [
+      { name: 'Trần Văn Nam', dharma: 'Minh Tâm' },
+      { name: 'Lê Diệu Hoa', dharma: 'Diệu Hoa' },
+      { name: 'Nguyễn Phúc Thiện', dharma: 'Phúc Thiện' },
+      { name: 'Phạm Minh Tuệ', dharma: 'Minh Tuệ' },
+      { name: 'Vũ Tịnh Tâm', dharma: 'Tịnh Tâm' },
+      { name: 'Hoàng An Nhiên', dharma: 'An Nhiên' },
+      { name: 'Đặng Đức Trí', dharma: 'Đức Trí' },
+      { name: 'Bùi Diệu Hương', dharma: 'Diệu Hương' },
+      { name: 'Lý Thanh Tuyền', dharma: 'Thanh Tuyền' }
+    ];
+
+    function rollSuggestedFullName() {
+      const pick = SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)];
+      const nameInput = document.getElementById('reg-fullname');
+      const dharmaInput = document.getElementById('reg-dharma-name');
+      if (nameInput) nameInput.value = pick.name;
+      if (dharmaInput) dharmaInput.value = pick.dharma;
+      currentUserProfile.fullName = pick.name;
+      currentUserProfile.dharmaName = pick.dharma;
+    }
+
+    function renderRegSeatsSelector() {
+      const grid = document.getElementById('reg-seats-selector-grid');
+      const badge = document.getElementById('reg-selected-seat-badge');
+      const countEl = document.getElementById('reg-empty-seats-count');
+      if (!grid) return;
+
+      const currentChosenSeatNo = currentUserProfile.assignedSeatNo || pickBestAvailableSeat();
+      currentUserProfile.assignedSeatNo = currentChosenSeatNo;
+
+      if (badge) {
+        badge.textContent = `Bồ đoàn #${currentChosenSeatNo}`;
+      }
+
+      let emptyCount = 0;
+      grid.innerHTML = sanctuarySeats.map(s => {
+        const isSelected = (s.seatNo === currentChosenSeatNo);
+        const isRemoteUser = !!s.remoteClientId;
+        const isOccupiedOther = s.occupied && !s.isUser && isRemoteUser;
+
+        if (!s.occupied || s.isDummy) emptyCount++;
+
+        if (isSelected) {
+          return `
+            <button type="button" onclick="selectRegSeat(${s.seatNo})"
+              title="Bồ đoàn #${s.seatNo} (Bạn đang chọn)"
+              class="py-1 px-0.5 rounded border-2 border-amber-300 bg-amber-500/35 text-amber-100 font-bold text-[9.5px] text-center shadow-[0_0_10px_rgba(251,191,36,0.6)] active:scale-95 transition">
+              <span class="block text-[8px] leading-tight text-amber-200">⭐ BẠN</span>
+              <span>#${s.seatNo}</span>
+            </button>
+          `;
+        } else if (isOccupiedOther) {
+          const shortName = (s.name || 'Đồng Tu').split(' ').pop();
+          return `
+            <button type="button" disabled
+              title="Bồ đoàn #${s.seatNo} (Đã có đạo hữu: ${s.name})"
+              class="py-1 px-0.5 rounded border border-rose-500/40 bg-rose-950/60 text-rose-300/80 font-semibold text-[9.5px] text-center cursor-not-allowed opacity-80">
+              <span class="block text-[7.5px] leading-tight truncate text-rose-200">${shortName}</span>
+              <span>#${s.seatNo}</span>
+            </button>
+          `;
+        } else {
+          return `
+            <button type="button" onclick="selectRegSeat(${s.seatNo})"
+              title="Bồ đoàn #${s.seatNo} (Còn trống - Nhấp để chọn)"
+              class="py-1 px-0.5 rounded border border-emerald-400/50 bg-emerald-950/40 hover:bg-emerald-800/60 hover:border-emerald-300 text-emerald-200 font-semibold text-[9.5px] text-center cursor-pointer transition active:scale-95">
+              <span class="block text-[7.5px] leading-tight text-emerald-300/90">Trống</span>
+              <span>#${s.seatNo}</span>
+            </button>
+          `;
+        }
+      }).join('');
+
+      if (countEl) {
+        countEl.textContent = `🟢 ${emptyCount}/12 chỗ sẵn sàng`;
+      }
+    }
+
+    function selectRegSeat(seatNo) {
+      currentUserProfile.assignedSeatNo = seatNo;
+      renderRegSeatsSelector();
+    }
+
+    window.renderRegSeatsSelector = renderRegSeatsSelector;
+
     function openRegistrationModal(isEditing = false) {
       const modal = document.getElementById('registration-gate-modal');
       const cancelBtn = document.getElementById('btn-cancel-edit');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
+
+      const nameInput = document.getElementById('reg-fullname');
+      const dharmaInput = document.getElementById('reg-dharma-name');
+
+      if (!currentUserProfile.registered && (!nameInput.value || nameInput.value === 'Nguyễn Bá Ngọc')) {
+        const pick = SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)];
+        nameInput.value = pick.name;
+        dharmaInput.value = pick.dharma;
+        currentUserProfile.fullName = pick.name;
+        currentUserProfile.dharmaName = pick.dharma;
+      }
+
+      renderRegSeatsSelector();
+
       if (currentUserProfile.isLocked || currentUserProfile.registered) {
         if (cancelBtn) cancelBtn.classList.remove('hidden');
         applyProfileLockState(true);
@@ -2752,15 +2853,17 @@
 
       recalculateAgeAndPreview(false);
       currentUserProfile.registered = true;
-      currentUserProfile.fullName = document.getElementById('reg-fullname').value.trim() || 'Nguyễn Bá Ngọc';
-      currentUserProfile.dharmaName = document.getElementById('reg-dharma-name').value.trim() || 'Minh Tâm';
-      currentUserProfile.hometown = document.getElementById('reg-hometown').value.trim() || 'Hà Nội';
+      const enteredFullName = document.getElementById('reg-fullname').value.trim();
+      const enteredDharmaName = document.getElementById('reg-dharma-name').value.trim();
+      currentUserProfile.fullName = enteredFullName || currentUserProfile.fullName || 'Đồng Tu Mới';
+      currentUserProfile.dharmaName = enteredDharmaName || currentUserProfile.dharmaName || 'Minh Tâm';
+      currentUserProfile.hometown = document.getElementById('reg-hometown').value.trim() || 'Chùa An Nhiên';
       currentUserProfile.day = document.getElementById('reg-day').value.padStart(2, '0');
       currentUserProfile.month = document.getElementById('reg-month').value.padStart(2, '0');
       currentUserProfile.year = document.getElementById('reg-year').value || '1996';
       currentUserProfile.age = parseInt(document.getElementById('reg-age').value, 10) || 30;
       currentUserProfile.avatarType = document.querySelector('input[name="regAvatarType"]:checked')?.value || 'monk';
-      currentUserProfile.wish = document.getElementById('reg-wish').value.trim() || 'Bình an mỗi ngày';
+      currentUserProfile.wish = document.getElementById('reg-wish').value.trim() || 'Cầu bình an mỗi ngày';
 
       // Attach detected real IP and lock profile
       currentUserProfile.clientIp = currentDetectedIP || '117.5.146.242';
@@ -2771,12 +2874,16 @@
       applyProfileLockState(true);
       closeRegistrationModal();
 
-      if (window.RealtimeSanctuary) {
-        window.RealtimeSanctuary.broadcastHelloSync();
+      let targetSeatNo = currentUserProfile.assignedSeatNo;
+      if (!targetSeatNo || isSeatTakenByRemote(targetSeatNo)) {
+        targetSeatNo = pickBestAvailableSeat(targetSeatNo);
+        currentUserProfile.assignedSeatNo = targetSeatNo;
       }
 
-      const targetSeatNo = pickBestAvailableSeat(currentUserProfile.assignedSeatNo);
-      currentUserProfile.assignedSeatNo = targetSeatNo;
+      if (window.RealtimeSanctuary) {
+        window.RealtimeSanctuary.broadcastSeatClaim(targetSeatNo, currentUserProfile);
+      }
+
       walkUserToSeat(targetSeatNo, true);
     }
 
@@ -3366,10 +3473,10 @@
                 : 'bg-[#261c14]/92 text-[#f5ebd6] border-amber-200/30 font-semibold');
 
           const metaSubtitle = seat.isUser
-            ? `<span class="block text-[7.5px] font-bold text-stone-900/95 leading-none mt-0.5 truncate max-w-[76px]">Bạn • PD: ${currentUserProfile.dharmaName || 'Minh Tâm'}</span>`
+            ? `<span class="block text-[7.5px] font-bold text-stone-900/95 leading-none mt-0.5 truncate max-w-[76px]">Bạn • #${seat.seatNo} • PD: ${currentUserProfile.dharmaName || 'Minh Tâm'}</span>`
             : (isRemoteHuman
-                ? `<span class="inline-flex items-center gap-1 text-[7px] font-bold text-emerald-300 leading-none mt-0.5 truncate max-w-[76px]"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>Live • PD: ${seat.dharma || 'Tịnh Tâm'}</span>`
-                : `<span class="block text-[7px] font-semibold text-amber-200/80 leading-none mt-0.5 truncate max-w-[76px]">PD: ${seat.dharma || 'Tịnh Tâm'}</span>`);
+                ? `<span class="inline-flex items-center gap-1 text-[7px] font-bold text-emerald-300 leading-none mt-0.5 truncate max-w-[76px]"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>Live • #${seat.seatNo} • PD: ${seat.dharma || 'Tịnh Tâm'}</span>`
+                : `<span class="block text-[7px] font-semibold text-amber-200/80 leading-none mt-0.5 truncate max-w-[76px]">#${seat.seatNo} • PD: ${seat.dharma || 'Tịnh Tâm'}</span>`);
 
           wrapper.title = seat.isUser
             ? `Bồ đoàn #${seat.seatNo} (CỦA BẠN - ĐÃ NIÊM PHONG) • IP: ${currentUserProfile.clientIp || '117.5.x.x'}`
@@ -5190,7 +5297,12 @@
       // 1. Phát hiện IP kết nối thực tế
       await detectUserRealIP();
 
-      // 2. Tải phiên thực tế đã lưu và khôi phục trạng thái niêm phong
+      // 2. Khởi tạo kết nối Đạo Tràng Trực Tuyến Đa Thiết Bị Thời Gian Thực (Port 443 Universal Stream)
+      if (window.RealtimeSanctuary) {
+        window.RealtimeSanctuary.init();
+      }
+
+      // 3. Tải phiên thực tế đã lưu và khôi phục trạng thái niêm phong
       const restored = loadRealUserSession();
       if (!restored) {
         // Tự động phân bổ bồ đoàn còn trống cho khách đồng tu để hiện diện ngay lập tức
@@ -5211,11 +5323,6 @@
 
       startIdleFellowBowing();
       animateAtmosphere();
-
-      // 3. Khởi tạo kết nối Đạo Tràng Trực Tuyến Đa Thiết Bị Thời Gian Thực
-      if (window.RealtimeSanctuary) {
-        window.RealtimeSanctuary.init();
-      }
 
       // 4. Khởi tạo Hệ Thống Nhiệm Vụ Tu Học & Đếm Ngược Tụng Kinh
       if (window.DailyQuestEngine) {
