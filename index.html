@@ -741,6 +741,13 @@
             <span id="ambience-label-text" class="hidden sm:inline">Bình Minh</span>
           </button>
 
+          <!-- 3D SANCTUARY TOGGLE BUTTON -->
+          <button onclick="toggle3DMode()" id="btn-toggle-3d" title="Chuyển đổi Chánh Điện 3D Trực Quan / 2.5D Cổ Điển"
+            class="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/25 via-yellow-400/35 to-amber-500/25 hover:from-amber-500/40 hover:to-yellow-400/50 border border-amber-300/60 text-[10px] sm:text-[11px] text-amber-200 font-extrabold flex items-center gap-1.5 shadow-[0_0_15px_rgba(250,204,21,0.35)] transition active:scale-95">
+            <span class="text-amber-300 text-xs">🌌</span>
+            <span id="label-3d-toggle">Chế Độ 3D</span>
+          </button>
+
           <div id="practitioner-hud" class="hidden temple-panel rounded-full px-2.5 py-1 flex items-center gap-1.5 text-[9.5px] sm:text-[10.5px]">
             <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
             <span id="hud-user-name" class="font-bold text-amber-200 truncate max-w-[100px]">Nguyễn Bá Ngọc</span>
@@ -809,6 +816,28 @@
           </button>
         </div>
       </header>
+
+      <!-- ======================================================================
+           3D CAMERA VIEWPOINTS BAR (Active in 3D Mode)
+           ====================================================================== -->
+      <div id="camera-presets-bar" class="hidden absolute top-14 left-1/2 -translate-x-1/2 z-30 temple-panel px-3 py-1.5 rounded-full items-center gap-1.5 text-[10px] sm:text-xs font-bold text-amber-200 shadow-2xl border border-amber-300/50 backdrop-blur-md pointer-events-auto">
+        <span class="text-[9px] uppercase tracking-wider text-amber-300/80 mr-1 hidden sm:inline">🎥 Góc Nhìn 3D:</span>
+        <button onclick="switch3DView('overview')" id="cam-btn-overview" class="cam-view-btn px-2.5 py-1 rounded-full bg-amber-500/40 border border-amber-300 text-amber-100 transition active:scale-95">
+          Toàn Cảnh
+        </button>
+        <button onclick="switch3DView('userSeat')" id="cam-btn-userSeat" class="cam-view-btn px-2.5 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
+          Bồ Đoàn Của Tôi
+        </button>
+        <button onclick="switch3DView('altar')" id="cam-btn-altar" class="cam-view-btn px-2.5 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
+          Tượng Phật
+        </button>
+        <button onclick="switch3DView('bell')" id="cam-btn-bell" class="cam-view-btn px-2.5 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
+          Đại Hồng Chung
+        </button>
+        <button onclick="switch3DView('mo')" id="cam-btn-mo" class="cam-view-btn px-2.5 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95">
+          Mõ Gỗ
+        </button>
+      </div>
 
       <!-- ======================================================================
            3. FLOATING LEFT & RIGHT PANELS
@@ -1675,10 +1704,14 @@
     </main>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
   <script src="js/scriptures.js"></script>
   <script src="js/dharma-wisdom.js"></script>
   <script src="js/certificate.js"></script>
   <script src="js/mindful-breathing.js"></script>
+  <script src="js/temple-3d.js"></script>
   <script>
     /**************************************************************************
      * 1. DỮ LIỆU 12 VỊ TRÍ BỒ ĐOÀN TRONG CHÁNH ĐIỆN
@@ -1697,6 +1730,7 @@
       { seatNo: 11, id: 'seat-11', x: 72.5, y: 42, scale: 0.98, occupied: true,  isUser: false, name: 'Bảo Trân',  dharma: 'Ngọc Trân',age: 23, hometown: 'Cần Thơ',   type: 'female', points: 55 },
       { seatNo: 12, id: 'seat-12', x: 84,   y: 42, scale: 0.98, occupied: false, isUser: false, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'female', points: 0  }
     ];
+    window.sanctuarySeats = sanctuarySeats;
 
     const currentUserProfile = {
       registered: false,
@@ -1976,6 +2010,9 @@
       } else if (mode.id === 'rain') {
         sunbeams.style.opacity = '0.15';
         if (AudioEngine.enabled) AudioEngine.startRainSound();
+      }
+      if (window.temple3D && is3DModeActive) {
+        window.temple3D.setAmbienceMode(mode.id);
       }
       showLiveGiftBanner('Không Gian Chánh Điện', `Đã chuyển sang chế độ: ${mode.label}`, 'lotus');
     }
@@ -2766,6 +2803,9 @@
 
       AudioEngine.playWoodenFish(zenMultiplier);
       animateRightWoodenFishWidget(zenMultiplier);
+      if (window.temple3D && is3DModeActive) {
+        window.temple3D.tapWoodenFish3D();
+      }
 
       currentUserProfile.woodenFishCount++;
       currentUserProfile.malaBeads = (currentUserProfile.malaBeads + 1) % 109;
@@ -2899,6 +2939,10 @@
 
       layer.appendChild(lantern);
       setTimeout(() => lantern.remove(), 16000);
+
+      if (window.temple3D && is3DModeActive) {
+        window.temple3D.spawn3DSkyLantern(senderName, wishText);
+      }
 
       if (broadcast && liveChannel) {
         try {
@@ -3357,6 +3401,81 @@
     }
 
     /**************************************************************************
+     * 7G. ĐIỀU KHIỂN CHÁNH ĐIỆN 3D & CAMERA TRỰC QUAN (THREE.JS)
+     **************************************************************************/
+    let is3DModeActive = false;
+    let temple3DInstance = null;
+
+    function toggle3DMode() {
+      const stage = document.getElementById('temple-stage');
+      const svgBg = document.getElementById('sanctuary-svg-bg');
+      const floorSeats = document.getElementById('sanctuary-floor-stage');
+      const camBar = document.getElementById('camera-presets-bar');
+      const btnLabel = document.getElementById('label-3d-toggle');
+
+      if (!is3DModeActive) {
+        // Bật Chế Độ 3D
+        is3DModeActive = true;
+        btnLabel.textContent = 'Chế Độ 2D';
+
+        if (!temple3DInstance) {
+          temple3DInstance = new Temple3DEngine();
+          temple3DInstance.init(stage);
+        } else {
+          if (temple3DInstance.canvas) temple3DInstance.canvas.classList.remove('hidden');
+        }
+        temple3DInstance.start();
+        window.temple3D = temple3DInstance;
+
+        // Ẩn nền 2.5D tĩnh và sàn bồ đoàn 2D để hiển thị không gian 3D
+        if (svgBg) svgBg.classList.add('hidden');
+        if (floorSeats) floorSeats.classList.add('hidden');
+        if (camBar) {
+          camBar.classList.remove('hidden');
+          camBar.classList.add('flex');
+        }
+
+        AudioEngine.playTempleBell();
+        showLiveGiftBanner(currentUserProfile.fullName, '🌌 Đã khởi động Chánh Điện 3D Toàn Cảnh Trực Quan', 'bell');
+      } else {
+        // Tắt Chế Độ 3D, quay về 2D
+        is3DModeActive = false;
+        btnLabel.textContent = 'Chế Độ 3D';
+
+        if (temple3DInstance) {
+          temple3DInstance.stop();
+          if (temple3DInstance.canvas) {
+            temple3DInstance.canvas.classList.add('hidden');
+          }
+        }
+
+        if (svgBg) svgBg.classList.remove('hidden');
+        if (floorSeats) floorSeats.classList.remove('hidden');
+        if (camBar) {
+          camBar.classList.add('hidden');
+          camBar.classList.remove('flex');
+        }
+
+        showLiveGiftBanner(currentUserProfile.fullName, 'Đã chuyển về Giao diện 2.5D Cổ Điển', 'lotus');
+      }
+    }
+
+    function switch3DView(viewKey) {
+      if (!window.temple3D || !is3DModeActive) return;
+      window.temple3D.setCameraView(viewKey, true);
+
+      document.querySelectorAll('.cam-view-btn').forEach(b => {
+        b.className = 'cam-view-btn px-2.5 py-1 rounded-full hover:bg-amber-500/20 text-amber-200/80 transition active:scale-95';
+      });
+      const activeBtn = document.getElementById(`cam-btn-${viewKey}`);
+      if (activeBtn) {
+        activeBtn.className = 'cam-view-btn px-2.5 py-1 rounded-full bg-amber-500/40 border border-amber-300 text-amber-100 transition active:scale-95';
+      }
+
+      AudioEngine.playGiftChime();
+    }
+
+    /**************************************************************************
      * 8. WEB AUDIO API SYNTHESIZER
      **************************************************************************/
     const AudioEngine = {
@@ -3636,6 +3755,9 @@
         AudioEngine.playTempleBell();
       }
       createBellRipple(50, 26);
+      if (window.temple3D && is3DModeActive) {
+        window.temple3D.strikeBell3D();
+      }
       showLiveGiftBanner('Tiếng Đại Hồng Chung', 'Ngân vang tĩnh tâm · Xua tan muộn phiền', 'lotus');
     }
 
