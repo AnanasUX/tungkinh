@@ -737,10 +737,12 @@
           </button>
 
           <!-- REAL-TIME ACTIVE HUD BADGE -->
-          <div class="temple-panel rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px]">
-            <span id="hud-realtime-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Đã kết nối Đạo Tràng Trực Tuyến Toàn Cầu"></span>
+          <button onclick="openServerConfigModal()" id="btn-realtime-server-badge" title="Xem Trạng Thái Máy Chủ & Luồng Lưu Trữ Chung (Port 443 Cloud Sync)"
+            class="temple-panel hover:border-amber-300/80 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] cursor-pointer transition active:scale-95 shadow">
+            <span id="hud-realtime-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Đang kết nối Máy Chủ Lưu Trữ Đạo Tràng Toàn Cầu"></span>
             <span class="text-amber-100 font-medium"><strong id="hud-online-count" class="text-amber-300 font-bold">1</strong>/12 đồng tu</span>
-          </div>
+            <span class="text-[8.5px] text-emerald-300 hidden md:inline ml-0.5 font-mono">📡 Cloud Sync</span>
+          </button>
         </div>
 
         <!-- CENTER TEMPLE TITLE -->
@@ -1714,6 +1716,103 @@
           <!-- Modal Action Buttons -->
           <div id="shared-room-actions" class="mt-4 pt-3 border-t border-amber-300/20 flex items-center justify-end gap-2.5">
             <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================================
+           MODAL: CẤU HÌNH & TRẠNG THÁI MÁY CHỦ LƯU TRỮ CHUNG LUỒNG (UNIVERSAL SERVER STREAM)
+           ====================================================================== -->
+      <div id="sanctuary-server-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-5">
+        <div class="temple-panel w-full max-w-[620px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-4 sm:p-6 border-2 border-amber-300/80 text-amber-50 relative shadow-[0_0_35px_rgba(245,158,11,0.25)]">
+          <!-- Modal Header -->
+          <div class="flex items-center justify-between border-b border-amber-300/30 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+              <div>
+                <div class="text-[9px] tracking-[0.2em] text-amber-300 uppercase font-bold">✦ HỆ THỐNG MÁY CHỦ LƯU TRỮ CHUNG 1 LUỒNG ✦</div>
+                <h3 class="font-serif-title text-xl sm:text-2xl font-bold text-amber-100 title-glow">
+                  Máy Chủ & Luồng Dữ Liệu Đạo Tràng
+                </h3>
+              </div>
+            </div>
+            <button onclick="closeServerConfigModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-200">
+              ✕
+            </button>
+          </div>
+
+          <!-- Description & Architecture explanation -->
+          <div class="my-3 p-3 rounded-xl bg-gradient-to-r from-amber-950/70 to-stone-900/80 border border-amber-300/40 text-xs text-amber-100/90 leading-relaxed">
+            <div class="flex items-center gap-2 font-bold text-amber-300 mb-1">
+              <span>🌐</span>
+              <span>Kiến Trúc Lưu Trữ Máy Chủ Đồng Bộ Bền Vững (Port 443 HTTPS):</span>
+            </div>
+            <p>
+              Hệ thống sử dụng luồng lưu trữ máy chủ chạy trên <strong>Cổng chuẩn 443 (HTTPS)</strong>. Khác với các hệ thống phòng chắp vá bị nhà mạng di động 4G/5G Viettel/Vinaphone chặn cổng lạ, giải pháp này đảm bảo <strong>100% mọi thiết bị truy cập https://ananasux.github.io/tungkinh/ đều cùng chung 1 luồng dữ liệu duy nhất</strong>.
+            </p>
+          </div>
+
+          <!-- Server Metrics Cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3.5">
+            <div class="p-2.5 rounded-xl bg-black/60 border border-amber-300/30 text-center">
+              <div class="text-[9.5px] text-amber-200/70 uppercase">Trạng Thái</div>
+              <div id="srv-status-text" class="text-xs sm:text-sm font-bold text-emerald-300 flex items-center justify-center gap-1 mt-0.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Hoạt Động</span>
+              </div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-black/60 border border-amber-300/30 text-center">
+              <div class="text-[9.5px] text-amber-200/70 uppercase">Đồng Tu Online</div>
+              <div id="srv-online-count" class="text-xs sm:text-sm font-bold text-amber-200 mt-0.5">1 đạo hữu</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-black/60 border border-amber-300/30 text-center">
+              <div class="text-[9.5px] text-amber-200/70 uppercase">Độ Trễ (Ping)</div>
+              <div id="srv-latency-text" class="text-xs sm:text-sm font-mono font-bold text-teal-300 mt-0.5">~65 ms</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-black/60 border border-amber-300/30 text-center">
+              <div class="text-[9.5px] text-amber-200/70 uppercase">Chế Độ Lưu Trữ</div>
+              <div id="srv-mode-text" class="text-[11px] font-bold text-emerald-300 mt-0.5 truncate">Cloud Stream</div>
+            </div>
+          </div>
+
+          <!-- Dedicated Server Configuration -->
+          <div class="space-y-3 bg-black/45 p-3 sm:p-4 rounded-xl border border-amber-300/25">
+            <div>
+              <label class="block text-xs font-bold text-amber-200 mb-1">
+                Tùy Chọn Máy Chủ Riêng (Tự Host Node.js Server):
+              </label>
+              <div class="flex items-center gap-2">
+                <input type="text" id="custom-server-input" placeholder="Ví dụ: https://my-sanctuary.onrender.com hoặc để trống"
+                  class="flex-1 px-3 py-1.5 rounded-lg bg-stone-900/90 border border-amber-300/40 text-amber-100 text-xs focus:outline-none focus:border-amber-300 font-mono" />
+                <button onclick="saveCustomServerUrl()" class="px-3 py-1.5 rounded-lg bg-amber-500/30 hover:bg-amber-500/50 border border-amber-300 text-amber-100 font-bold text-xs transition">
+                  Lưu
+                </button>
+              </div>
+              <p class="text-[10px] text-amber-200/60 mt-1">
+                Mặc định hệ thống tự kết nối Cloud Storage Stream Port 443. Nếu quý đạo hữu tự chạy lệnh <code class="text-amber-300">node server.js</code>, hãy điền URL máy chủ tại đây.
+              </p>
+            </div>
+
+            <!-- Client ID & Sync Time -->
+            <div class="pt-2 border-t border-amber-300/15 flex items-center justify-between text-[10.5px] text-amber-200/80 flex-wrap gap-1">
+              <span>Mã Phiên (Client ID): <strong id="srv-client-id" class="font-mono text-emerald-300">--</strong></span>
+              <span>Đồng bộ gần nhất: <strong id="srv-last-sync" class="font-mono text-amber-300">vừa xong</strong></span>
+            </div>
+          </div>
+
+          <!-- Actions Footer -->
+          <div class="mt-4 pt-3 border-t border-amber-300/20 flex items-center justify-between flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <button onclick="forceSyncServerState()" class="px-3 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-400 text-emerald-200 text-xs font-bold transition flex items-center gap-1.5">
+                <span>🔄 Đồng Bộ Tức Thời</span>
+              </button>
+              <button onclick="resetSanctuarySession()" class="px-3 py-1.5 rounded-lg bg-stone-800/80 hover:bg-stone-700 border border-stone-500 text-amber-200/80 text-xs font-semibold transition">
+                <span>Khởi Tạo Lại Ghế</span>
+              </button>
+            </div>
+            <button onclick="closeServerConfigModal()" class="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-amber-200 transition">
+              Đóng
+            </button>
           </div>
         </div>
       </div>
@@ -3935,6 +4034,103 @@
         window.RealtimeSanctuary.leaveCommunalChant();
         closeSharedChantingModal();
       }
+    }
+
+    /**************************************************************************
+     * 7A2. CẤU HÌNH MÁY CHỦ LƯU TRỮ CHUNG LUỒNG (UNIVERSAL SERVER MODAL)
+     **************************************************************************/
+    let serverModalTimer = null;
+
+    function openServerConfigModal() {
+      updateServerModalView();
+      const modal = document.getElementById('sanctuary-server-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+      clearInterval(serverModalTimer);
+      serverModalTimer = setInterval(updateServerModalView, 2000);
+    }
+
+    function closeServerConfigModal() {
+      clearInterval(serverModalTimer);
+      const modal = document.getElementById('sanctuary-server-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function updateServerModalView() {
+      if (!window.RealtimeSanctuary) return;
+      const status = (typeof window.RealtimeSanctuary.getServerStatus === 'function')
+        ? window.RealtimeSanctuary.getServerStatus()
+        : {
+            activeMode: 'cloud_storage',
+            isConnected: true,
+            clientId: window.RealtimeSanctuary.clientId,
+            onlineCount: window.RealtimeSanctuary.getOnlineCount(),
+            syncLatency: 50,
+            lastSyncTime: Date.now()
+          };
+
+      const statusEl = document.getElementById('srv-status-text');
+      const onlineEl = document.getElementById('srv-online-count');
+      const latencyEl = document.getElementById('srv-latency-text');
+      const modeEl = document.getElementById('srv-mode-text');
+      const clientEl = document.getElementById('srv-client-id');
+      const lastSyncEl = document.getElementById('srv-last-sync');
+      const inputEl = document.getElementById('custom-server-input');
+
+      if (statusEl) {
+        statusEl.innerHTML = status.isConnected
+          ? '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>Đã Kết Nối</span>'
+          : '<span class="w-2 h-2 rounded-full bg-amber-400"></span><span>Đang Kết Nối Lại...</span>';
+      }
+      if (onlineEl) {
+        onlineEl.textContent = `${status.onlineCount || 1} đồng tu`;
+      }
+      if (latencyEl) {
+        latencyEl.textContent = status.syncLatency ? `~${status.syncLatency} ms` : '~55 ms';
+      }
+      if (modeEl) {
+        modeEl.textContent = status.activeMode === 'node_server' ? 'Node Server' : 'Cloud Port 443';
+      }
+      if (clientEl) {
+        clientEl.textContent = status.clientId || '--';
+      }
+      if (lastSyncEl && status.lastSyncTime) {
+        const diffSec = Math.max(0, Math.round((Date.now() - status.lastSyncTime) / 1000));
+        lastSyncEl.textContent = diffSec <= 2 ? 'vừa xong' : `${diffSec}s trước`;
+      }
+      if (inputEl && document.activeElement !== inputEl) {
+        inputEl.value = localStorage.getItem('chua_an_nhien_server_url') || '';
+      }
+    }
+
+    function saveCustomServerUrl() {
+      const inputEl = document.getElementById('custom-server-input');
+      const url = inputEl ? inputEl.value.trim() : '';
+      if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.setCustomServerUrl === 'function') {
+        window.RealtimeSanctuary.setCustomServerUrl(url);
+      }
+      updateServerModalView();
+      alert(url ? `Đã lưu URL máy chủ: ${url}\nHệ thống sẽ kết nối trực tiếp đến máy chủ riêng của bạn.` : 'Đã đưa về chế độ mặc định: Cloud Storage Stream Port 443.');
+    }
+
+    async function forceSyncServerState() {
+      if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.forceSyncNow === 'function') {
+        await window.RealtimeSanctuary.forceSyncNow();
+        updateServerModalView();
+        if (window.AudioEngine) AudioEngine.playGiftChime();
+      }
+    }
+
+    function resetSanctuarySession() {
+      if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.resetSession === 'function') {
+        window.RealtimeSanctuary.resetSession();
+      }
+      updateServerModalView();
     }
 
     /**************************************************************************

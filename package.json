@@ -1,0 +1,26 @@
+{
+  "name": "tungkinh",
+  "version": "1.0.0",
+  "description": "> Không gian tâm linh thanh tịnh, trang nghiêm dành cho Phật tử và hành giả tu tập trực tuyến: Gõ Mõ, Thỉnh Đại Hồng Chung, Tụng Kinh Tự Động, Dâng Hương, Đảnh Lễ và Tích Lũy Công Đức.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnanasUX/tungkinh.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AnanasUX/tungkinh/issues"
+  },
+  "homepage": "https://github.com/AnanasUX/tungkinh#readme",
+  "dependencies": {
+    "ws": "^8.22.1"
+  }
+}
