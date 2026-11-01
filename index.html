@@ -73,15 +73,50 @@
       }
     }
 
-    /* Mobile Portrait Optimizations (Tối Ưu Hiển Thị Điện Thoại) */
+    /* Mobile Portrait Optimizations (Tối Ưu Hiển Thị Điện Thoại Dọc) */
     @media screen and (max-width: 768px) and (orientation: portrait) {
       #sanctuary-svg-bg {
-        transform: scale(0.64) translateY(-16%);
+        transform: scale(0.72) translateY(-12%);
         transform-origin: 50% 0%;
       }
+      #sanctuary-floor-stage {
+        top: 38% !important;
+        bottom: 52px !important;
+      }
       .chibi-idle, .chibi-walking-step {
-        max-width: 58px;
-        max-height: 72px;
+        width: 48px !important;
+        height: 60px !important;
+      }
+      .chibi-idle svg, .chibi-walking-step svg {
+        width: 48px !important;
+        height: 60px !important;
+      }
+      [id^="label-seat-"] {
+        padding: 1.5px 4px !important;
+        font-size: 8.5px !important;
+        max-width: 72px !important;
+      }
+      [id^="label-seat-"] span {
+        font-size: 7.5px !important;
+      }
+      footer {
+        padding: 2px 4px !important;
+        height: 48px !important;
+        max-height: 48px !important;
+      }
+      #bottom-dock-scroll {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+        padding-bottom: 2px !important;
+      }
+      #bottom-dock-scroll > button {
+        padding: 4px 8px !important;
+        font-size: 10px !important;
+        height: 32px !important;
+        flex-shrink: 0 !important;
       }
     }
 
@@ -2330,18 +2365,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
      * 1. DỮ LIỆU BỒ ĐOÀN TRONG CHÁNH ĐIỆN (MẶC ĐỊNH 12 CHỖ & TỰ ĐỘNG SINH HÀNG MỚI KHI > 12)
      **************************************************************************/
     const sanctuarySeats = [
-      { seatNo: 1,  id: 'seat-1',  x: 19,   y: 8,  scale: 0.86, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Bình An',   dharma: 'Tịnh An',  age: 24, hometown: 'Huế',       type: 'female', points: 40, ip: '113.161.45.12' },
-      { seatNo: 2,  id: 'seat-2',  x: 29.5, y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'monk',   points: 0,  ip: '' },
-      { seatNo: 3,  id: 'seat-3',  x: 40,   y: 8,  scale: 0.86, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Hoa Sen',   dharma: 'Liên Tâm', age: 19, hometown: 'Hà Nội',    type: 'monk',   points: 60, ip: '27.68.12.90' },
-      { seatNo: 4,  id: 'seat-4',  x: 60,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'monk',   points: 0,  ip: '' },
-      { seatNo: 5,  id: 'seat-5',  x: 70.5, y: 8,  scale: 0.86, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Gia Hân',   dharma: 'Tuệ Hân',  age: 22, hometown: 'Đà Nẵng',   type: 'monk',   points: 35, ip: '42.112.88.34' },
-      { seatNo: 6,  id: 'seat-6',  x: 81,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'female', points: 0,  ip: '' },
-      { seatNo: 7,  id: 'seat-7',  x: 16,   y: 42, scale: 0.98, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Ngọc Mai',  dharma: 'Diệu Mai', age: 27, hometown: 'TP.HCM',    type: 'female', points: 50, ip: '14.162.201.76' },
-      { seatNo: 8,  id: 'seat-8',  x: 27.5, y: 42, scale: 0.98, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Thiện Tâm', dharma: 'Chánh Tâm',age: 16, hometown: 'Nam Định',  type: 'monk',   points: 90, ip: '171.244.5.18' },
-      { seatNo: 9,  id: 'seat-9',  x: 39,   y: 42, scale: 0.98, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Hải Yến',   dharma: 'Tịnh Yến', age: 29, hometown: 'Hải Phòng', type: 'female', points: 45, ip: '123.24.119.55' },
-      { seatNo: 10, id: 'seat-10', x: 61,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'monk',   points: 0,  ip: '' },
-      { seatNo: 11, id: 'seat-11', x: 72.5, y: 42, scale: 0.98, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Bảo Trân',  dharma: 'Ngọc Trân',age: 23, hometown: 'Cần Thơ',   type: 'female', points: 55, ip: '116.108.92.21' },
-      { seatNo: 12, id: 'seat-12', x: 84,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '',          dharma: '',         age: 0,  hometown: '',          type: 'female', points: 0,  ip: '' }
+      { seatNo: 1,  id: 'seat-1',  x: 19,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 2,  id: 'seat-2',  x: 29.5, y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 3,  id: 'seat-3',  x: 40,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 4,  id: 'seat-4',  x: 60,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 5,  id: 'seat-5',  x: 70.5, y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 6,  id: 'seat-6',  x: 81,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 7,  id: 'seat-7',  x: 16,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 8,  id: 'seat-8',  x: 27.5, y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 9,  id: 'seat-9',  x: 39,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 10, id: 'seat-10', x: 61,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 11, id: 'seat-11', x: 72.5, y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 12, id: 'seat-12', x: 84,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' }
     ];
     window.sanctuarySeats = sanctuarySeats;
 
@@ -2435,15 +2470,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         const pref = sanctuarySeats.find(s => s.seatNo === preferSeatNo);
         if (pref && !pref.occupied && !pref.isUser && (!pref.remoteClientId || pref.remoteClientId === window.SANCTUARY_CLIENT_ID)) return pref.seatNo;
       }
-      // 1. Tìm bồ đoàn còn trống
+      // 1. Tìm bồ đoàn còn trống đầu tiên
       const emptySeat = sanctuarySeats.find(s => !s.occupied && !s.isUser && (!s.remoteClientId || s.remoteClientId === window.SANCTUARY_CLIENT_ID));
       if (emptySeat) return emptySeat.seatNo;
 
-      // 2. Tìm bồ đoàn đệ tử ảo (dummy AI)
-      const dummySeat = sanctuarySeats.find(s => s.isDummy && !s.isUser && (!s.remoteClientId || s.remoteClientId === window.SANCTUARY_CLIENT_ID));
-      if (dummySeat) return dummySeat.seatNo;
-
-      // 3. NẾU ĐÃ HẾT TẤT CẢ 12 CHỖ (HOẶC NHIỀU HƠN) -> TỰ ĐỘNG SINH HÀNG MỚI ĐỂ LUÔN CÓ CHỖ NGỒI!
+      // 2. NẾU ĐÃ HẾT TẤT CẢ CHỖ TRONG ĐẠO TRÀNG -> TỰ ĐỘNG SINH THÊM HÀNG MỚI ĐỂ LUÔN CÓ CHỖ NGỒI!
       const newSeats = generateNewSeatRow();
       return newSeats[0].seatNo;
     }
@@ -3076,9 +3107,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       grid.innerHTML = sanctuarySeats.map(s => {
         const isSelected = (s.seatNo === currentChosenSeatNo);
         const isRemoteUser = !!s.remoteClientId;
-        const isOccupiedOther = s.occupied && !s.isUser && isRemoteUser;
+        const isOccupiedOther = s.occupied && !s.isUser;
 
-        if (!s.occupied || s.isDummy) emptyCount++;
+        if (!s.occupied) emptyCount++;
 
         if (isSelected) {
           return `
@@ -3112,7 +3143,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       }).join('');
 
       if (countEl) {
-        countEl.textContent = `🟢 ${emptyCount}/12 chỗ sẵn sàng`;
+        countEl.textContent = `🟢 ${emptyCount}/${sanctuarySeats.length} chỗ sẵn sàng`;
       }
     }
 
@@ -3304,10 +3335,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         }
       });
 
-      let targetSeat = sanctuarySeats.find(s => s.seatNo === targetSeatNo && (!s.occupied || s.isDummy) && !s.remoteClientId);
+      let targetSeat = sanctuarySeats.find(s => s.seatNo === targetSeatNo && !s.occupied && !s.remoteClientId);
       if (!targetSeat) {
         const bestNo = pickBestAvailableSeat(targetSeatNo);
-        targetSeat = sanctuarySeats.find(s => s.seatNo === bestNo) || sanctuarySeats[9];
+        targetSeat = sanctuarySeats.find(s => s.seatNo === bestNo) || sanctuarySeats[0];
       }
 
       currentUserProfile.isWalking = true;
@@ -3826,11 +3857,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       const stage = document.getElementById('sanctuary-floor-stage');
 
       // Tự động mở rộng chiều cao sân Chánh Điện khi có nhiều hơn 12 bồ đoàn (sinh thêm hàng)
-      const totalRows = isMobilePortrait ? Math.ceil(sanctuarySeats.length / 3) : Math.ceil(sanctuarySeats.length / 6);
-      const baseRows = isMobilePortrait ? 4 : 2;
+      const totalRows = isMobilePortrait ? Math.ceil(sanctuarySeats.length / 4) : Math.ceil(sanctuarySeats.length / 6);
+      const baseRows = isMobilePortrait ? 3 : 2;
 
       if (totalRows > baseRows) {
-        const extraPercent = (totalRows - baseRows) * (isMobilePortrait ? 30 : 36);
+        const extraPercent = (totalRows - baseRows) * (isMobilePortrait ? 28 : 36);
         container.style.height = `${100 + extraPercent}%`;
         container.style.minHeight = `${100 + extraPercent}%`;
         if (stage) {
@@ -3848,11 +3879,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         let seatScale = seat.scale;
 
         if (isMobilePortrait) {
-          const row = Math.floor(idx / 3);
-          const col = idx % 3;
-          seatX = 18 + col * 32;
-          seatY = 46 + row * 11;
-          seatScale = seat.isUser ? 0.72 : 0.60;
+          const row = Math.floor(idx / 4);
+          const col = idx % 4;
+          // 4 cột cân xứng: 2 cột bên trái thảm đỏ (16%, 33%), 2 cột bên phải thảm đỏ (67%, 84%), thảm đỏ ở giữa thông thoáng
+          const colXs = [16, 33, 67, 84];
+          seatX = colXs[col] !== undefined ? colXs[col] : 50;
+          seatY = 8 + row * 28;
+          seatScale = seat.isUser ? 0.78 : 0.68;
         } else if (isMobileLandscape) {
           const row = Math.floor(idx / 6);
           const col = idx % 6;
@@ -6045,13 +6078,22 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       const restored = loadRealUserSession();
       let targetSeatNo = currentUserProfile.assignedSeatNo;
 
-      if (!restored) {
-        // Tự động phân bổ bồ đoàn còn trống cho khách đồng tu để hiện diện ngay lập tức
+      // Nếu chưa có sớ hoặc ghế cũ bị người khác ngồi hoặc chưa có ghế -> Tự động chọn bồ đoàn trống tiếp theo
+      if (!restored || !targetSeatNo || isSeatTakenByRemote(targetSeatNo)) {
         targetSeatNo = pickBestAvailableSeat();
         currentUserProfile.assignedSeatNo = targetSeatNo;
+        // Gợi ý tên mẫu ngẫu nhiên độc nhất nếu chưa có tên thật
+        if (!restored || !currentUserProfile.registered) {
+          rollSuggestedFullName();
+        }
         assignUserToSeat(targetSeatNo, currentUserProfile);
         renderSanctuaryFloor(targetSeatNo);
-        openRegistrationModal(false);
+        if (!restored) {
+          openRegistrationModal(false);
+        }
+      } else {
+        assignUserToSeat(targetSeatNo, currentUserProfile);
+        renderSanctuaryFloor(targetSeatNo);
       }
 
       // 5. Đồng bộ ngay vị trí và thông tin với Supabase Database & Realtime Presence

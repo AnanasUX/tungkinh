@@ -118,9 +118,16 @@
         if (this.channel) {
           try { this.channel.untrack(); } catch (e) {}
         }
-        if (this.client && myClientId) {
+        if (this.projectUrl && this.anonKey && myClientId) {
           try {
-            this.client.from('sanctuary_devotees').delete().eq('client_id', myClientId).then(() => {});
+            fetch(`${this.projectUrl}/rest/v1/sanctuary_devotees?client_id=eq.${myClientId}`, {
+              method: 'DELETE',
+              headers: {
+                'apikey': this.anonKey,
+                'Authorization': `Bearer ${this.anonKey}`
+              },
+              keepalive: true
+            }).catch(() => {});
           } catch (e) {}
         }
       };
@@ -633,12 +640,12 @@
 
       try {
         console.log('[SupabaseSanctuary] Đang tải danh sách đồng tu từ bảng sanctuary_devotees...');
-        // Chỉ nạp đồng tu có hoạt động trong vòng 2 phút gần nhất (chống kẹt linh hồn cũ/ghost devotee)
-        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+        // Nạp đồng tu có hoạt động trong vòng 10 phút gần nhất (chống kẹt linh hồn cũ/ghost devotee)
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
         const { data, error } = await this.client
           .from('sanctuary_devotees')
           .select('*')
-          .gte('last_seen', twoMinutesAgo)
+          .gte('last_seen', tenMinutesAgo)
           .order('last_seen', { ascending: false })
           .limit(36);
 
