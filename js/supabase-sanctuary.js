@@ -78,8 +78,8 @@
         // 3. Tải danh sách đồng tu từ Database Supabase trước khi xếp chỗ
         await this.fetchDevoteesFromDB();
 
-        // 4. Kết nối Realtime Channel & Lắng nghe Presence & Broadcast
-        this.setupRealtimeChannel();
+        // 4. Kết nối Realtime Channel & Lắng nghe Presence & Broadcast (AWAIT để sẵn sàng nhận & gửi ngay)
+        await this.setupRealtimeChannel();
 
         // 5. Lắng nghe sự kiện rời trang để giải phóng ghế
         this.setupUnloadHandlers();
@@ -163,6 +163,21 @@
         });
 
       // B. LẮNG NGHE REALTIME BROADCAST (Chuông, Mõ, Lễ Phật, Dâng Hương, Tùy Hỷ, Khóa lễ tụng kinh, v.v.)
+      const ensureSeatRendered = (seatNo, senderId, senderName) => {
+        if (!seatNo || !window.sanctuarySeats) return null;
+        let s = window.sanctuarySeats.find(item => item.seatNo === seatNo);
+        if (s && !s.isUser && (!s.occupied || !s.remoteClientId)) {
+          s.occupied = true;
+          s.isDummy = false;
+          s.remoteClientId = senderId || s.remoteClientId || ('remote_' + seatNo);
+          s.name = senderName || s.name || 'Đồng Tu';
+          if (typeof window.renderSanctuaryFloor === 'function') {
+            window.renderSanctuaryFloor();
+          }
+        }
+        return s;
+      };
+
       const handleBell = (payload) => {
         if (!payload || payload.senderId === this.getClientId()) return;
         if (window.AudioEngine) window.AudioEngine.playTempleBell();
@@ -176,6 +191,7 @@
           const s = window.sanctuarySeats.find(item => item.remoteClientId === payload.senderId);
           if (s) seatNo = s.seatNo;
         }
+        ensureSeatRendered(seatNo, payload.senderId, name);
         if (seatNo && window.triggerDevoteeBow) {
           window.triggerDevoteeBow(`seat-${seatNo}`, 'Nam Mô A Di Đà Phật', 'bell');
         }
@@ -190,6 +206,7 @@
           const s = window.sanctuarySeats.find(item => item.remoteClientId === payload.senderId);
           if (s) seatNo = s.seatNo;
         }
+        ensureSeatRendered(seatNo, payload.senderId, payload.senderName || payload.name);
         if (seatNo && window.triggerDevoteeBow) {
           window.triggerDevoteeBow(`seat-${seatNo}`, payload.phrase || 'Nam Mô A Di Đà Phật', 'mo');
         }
@@ -203,6 +220,7 @@
           const s = window.sanctuarySeats.find(item => item.remoteClientId === payload.senderId);
           if (s) seatNo = s.seatNo;
         }
+        ensureSeatRendered(seatNo, payload.senderId, payload.name || payload.senderName);
         if (seatNo && window.triggerDevoteeBow) {
           window.triggerDevoteeBow(`seat-${seatNo}`, 'Con thành tâm đảnh lễ Đức Phật', 'lotus');
         }
@@ -220,6 +238,7 @@
           const s = window.sanctuarySeats.find(item => item.remoteClientId === payload.senderId);
           if (s) seatNo = s.seatNo;
         }
+        ensureSeatRendered(seatNo, payload.senderId, payload.name || payload.senderName);
         if (seatNo && window.triggerDevoteeBow) {
           window.triggerDevoteeBow(`seat-${seatNo}`, 'Dâng 3 nén tâm hương', 'lotus');
         }
@@ -328,20 +347,34 @@
       } catch (e) {}
 
       // D. ĐĂNG KÝ VÀ THEO DÕI SỰ HIỆN DIỆN CỦA CHÍNH MÌNH (TRACK PRESENCE)
-      this.channel.subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          this.isRealtimeActive = true;
-          this.lastSyncTime = new Date();
-          console.log('[SupabaseSanctuary] Realtime Channel đã SUBSCRIBED thành công!');
-          if (window.currentUserProfile && window.currentUserProfile.assignedSeatNo) {
-            await this.trackCurrentUserPresence();
+      return new Promise((resolve) => {
+        let isDone = false;
+        const done = (val) => {
+          if (!isDone) {
+            isDone = true;
+            resolve(val);
           }
-          this.updateHUDStatus(true);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.warn('[SupabaseSanctuary] Kênh Realtime gặp lỗi hoặc timeout:', status);
-          this.isRealtimeActive = false;
-          this.updateHUDStatus(false);
-        }
+        };
+        // 2500ms safety timeout để không bị treo nếu mạng yếu
+        setTimeout(() => done(this.isRealtimeActive), 2500);
+
+        this.channel.subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            this.isRealtimeActive = true;
+            this.lastSyncTime = new Date();
+            console.log('[SupabaseSanctuary] Realtime Channel đã SUBSCRIBED thành công!');
+            if (window.currentUserProfile && window.currentUserProfile.assignedSeatNo) {
+              await this.trackCurrentUserPresence();
+            }
+            this.updateHUDStatus(true);
+            done(true);
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn('[SupabaseSanctuary] Kênh Realtime gặp lỗi hoặc timeout:', status);
+            this.isRealtimeActive = false;
+            this.updateHUDStatus(false);
+            done(false);
+          }
+        });
       });
     },
 
@@ -725,7 +758,7 @@
      * Phát sự kiện Realtime Broadcast qua Supabase
      */
     broadcast(eventName, payload = {}) {
-      if (!this.channel || !this.isRealtimeActive) return;
+      if (!this.channel) return;
       try {
         this.channel.send({
           type: 'broadcast',

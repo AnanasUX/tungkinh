@@ -85,6 +85,109 @@
       }
     }
 
+    /* Tối Ưu Hiển Thị Điện Thoại Xoay Ngang & Toàn Màn Hình (Mobile Landscape & Low Height) */
+    @media screen and (max-height: 520px) {
+      /* 1. Header thu gọn tối đa */
+      header {
+        height: 38px !important;
+        min-height: 38px !important;
+        padding-top: 2px !important;
+        padding-bottom: 2px !important;
+      }
+      header h1 {
+        font-size: 13px !important;
+        line-height: 1.1 !important;
+      }
+      header p {
+        display: none !important;
+      }
+      #bgm-volume-slider {
+        width: 40px !important;
+      }
+
+      /* 2. Side Panels (Gửi lời chúc & Bảng công đức) mặc định thu gọn, tuyệt đối không đè sàn */
+      #panel-left-drawer {
+        transform: translateX(-100%) !important;
+        position: fixed !important;
+        top: 40px !important;
+        bottom: 44px !important;
+        max-height: calc(100vh - 84px) !important;
+        z-index: 50 !important;
+      }
+      #panel-left-drawer.drawer-open {
+        transform: translateX(0) !important;
+      }
+
+      #panel-right-drawer {
+        transform: translateX(100%) !important;
+        position: fixed !important;
+        top: 40px !important;
+        bottom: 44px !important;
+        max-height: calc(100vh - 84px) !important;
+        z-index: 50 !important;
+      }
+      #panel-right-drawer.drawer-open {
+        transform: translateX(0) !important;
+      }
+
+      #btn-tab-drawer-left, #btn-tab-drawer-right {
+        display: flex !important;
+        top: 18% !important;
+      }
+
+      /* 3. Sàn Chánh Điện thông thoáng từ 35% đến cách đáy 44px */
+      #sanctuary-floor-stage {
+        top: 36% !important;
+        bottom: 44px !important;
+      }
+
+      /* 4. Thanh công cụ dưới đáy (Dock) TUYỆT ĐỐI 1 HÀNG NGANG, cuộn ngang mượt ngón tay */
+      footer {
+        padding: 2px 4px !important;
+        max-height: 44px !important;
+        height: 44px !important;
+      }
+      #bottom-dock-scroll {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+        padding-bottom: 2px !important;
+      }
+      #bottom-dock-scroll > button {
+        padding: 2.5px 7px !important;
+        font-size: 9px !important;
+        height: 27px !important;
+        flex-shrink: 0 !important;
+      }
+      #bottom-dock-scroll > button svg {
+        width: 12px !important;
+        height: 12px !important;
+      }
+      footer .hidden.sm\:block,
+      footer .hidden.lg\:block {
+        display: none !important;
+      }
+
+      /* 5. Tỉ lệ nhân vật Chibi và Bồ Đoàn thu gọn tinh tế, sắc nét */
+      .chibi-idle, .chibi-walking-step {
+        width: 46px !important;
+        height: 56px !important;
+      }
+      .chibi-idle svg, .chibi-walking-step svg {
+        width: 46px !important;
+        height: 56px !important;
+      }
+      [id^="label-seat-"] {
+        padding: 1px 3px !important;
+        font-size: 8px !important;
+        max-width: 68px !important;
+      }
+      [id^="label-seat-"] span {
+        font-size: 7.5px !important;
+      }
+    }
+
     /* Scrollbar hide utility */
     .scrollbar-none::-webkit-scrollbar {
       display: none;
@@ -797,8 +900,21 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
             </svg>
           </button>
+
+          <!-- MOBILE ROTATE & FULLSCREEN BUTTON -->
+          <button onclick="requestMobileLandscapeFullscreen()" id="btn-header-rotate-landscape" title="Xoay ngang & Toàn màn hình (Tối ưu Mobile)"
+            class="px-2 py-1 rounded-full bg-gradient-to-r from-amber-600/80 to-yellow-600/80 hover:brightness-110 border border-amber-300/60 text-[9px] sm:text-[10px] text-stone-950 font-bold flex items-center gap-1 shadow-lg transition active:scale-90">
+            <span>⛶</span>
+            <span class="hidden sm:inline">Xoay Ngang</span>
+          </button>
         </div>
       </header>
+
+      <!-- FLOATING MOBILE ORIENTATION HELPER BANNER -->
+      <div id="mobile-orientation-banner" class="hidden fixed top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-950/95 via-stone-900/95 to-amber-950/95 border border-amber-300 text-amber-200 text-xs font-semibold shadow-2xl flex items-center gap-2 cursor-pointer pointer-events-auto animate-bounce" onclick="requestMobileLandscapeFullscreen()">
+        <span>📱 Chạm để Xoay Ngang & Toàn Màn Hình</span>
+        <span class="px-2 py-0.5 rounded-full bg-amber-500 text-stone-950 font-extrabold text-[10px]">Xoay ngay</span>
+      </div>
 
       <!-- ======================================================================
            3D CAMERA VIEWPOINTS & TOUR BAR (Active in 3D Mode)
@@ -1128,8 +1244,8 @@
       <!-- ======================================================================
            5. BOTTOM ACTION BAR & RITUAL DOCK
            ====================================================================== -->
-      <footer class="absolute inset-x-0 bottom-0 z-30 pb-1 pt-1 sm:pt-3 px-1 sm:px-4 bg-gradient-to-t from-black/95 via-black/70 to-transparent flex flex-col items-center gap-0.5">
-        <div class="flex items-center gap-1 sm:gap-2 flex-nowrap sm:flex-wrap overflow-x-auto sm:overflow-visible max-w-full px-1.5 py-0.5 scrollbar-none justify-start sm:justify-center pointer-events-auto">
+      <footer class="absolute inset-x-0 bottom-0 z-30 pb-0.5 pt-0.5 sm:pt-2 px-1 sm:px-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex flex-col items-center gap-0.5">
+        <div id="bottom-dock-scroll" class="flex items-center gap-1 sm:gap-2 flex-nowrap overflow-x-auto w-full max-w-full px-1.5 py-0.5 scrollbar-none justify-start sm:justify-center pointer-events-auto">
           <!-- 0. Nhiệm Vụ & Việc Lành Mỗi Ngày -->
           <button onclick="DailyQuestEngine.openQuestModal()" title="Nhiệm Vụ Tu Học & Việc Tốt Trong Ngày"
             class="px-2.5 py-1 rounded-full bg-gradient-to-r from-red-600 via-amber-600 to-yellow-500 hover:brightness-110 border border-amber-200 text-[10px] sm:text-[11.5px] font-extrabold text-white flex items-center gap-1.5 shadow-lg active:scale-95 transition shrink-0 whitespace-nowrap">
@@ -1263,7 +1379,7 @@
           </button>
         </div>
 
-        <div class="hidden sm:block text-center leading-tight">
+        <div class="hidden lg:block text-center leading-tight">
           <p class="text-[9px] sm:text-[10.5px] text-amber-100/85 font-medium tracking-wide drop-shadow">
             Dâng hoa sen · Gõ mõ tịnh tâm · Tụng kinh tự động · Xin xăm đầu năm — Nhấp vào Bồ Đoàn trống để đi bộ vào chỗ ngồi
           </p>
@@ -2866,6 +2982,49 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       } catch (err) {}
     }
 
+    async function requestMobileLandscapeFullscreen() {
+      const docEl = document.documentElement;
+      try {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          if (docEl.requestFullscreen) {
+            await docEl.requestFullscreen();
+          } else if (docEl.webkitRequestFullscreen) {
+            await docEl.webkitRequestFullscreen();
+          }
+        }
+      } catch (err) {}
+      try {
+        if (screen.orientation && screen.orientation.lock) {
+          await screen.orientation.lock('landscape');
+        }
+      } catch (err) {}
+      const banner = document.getElementById('mobile-orientation-banner');
+      if (banner) banner.classList.add('hidden');
+      setTimeout(() => {
+        if (typeof renderSanctuaryFloor === 'function') renderSanctuaryFloor();
+      }, 350);
+    }
+
+    function checkMobileOrientationBanner() {
+      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
+      const isPortrait = window.innerHeight > window.innerWidth;
+      const banner = document.getElementById('mobile-orientation-banner');
+      if (banner) {
+        if (isMobile && isPortrait) {
+          banner.classList.remove('hidden');
+        } else {
+          banner.classList.add('hidden');
+        }
+      }
+    }
+    window.addEventListener('resize', checkMobileOrientationBanner);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        checkMobileOrientationBanner();
+        if (typeof renderSanctuaryFloor === 'function') renderSanctuaryFloor();
+      }, 350);
+    });
+
     function toggleFullscreenMode() {
       if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         requestAppFullscreen();
@@ -3663,6 +3822,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       container.innerHTML = '';
 
       const isMobilePortrait = (window.innerWidth < 768 && window.innerHeight > window.innerWidth);
+      const isMobileLandscape = (window.innerHeight <= 520 && window.innerWidth > window.innerHeight);
       const stage = document.getElementById('sanctuary-floor-stage');
 
       // Tự động mở rộng chiều cao sân Chánh Điện khi có nhiều hơn 12 bồ đoàn (sinh thêm hàng)
@@ -3693,6 +3853,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           seatX = 18 + col * 32;
           seatY = 46 + row * 11;
           seatScale = seat.isUser ? 0.72 : 0.60;
+        } else if (isMobileLandscape) {
+          const row = Math.floor(idx / 6);
+          const col = idx % 6;
+          const colXs = [16, 27.5, 39, 61, 72.5, 84];
+          seatX = colXs[col] !== undefined ? colXs[col] : (15 + col * 14);
+          seatY = 6 + row * 40;
+          seatScale = seat.isUser ? 0.82 : 0.72;
         }
 
         const wrapper = document.createElement('div');
@@ -5848,6 +6015,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     }
 
     window.onload = async function () {
+      checkMobileOrientationBanner();
       setupSmartDobInputs();
       recalculateAgeAndPreview(false);
       initGoldMotes();
