@@ -21,6 +21,8 @@
   },
   "homepage": "https://github.com/AnanasUX/tungkinh#readme",
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
     "ws": "^8.22.1"
   }
 }

@@ -25,7 +25,7 @@
 
   // Cấu hình dự án Supabase chính thức của Đạo Tràng
   const DEFAULT_SUPABASE_URL = 'https://oqukilrmabwaovxgtbzy.supabase.co';
-  const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xdWtpbHJtYWJ3YW92eGd0Ynp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDk4NTYwMDAsImV4cCI6MjAyNTQzMjAwMH0.sample_public_anon_key_oqukilrmabwaovxgtbzy';
+  const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_Xn1eLRkvPi9dPyxHmftaAA_oQfxWh6D';
 
   const SupabaseSanctuary = {
     client: null,
