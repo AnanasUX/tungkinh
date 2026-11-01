@@ -48,8 +48,10 @@
     ? new window.BroadcastChannel('chua_an_nhien_realtime_channel_v3')
     : null;
 
-  // Unique client identity per browser session
-  const clientId = 'phattu_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36);
+  // Unique client identity per browser session (unified across transport engines)
+  const clientId = window.SANCTUARY_CLIENT_ID
+    || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('chua_an_nhien_cid'))
+    || ('phattu_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36));
 
   // Map of active remote devotees: clientId -> { clientId, seatNo, data, lastSeen }
   const remoteDevotees = new Map();
@@ -805,7 +807,7 @@
     },
 
     handleIncomingMessage(msg) {
-      if (!msg || !msg.type || msg.senderId === clientId) return;
+      if (!msg || !msg.type || msg.senderId === clientId || msg.senderId === window.SANCTUARY_CLIENT_ID) return;
 
       switch (msg.type) {
         case 'HELLO_SYNC':
@@ -938,7 +940,7 @@
           window.ensureSeatCapacity(requestedSeatNo);
         }
         const candidate = window.sanctuarySeats.find(s => s.seatNo === requestedSeatNo);
-        if (candidate) {
+        if (candidate && !candidate.isUser) {
           if (!candidate.occupied || candidate.remoteClientId === senderId) {
             return candidate;
           }
@@ -967,7 +969,7 @@
     },
 
     handleDevoteePresence(senderId, data, isNewJoin) {
-      if (!data) return;
+      if (!data || senderId === clientId || senderId === window.SANCTUARY_CLIENT_ID) return;
       const isExisting = remoteDevotees.has(senderId);
       const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
 
@@ -1036,7 +1038,7 @@
     },
 
     handleDevoteeSeatClaim(senderId, seatNo, data) {
-      if (!window.sanctuarySeats || !seatNo || !data) return;
+      if (!window.sanctuarySeats || !seatNo || !data || senderId === clientId || senderId === window.SANCTUARY_CLIENT_ID) return;
       const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
 
       // If remote claims the seat I am currently occupying as registered user:
@@ -1061,7 +1063,11 @@
         }
       });
 
-      const targetSeat = window.sanctuarySeats.find(s => s.seatNo === seatNo);
+      let targetSeat = window.sanctuarySeats.find(s => s.seatNo === seatNo);
+      if (!targetSeat || targetSeat.isUser || (targetSeat.remoteClientId && targetSeat.remoteClientId !== senderId)) {
+        targetSeat = this.findBestSeatForRemoteDevotee(senderId, seatNo);
+      }
+
       if (targetSeat && !targetSeat.isUser) {
         targetSeat.occupied = true;
         targetSeat.isUser = false;

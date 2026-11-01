@@ -2181,6 +2181,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     </main>
   </div>
 
+  <script>
+    // Định danh đồng tu duy nhất và nhất quán cho toàn bộ phiên trên thiết bị (Unified Client ID)
+    (function() {
+      try {
+        var cid = sessionStorage.getItem('chua_an_nhien_cid');
+        if (!cid) {
+          cid = 'phattu_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+          sessionStorage.setItem('chua_an_nhien_cid', cid);
+        }
+        window.SANCTUARY_CLIENT_ID = cid;
+      } catch (e) {
+        window.SANCTUARY_CLIENT_ID = 'phattu_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+      }
+    })();
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
@@ -2302,7 +2317,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       if (preferSeatNo) {
         ensureSeatCapacity(preferSeatNo);
         const pref = sanctuarySeats.find(s => s.seatNo === preferSeatNo);
-        if (pref && !pref.isUser && !pref.remoteClientId) return pref.seatNo;
+        if (pref && !pref.occupied && !pref.isUser && !pref.remoteClientId) return pref.seatNo;
       }
       // 1. Tìm bồ đoàn còn trống
       const emptySeat = sanctuarySeats.find(s => !s.occupied && !s.isUser && !s.remoteClientId);
@@ -2325,15 +2340,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       isLocked: false,
       lockedAt: null,
       clientIp: '',
-      fullName: 'Nguyễn Bá Ngọc',
-      dharmaName: 'Minh Tâm',
+      fullName: 'Đồng Tu Mới',
+      dharmaName: 'Tịnh Tâm',
       day: '31',
       month: '10',
       year: '1996',
       age: 30,
       canChi: 'Bính Tý',
       element: 'Mệnh Thủy',
-      hometown: 'Hà Nội',
+      hometown: 'Chùa An Nhiên',
       avatarType: 'monk',
       wish: 'Cầu bình an, sức khỏe dồi dào & gia đình sum vầy',
       sessionCode: '#AN-8899',
@@ -2519,7 +2534,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           const bestNo = pickBestAvailableSeat(currentUserProfile.assignedSeatNo);
           targetSeat = sanctuarySeats.find(s => s.seatNo === bestNo) || sanctuarySeats[9];
         }
-        sanctuarySeats.forEach(s => { if (s.isUser) { s.isUser = false; s.occupied = false; } });
+        sanctuarySeats.forEach(s => {
+          if (s.isUser || (currentUserProfile.fullName && s.name === currentUserProfile.fullName && !s.remoteClientId)) {
+            s.isUser = false;
+            s.occupied = false;
+            s.remoteClientId = null;
+            s.name = '';
+            s.dharma = '';
+          }
+        });
         targetSeat.occupied = true;
         targetSeat.isUser = true;
         targetSeat.isDummy = false;
@@ -3048,9 +3071,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
       if (window.RealtimeSanctuary) {
         window.RealtimeSanctuary.broadcastSeatClaim(targetSeatNo, currentUserProfile);
+        window.RealtimeSanctuary.broadcastHelloSync();
       }
       if (window.SupabaseSanctuary) {
         window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, targetSeatNo);
+        window.SupabaseSanctuary.trackCurrentUserPresence();
       }
 
       walkUserToSeat(targetSeatNo, true);
@@ -3078,23 +3103,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     function walkUserToSeat(targetSeatNo, isEnteringFromGate = false) {
       if (currentUserProfile.isWalking) return;
 
-      const previousUserSeat = sanctuarySeats.find(s => s.isUser);
       let startX = 50;
       let startY = 88;
 
+      const previousUserSeat = sanctuarySeats.find(s => s.isUser);
       if (previousUserSeat && !isEnteringFromGate) {
         startX = previousUserSeat.x;
         startY = previousUserSeat.y;
-        previousUserSeat.occupied = false;
-        previousUserSeat.isUser = false;
-        previousUserSeat.name = '';
-        previousUserSeat.dharma = '';
-        previousUserSeat.age = 0;
-        previousUserSeat.hometown = '';
-      } else if (previousUserSeat) {
-        previousUserSeat.occupied = false;
-        previousUserSeat.isUser = false;
       }
+
+      // Giải phóng triệt để TẤT CẢ các bồ đoàn cũ của người dùng này trên toàn bộ sàn (chống nhân bản tuyệt đối)
+      sanctuarySeats.forEach(s => {
+        if (s.isUser || (currentUserProfile.fullName && s.name === currentUserProfile.fullName && !s.remoteClientId)) {
+          s.occupied = false;
+          s.isUser = false;
+          s.remoteClientId = null;
+          s.name = '';
+          s.dharma = '';
+          s.age = 0;
+          s.hometown = '';
+          s.points = 0;
+        }
+      });
 
       let targetSeat = sanctuarySeats.find(s => s.seatNo === targetSeatNo && (!s.occupied || s.isDummy) && !s.remoteClientId);
       if (!targetSeat) {
@@ -3141,6 +3171,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
       runWaypointSequence(walkerEl, startX, startY, waypoints, () => {
         walkLayer.innerHTML = '';
+
+        // Dọn dẹp sạch sẽ đảm bảo chỉ duy nhất targetSeat giữ trạng thái isUser
+        sanctuarySeats.forEach(s => {
+          if (s.seatNo !== targetSeat.seatNo && (s.isUser || (currentUserProfile.fullName && s.name === currentUserProfile.fullName && !s.remoteClientId))) {
+            s.occupied = false;
+            s.isUser = false;
+            s.remoteClientId = null;
+            s.name = '';
+            s.dharma = '';
+          }
+        });
+
         targetSeat.occupied = true;
         targetSeat.isUser = true;
         targetSeat.isDummy = false;
@@ -3155,12 +3197,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         targetSeat.isLocked = true;
 
         currentUserProfile.isWalking = false;
+        currentUserProfile.assignedSeatNo = targetSeat.seatNo;
         renderSanctuaryFloor(targetSeat.seatNo);
         updatePractitionerHUD();
         saveRealUserSession();
 
         if (window.RealtimeSanctuary) {
           window.RealtimeSanctuary.broadcastSeatClaim(targetSeat.seatNo, currentUserProfile);
+        }
+        if (window.SupabaseSanctuary) {
+          window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, targetSeat.seatNo);
+          window.SupabaseSanctuary.trackCurrentUserPresence();
         }
 
         if (window.temple3D && is3DModeActive) {
