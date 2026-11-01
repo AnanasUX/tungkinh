@@ -1057,6 +1057,51 @@
         <div id="walking-practitioner-layer" class="absolute inset-0 pointer-events-none z-30"></div>
       </section>
 
+      <!-- Real-time Shared Room Chanting HUD Banner (Đồng Bộ Khóa Lễ Tụng Kinh Thời Gian Thực) -->
+      <div id="communal-chant-banner" class="hidden absolute left-1/2 -translate-x-1/2 top-[7.5%] sm:top-[7%] z-45 w-[96%] max-w-[760px] pointer-events-auto transition-all duration-300">
+        <div class="px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl bg-gradient-to-r from-stone-950/95 via-amber-950/95 to-stone-950/95 border-2 border-emerald-400/80 shadow-[0_0_30px_rgba(16,185,129,0.35)] backdrop-blur-md flex flex-col gap-1 text-amber-100">
+          <!-- Top Row: Status, Scripture Name, Leader, Progress, Close -->
+          <div class="flex items-center justify-between border-b border-amber-300/30 pb-1 text-[10px] sm:text-xs">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/90 border border-emerald-400 text-emerald-300 font-extrabold text-[9px] sm:text-[10px]">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>ĐỒNG TỤNG THỜI GIAN THỰC</span>
+              </span>
+              <span id="communal-scripture-title" class="font-bold text-amber-200">Chú Đại Bi</span>
+              <span class="text-amber-200/60 hidden sm:inline">•</span>
+              <span id="communal-chant-leader" class="text-amber-200/80 hidden sm:inline">Chủ lễ: Minh Tâm</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="communal-chant-progress" class="font-mono text-emerald-300 font-bold bg-black/60 px-2 py-0.5 rounded border border-emerald-500/40 text-[9.5px]">
+                Câu 1 / 84
+              </span>
+              <span id="communal-chant-participants" class="font-semibold text-amber-300 text-[9.5px] hidden sm:inline">
+                🟢 2 đang cùng tụng
+              </span>
+              <button onclick="leaveOrStopCommunalChant()" title="Rời hoặc dừng khóa lễ đồng tụng" class="w-5 h-5 rounded-full bg-white/10 hover:bg-rose-500 hover:text-white flex items-center justify-center text-amber-200/80 text-[11px] transition">
+                ✕
+              </button>
+            </div>
+          </div>
+          <!-- Bottom Row: Glowing Active Sacred Verse & Quick Actions -->
+          <div class="flex items-center justify-between gap-2 pt-0.5">
+            <div class="flex-1 text-center sm:text-left overflow-hidden">
+              <div id="communal-active-verse" class="font-scripture text-xs sm:text-sm md:text-base font-bold text-amber-100 tracking-wide truncate drop-shadow-[0_0_8px_rgba(253,224,71,0.6)]">
+                "Thiên thủ thiên nhãn vô ngại đại bi tâm đà la ni"
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="openScriptureModal()" class="px-2 py-0.5 rounded-md bg-amber-500/20 hover:bg-amber-500/35 border border-amber-300/40 text-[9px] sm:text-[10.5px] text-amber-200 font-semibold flex items-center gap-1 transition">
+                <span>📖 Xem Bản Kinh</span>
+              </button>
+              <button onclick="ringTempleBellAction()" class="px-2 py-0.5 rounded-md bg-amber-950/80 hover:bg-amber-900 border border-amber-300/40 text-[9px] sm:text-[10.5px] text-amber-200 font-semibold flex items-center gap-1 transition">
+                <span>🔔 Thỉnh Chuông</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Live Floating Toast Notification -->
       <div id="live-gift-banner" class="absolute left-1/2 -translate-x-1/2 top-[13.5%] z-40 pointer-events-none transition-all duration-300 opacity-0 scale-90">
         <div class="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-950/95 via-stone-900/95 to-amber-950/95 border border-amber-300/75 shadow-2xl flex items-center gap-2.5 whitespace-nowrap">
@@ -1117,6 +1162,13 @@
               <circle cx="12" cy="15" r="2" fill="#fde047" stroke="none" />
             </svg>
             <span>Xin Xăm Từ Bi</span>
+          </button>
+
+          <!-- 4B. Đồng Tụng Thời Gian Thực (Shared Room) -->
+          <button onclick="openSharedChantingModal()" id="btn-shared-chanting-dock" title="Phòng Đồng Tụng Thời Gian Thực Cùng Đạo Tràng Toàn Cầu"
+            class="px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-950 via-teal-900 to-emerald-950 hover:brightness-125 border border-emerald-400/80 text-[10px] sm:text-[11.5px] font-bold text-emerald-200 flex items-center gap-1.5 shadow-lg active:scale-95 transition shrink-0 whitespace-nowrap ring-1 ring-emerald-400/40">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Đồng Tụng Chung (Shared Room)</span>
           </button>
 
           <!-- 5. Kinh Thư Tụng Niệm -->
@@ -1580,11 +1632,16 @@
               <option value="samhoi">Kinh Sám Hối & Hồi Hướng</option>
             </select>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <button onclick="toggleScriptureAutoScroll()" id="btn-scripture-autochant"
                 class="px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-stone-950 font-bold text-xs flex items-center gap-1 shadow">
                 <span id="scripture-play-icon">▶</span>
-                <span id="scripture-play-text">Tự Động Cuộn Kinh & Gõ Mõ</span>
+                <span id="scripture-play-text">Tự Động Cuộn Kinh</span>
+              </button>
+              <button onclick="closeScriptureModal(); openSharedChantingModal(currentScriptureId);" id="btn-scripture-communal"
+                class="px-3 py-1 rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 hover:brightness-110 text-white font-extrabold text-xs flex items-center gap-1.5 shadow border border-emerald-300/60">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+                <span>📿 Đồng Tụng Thời Gian Thực</span>
               </button>
             </div>
           </div>
@@ -1592,6 +1649,71 @@
           <!-- Scripture Reader Box -->
           <div id="scripture-reader-box" class="max-h-[300px] overflow-y-auto merit-scroll p-3 rounded-xl bg-black/55 border border-amber-300/25 text-amber-100/95 font-scripture text-sm sm:text-base leading-relaxed space-y-2">
             <!-- Populated via scriptures.js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================================
+           MODAL: PHÒNG ĐỒNG TỤNG THỜI GIAN THỰC (REAL-TIME SHARED CHANTING ROOM)
+           ====================================================================== -->
+      <div id="shared-chanting-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-5">
+        <div class="temple-panel w-full max-w-[640px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-4 sm:p-6 border-2 border-emerald-400/80 text-amber-50 relative shadow-[0_0_35px_rgba(16,185,129,0.3)]">
+          <div class="flex items-center justify-between border-b border-emerald-400/30 pb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+              <div>
+                <div class="text-[9.5px] tracking-[0.2em] text-emerald-300 uppercase font-bold">✦ ĐỒNG TỤNG THỜI GIAN THỰC · CHÁNH ĐIỆN TOÀN CẦU ✦</div>
+                <h3 class="font-serif-title text-xl sm:text-2xl font-bold text-amber-100 title-glow">
+                  Phòng Đồng Tụng Chung (Real-time Shared Room)
+                </h3>
+              </div>
+            </div>
+            <button onclick="closeSharedChantingModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-200">
+              ✕
+            </button>
+          </div>
+
+          <!-- Description -->
+          <p class="text-xs text-amber-200/85 mt-2.5 leading-relaxed">
+            Kết nối tâm thức cùng chư đồng tu trên khắp mọi miền. Khi khóa lễ bắt đầu, <strong>câu kinh, tiếng mõ và động tác đảnh lễ sẽ đồng bộ tức thời</strong> trên mọi thiết bị trong Chánh Điện.
+          </p>
+
+          <!-- Status Section (Active vs Inactive) -->
+          <div id="shared-room-status-card" class="my-3.5 p-3 sm:p-4 rounded-xl border transition-all">
+            <!-- Dynamic Content via JS -->
+          </div>
+
+          <!-- Scripture Selection & Settings -->
+          <div id="shared-room-config-section" class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-amber-300 mb-1">1. Chọn Bản Kinh Khóa Lễ</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="shared-scripture-cards">
+                <!-- Scripture choice cards populated via JS -->
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-amber-300 mb-1">2. Nhịp Điệu Gõ Mõ & Chuyển Câu</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="selectChantCadence(3800, this)" class="chant-cadence-btn p-2 rounded-lg border border-amber-300/40 bg-black/50 text-[11px] font-semibold text-amber-200 hover:border-emerald-400 transition text-center">
+                  <div>Trang Nghiêm</div>
+                  <div class="text-[9.5px] text-amber-200/60">3.8 giây/câu</div>
+                </button>
+                <button type="button" onclick="selectChantCadence(3000, this)" class="chant-cadence-btn p-2 rounded-lg border-2 border-emerald-400 bg-emerald-950/60 text-[11px] font-bold text-emerald-200 transition text-center active-cadence">
+                  <div>Tiêu Chuẩn</div>
+                  <div class="text-[9.5px] text-emerald-300/80">3.0 giây/câu</div>
+                </button>
+                <button type="button" onclick="selectChantCadence(2200, this)" class="chant-cadence-btn p-2 rounded-lg border border-amber-300/40 bg-black/50 text-[11px] font-semibold text-amber-200 hover:border-emerald-400 transition text-center">
+                  <div>Tinh Tấn</div>
+                  <div class="text-[9.5px] text-amber-200/60">2.2 giây/câu</div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Action Buttons -->
+          <div id="shared-room-actions" class="mt-4 pt-3 border-t border-amber-300/20 flex items-center justify-end gap-2.5">
+            <!-- Populated via JS -->
           </div>
         </div>
       </div>
@@ -3352,8 +3474,12 @@
       } else if (e.key.toUpperCase() === 'K') {
         e.preventDefault();
         openScriptureModal();
+      } else if (e.key.toUpperCase() === 'S') {
+        e.preventDefault();
+        openSharedChantingModal();
       } else if (e.key === 'Escape') {
         closeScriptureModal();
+        closeSharedChantingModal();
         closeOracleModal();
         closeSeatDirectoryModal();
         closeRegistrationModal();
@@ -3640,6 +3766,175 @@
       document.getElementById('scripture-play-icon').textContent = '▶';
       document.getElementById('scripture-play-text').textContent = 'Tự Động Cuộn Kinh & Gõ Mõ';
       document.querySelectorAll('.active-chant-verse').forEach(el => el.classList.remove('active-chant-verse'));
+    }
+
+    /**************************************************************************
+     * PHÒNG ĐỒNG TỤNG THỜI GIAN THỰC (REAL-TIME SHARED CHANTING ROOM)
+     **************************************************************************/
+    let selectedSharedScriptureId = 'daibi';
+    let selectedChantCadenceMs = 3000;
+
+    function openSharedChantingModal(preselectScriptureId = null) {
+      if (preselectScriptureId) {
+        selectedSharedScriptureId = preselectScriptureId;
+      }
+      renderSharedChantingModalContent();
+      const modal = document.getElementById('shared-chanting-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function closeSharedChantingModal() {
+      const modal = document.getElementById('shared-chanting-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function selectChantCadence(ms, btnEl) {
+      selectedChantCadenceMs = ms;
+      document.querySelectorAll('.chant-cadence-btn').forEach(b => {
+        b.classList.remove('border-2', 'border-emerald-400', 'bg-emerald-950/60', 'text-emerald-200', 'font-bold', 'active-cadence');
+        b.classList.add('border-amber-300/40', 'bg-black/50', 'text-amber-200');
+      });
+      if (btnEl) {
+        btnEl.classList.remove('border-amber-300/40', 'bg-black/50', 'text-amber-200');
+        btnEl.classList.add('border-2', 'border-emerald-400', 'bg-emerald-950/60', 'text-emerald-200', 'font-bold', 'active-cadence');
+      }
+    }
+
+    function selectSharedScripture(id) {
+      selectedSharedScriptureId = id;
+      renderSharedChantingModalContent();
+    }
+
+    function renderSharedChantingModalContent() {
+      const statusCard = document.getElementById('shared-room-status-card');
+      const scripturesContainer = document.getElementById('shared-scripture-cards');
+      const actionsContainer = document.getElementById('shared-room-actions');
+      if (!statusCard || !scripturesContainer || !actionsContainer) return;
+
+      const isSessionActive = window.RealtimeSanctuary && window.RealtimeSanctuary.sharedChanting && window.RealtimeSanctuary.sharedChanting.isActive;
+      const isLeader = isSessionActive && window.RealtimeSanctuary.sharedChanting.leaderId === window.RealtimeSanctuary.clientId;
+      const chState = window.RealtimeSanctuary ? window.RealtimeSanctuary.sharedChanting : {};
+
+      if (isSessionActive) {
+        statusCard.className = 'my-3.5 p-3 sm:p-4 rounded-xl border border-emerald-400/70 bg-gradient-to-r from-emerald-950/80 via-stone-900/90 to-teal-950/80 shadow-[0_0_20px_rgba(16,185,129,0.25)]';
+        statusCard.innerHTML = `
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-900/90 text-emerald-200 text-[10px] font-bold border border-emerald-400/50">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>ĐẠO TRÀNG ĐANG DIỄN RA KHÓA LỄ</span>
+              </div>
+              <h4 class="text-base sm:text-lg font-bold text-amber-100 title-glow mt-1">
+                ${chState.scriptureTitle}
+              </h4>
+              <p class="text-[11px] text-amber-200/80">
+                ${isLeader ? '🌟 Bạn đang là Chủ Lễ khởi xướng' : `Chủ lễ: <strong>${chState.leaderName || 'Đồng Tu'}</strong>`} • Đang tụng: Câu <strong>${chState.verseIndex + 1} / ${chState.totalVerses}</strong>
+              </p>
+            </div>
+            <div class="text-right">
+              <span class="px-2.5 py-1 rounded-lg bg-black/60 border border-emerald-400/40 text-emerald-300 font-mono text-xs font-bold block">
+                🟢 ${window.RealtimeSanctuary.getOnlineCount()} Đồng Tu Online
+              </span>
+            </div>
+          </div>
+          <div class="mt-2.5 p-2 rounded-lg bg-black/45 border border-amber-300/30 text-center font-scripture text-xs sm:text-sm text-amber-100 italic">
+            "${chState.verseText || 'Nam Mô A Di Đà Phật'}"
+          </div>
+        `;
+
+        actionsContainer.innerHTML = `
+          <button type="button" onclick="closeSharedChantingModal()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-amber-200 transition">
+            Đóng
+          </button>
+          ${isLeader ? `
+            <button type="button" onclick="leaveOrStopCommunalChant()" class="px-4 py-2 rounded-xl bg-rose-900/90 hover:bg-rose-800 text-rose-100 border border-rose-400 text-xs font-bold transition flex items-center gap-1">
+              <span>🛑 Kết Thúc Khóa Lễ (Toàn Phòng)</span>
+            </button>
+          ` : `
+            <button type="button" onclick="joinSharedRoomChanting()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 text-stone-950 font-extrabold text-xs shadow-lg hover:brightness-110 transition flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-200 animate-pulse"></span>
+              <span>🟢 Hòa Giọng Cùng Đạo Tràng</span>
+            </button>
+          `}
+        `;
+      } else {
+        statusCard.className = 'my-3.5 p-3 rounded-xl border border-amber-300/30 bg-black/40';
+        statusCard.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-lg">📿</span>
+            <div>
+              <div class="text-xs font-bold text-amber-200">Chánh Điện hiện đang trang nghiêm tĩnh lặng</div>
+              <div class="text-[10px] text-amber-200/70">Bạn có thể chọn một bản kinh bên dưới và khởi xướng Khóa Lễ Đồng Tụng cho toàn thể đạo tràng.</div>
+            </div>
+          </div>
+        `;
+
+        actionsContainer.innerHTML = `
+          <button type="button" onclick="closeSharedChantingModal()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-amber-200 transition">
+            Hủy Bỏ
+          </button>
+          <button type="button" onclick="startSharedRoomChanting()" class="px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 text-white font-extrabold text-xs shadow-lg hover:brightness-110 active:scale-95 transition flex items-center gap-2 border border-emerald-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-300 animate-pulse"></span>
+            <span>📿 KHỞI XƯỚNG KHÓA LỄ ĐỒNG TỤNG</span>
+          </button>
+        `;
+      }
+
+      // Render scripture cards
+      const scriptures = window.TEMPLE_SCRIPTURES || [
+        { id: 'daibi', title: 'Chú Đại Bi', description: '84 câu chân ngôn vô lượng uy đức của Đức Quán Thế Âm' },
+        { id: 'batnha', title: 'Bát Nhã Tâm Kinh', description: 'Tinh hoa trí tuệ thấu suốt Tánh Không, dứt khổ ách' },
+        { id: 'duocsu', title: 'Dược Sư Quán Đảnh', description: 'Tiêu trừ tật bệnh, thân tâm an lạc vạn sự bình an' },
+        { id: 'samhoi', title: 'Kinh Sám Hối & Hồi Hướng', description: 'Rửa sạch nghiệp trần, hồi hướng khắp muôn loài' }
+      ];
+
+      scripturesContainer.innerHTML = scriptures.map(s => {
+        const isSelected = s.id === selectedSharedScriptureId;
+        return `
+          <button type="button" onclick="selectSharedScripture('${s.id}')"
+            class="p-2.5 rounded-xl border text-left transition flex items-start gap-2 ${isSelected ? 'border-2 border-emerald-400 bg-emerald-950/70 shadow-[0_0_12px_rgba(52,211,153,0.3)]' : 'border-amber-300/30 bg-black/50 hover:bg-amber-950/40'}">
+            <span class="text-base mt-0.5">${isSelected ? '🟢' : '📿'}</span>
+            <div class="overflow-hidden">
+              <div class="text-xs font-bold ${isSelected ? 'text-emerald-200' : 'text-amber-100'} truncate">${s.title}</div>
+              <div class="text-[9.5px] text-amber-200/70 leading-snug line-clamp-2 mt-0.5">${s.description || ''}</div>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function startSharedRoomChanting() {
+      if (window.RealtimeSanctuary) {
+        window.RealtimeSanctuary.startCommunalChant(selectedSharedScriptureId, selectedChantCadenceMs);
+      }
+      closeSharedChantingModal();
+    }
+
+    function joinSharedRoomChanting() {
+      if (window.RealtimeSanctuary) {
+        window.RealtimeSanctuary.joinCommunalChant();
+      }
+      closeSharedChantingModal();
+    }
+
+    function leaveOrStopCommunalChant() {
+      if (!window.RealtimeSanctuary) return;
+      const isLeader = window.RealtimeSanctuary.sharedChanting.isActive && window.RealtimeSanctuary.sharedChanting.leaderId === window.RealtimeSanctuary.clientId;
+      if (isLeader) {
+        if (confirm('Bạn đang là Chủ Lễ. Bạn có muốn kết thúc khóa lễ đồng tụng của toàn phòng không?')) {
+          window.RealtimeSanctuary.stopCommunalChant(false);
+          closeSharedChantingModal();
+        }
+      } else {
+        window.RealtimeSanctuary.leaveCommunalChant();
+        closeSharedChantingModal();
+      }
     }
 
     /**************************************************************************

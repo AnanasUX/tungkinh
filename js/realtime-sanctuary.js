@@ -1,13 +1,17 @@
 /**
- * Chùa An Nhiên — Real-time Sanctuary Synchronization System (v2.0)
- * Đạo Tràng Trực Tuyến Đa Thiết Bị Thời Gian Thực
+ * Chùa An Nhiên — Real-time Sanctuary Synchronization System (v2.5)
+ * Đạo Tràng Trực Tuyến & Phòng Đồng Tụng Thời Gian Thực (Real-time Shared Room)
  *
  * Cho phép mọi người dùng truy cập https://ananasux.github.io/tungkinh/
- * từ các thiết bị khác nhau (Điện thoại, Máy tính, Máy tính bảng)
- * cùng chung 1 không gian Chánh Điện thời gian thực:
+ * từ các thiết bị khác nhau cùng chung 1 không gian Chánh Điện thời gian thực:
+ * - ĐỒNG BỘ PHÒNG ĐỒNG TỤNG THỜI GIAN THỰC (Real-time Shared Chanting Room):
+ *   + Đồng bộ từng câu kinh, nhịp gõ mõ và động tác đảnh lễ của chư đồng tu.
+ *   + Thanh Khóa Lễ Đồng Tụng phát sáng hiển thị câu kinh đang tụng trực tiếp.
+ *   + Tự động cuộn bản kinh trong kho kinh điển cho mọi thiết bị.
+ *   + Cộng điểm công đức chung (+25 Điểm) khi viên mãn khóa lễ.
  * - Tự động đồng bộ trạng thái khi vào (HELLO_SYNC & STATE_ANNOUNCE handshake).
  * - Giải quyết xung đột vị trí Bồ Đoàn (Seat Conflict Resolution), ưu tiên người dùng thật.
- * - Hiển thị huy hiệu "🟢 Đồng tu Live" cho người thật đang trực tuyến.
+ * - Hiển thị huy hiệu "🟢 Live • PD" cho người thật đang trực tuyến.
  * - Đồng bộ mọi hành vi: Gõ mõ, Thỉnh chuông, Thả hoa đăng, Dâng sớ, Tùy hỷ công đức.
  * - Tự động khôi phục kết nối khi chuyển tab hoặc mở khóa màn hình điện thoại.
  */
@@ -43,6 +47,22 @@
   const RealtimeSanctuary = {
     clientId: clientId,
     isConnected: false,
+
+    // Real-time Shared Chanting Room State
+    sharedChanting: {
+      isActive: false,
+      leaderId: null,
+      leaderName: '',
+      scriptureId: 'daibi',
+      scriptureTitle: 'Chú Đại Bi',
+      verseIndex: 0,
+      verseText: '',
+      totalVerses: 0,
+      intervalMs: 3000,
+      startedAt: null,
+      timer: null,
+      isParticipant: true
+    },
 
     init() {
       console.log(`[RealtimeSanctuary] Initializing with clientId: ${clientId}`);
@@ -151,6 +171,11 @@
           senderId: clientId,
           seatNo: mySeat || null
         });
+
+        // If leaving while leading communal chant, stop or yield
+        if (RealtimeSanctuary.sharedChanting.isActive && RealtimeSanctuary.sharedChanting.leaderId === clientId) {
+          RealtimeSanctuary.stopCommunalChant(true);
+        }
       });
 
       // Mobile lifecycle: resume on screen unlock or tab focus
@@ -200,7 +225,7 @@
 
     buildUserProfilePayload() {
       const profile = window.currentUserProfile || {};
-      return {
+      const payload = {
         sessionCode: profile.sessionCode || '#AN-8899',
         ip: profile.clientIp || '',
         seatNo: profile.assignedSeatNo || null,
@@ -214,6 +239,24 @@
         wish: profile.wish || profile.userWish || 'Cầu bình an vạn sự',
         registered: !!profile.registered
       };
+
+      // Attach active shared chanting session state if in progress
+      if (this.sharedChanting && this.sharedChanting.isActive) {
+        payload.communalChant = {
+          isActive: true,
+          leaderId: this.sharedChanting.leaderId,
+          leaderName: this.sharedChanting.leaderName,
+          scriptureId: this.sharedChanting.scriptureId,
+          scriptureTitle: this.sharedChanting.scriptureTitle,
+          verseIndex: this.sharedChanting.verseIndex,
+          verseText: this.sharedChanting.verseText,
+          totalVerses: this.sharedChanting.totalVerses,
+          intervalMs: this.sharedChanting.intervalMs,
+          startedAt: this.sharedChanting.startedAt
+        };
+      }
+
+      return payload;
     },
 
     broadcastHelloSync() {
@@ -306,12 +349,268 @@
       });
     },
 
+    /**************************************************************************
+     * REAL-TIME SHARED CHANTING ROOM METHODS (ĐỒNG TỤNG THỜI GIAN THỰC)
+     **************************************************************************/
+
+    getScriptureVerses(id) {
+      const scriptures = window.TEMPLE_SCRIPTURES || [];
+      const found = scriptures.find(s => s.id === id);
+      if (!found || !Array.isArray(found.verses)) {
+        return [
+          'Nam Mô Bổn Sư Thích Ca Mâu Ni Phật',
+          'Nam Mô A Di Đà Phật',
+          'Nam Mô Quán Thế Âm Bồ Tát'
+        ];
+      }
+      // Filter out empty rows used only for spacing
+      return found.verses.filter(v => v && v.trim().length > 0);
+    },
+
+    getScriptureTitle(id) {
+      const scriptures = window.TEMPLE_SCRIPTURES || [];
+      const found = scriptures.find(s => s.id === id);
+      return found ? found.title : 'Kinh Điển Tụng Niệm';
+    },
+
+    startCommunalChant(scriptureId = 'daibi', intervalMs = 3000) {
+      const verses = this.getScriptureVerses(scriptureId);
+      const title = this.getScriptureTitle(scriptureId);
+      const profile = window.currentUserProfile || {};
+      const leaderName = profile.fullName || 'Chủ Lễ';
+
+      clearInterval(this.sharedChanting.timer);
+
+      this.sharedChanting.isActive = true;
+      this.sharedChanting.leaderId = clientId;
+      this.sharedChanting.leaderName = leaderName;
+      this.sharedChanting.scriptureId = scriptureId;
+      this.sharedChanting.scriptureTitle = title;
+      this.sharedChanting.verseIndex = 0;
+      this.sharedChanting.verseText = verses[0] || 'Nam Mô A Di Đà Phật';
+      this.sharedChanting.totalVerses = verses.length;
+      this.sharedChanting.intervalMs = intervalMs;
+      this.sharedChanting.startedAt = Date.now();
+      this.sharedChanting.isParticipant = true;
+
+      // Publish start event to global broker
+      this.publishMessage({
+        type: 'COMMUNAL_CHANT_START',
+        senderId: clientId,
+        leaderId: clientId,
+        leaderName: leaderName,
+        scriptureId: scriptureId,
+        scriptureTitle: title,
+        verseIndex: 0,
+        verseText: this.sharedChanting.verseText,
+        totalVerses: verses.length,
+        intervalMs: intervalMs,
+        startedAt: this.sharedChanting.startedAt
+      });
+
+      // Sound bell chime to inaugurate chant
+      if (window.AudioEngine && window.AudioEngine.enabled) {
+        window.AudioEngine.playTempleBell();
+      }
+      if (window.showLiveGiftBanner) {
+        window.showLiveGiftBanner('Khai Mở Khóa Lễ', `📿 Bạn vừa khởi xướng Khóa Lễ: ${title}`, 'lotus');
+      }
+
+      this.onCommunalVerseAdvanced(0, this.sharedChanting.verseText, true);
+
+      // Start stepping timer
+      let curIdx = 0;
+      this.sharedChanting.timer = setInterval(() => {
+        curIdx++;
+        if (curIdx >= verses.length) {
+          RealtimeSanctuary.finishCommunalChant();
+          return;
+        }
+
+        const vText = verses[curIdx];
+        RealtimeSanctuary.sharedChanting.verseIndex = curIdx;
+        RealtimeSanctuary.sharedChanting.verseText = vText;
+
+        RealtimeSanctuary.publishMessage({
+          type: 'COMMUNAL_CHANT_VERSE',
+          senderId: clientId,
+          leaderId: clientId,
+          scriptureId: scriptureId,
+          verseIndex: curIdx,
+          verseText: vText,
+          totalVerses: verses.length
+        });
+
+        RealtimeSanctuary.onCommunalVerseAdvanced(curIdx, vText, true);
+      }, intervalMs);
+    },
+
+    stopCommunalChant(silent = false) {
+      clearInterval(this.sharedChanting.timer);
+      this.sharedChanting.timer = null;
+      this.sharedChanting.isActive = false;
+      this.sharedChanting.leaderId = null;
+
+      if (!silent) {
+        this.publishMessage({
+          type: 'COMMUNAL_CHANT_STOP',
+          senderId: clientId,
+          scriptureTitle: this.sharedChanting.scriptureTitle
+        });
+        if (window.showLiveGiftBanner) {
+          window.showLiveGiftBanner('Khóa Lễ Đã Dừng', 'Khóa lễ đồng tụng thời gian thực đã kết thúc', 'lotus');
+        }
+      }
+
+      this.hideCommunalBanner();
+    },
+
+    finishCommunalChant() {
+      clearInterval(this.sharedChanting.timer);
+      this.sharedChanting.timer = null;
+      this.sharedChanting.isActive = false;
+      const title = this.sharedChanting.scriptureTitle;
+
+      this.publishMessage({
+        type: 'COMMUNAL_CHANT_FINISH',
+        senderId: clientId,
+        scriptureTitle: title
+      });
+
+      this.hideCommunalBanner();
+
+      // Award leader and local user merit bonus (+25 Merit points)
+      if (window.addMeritPoints && window.currentUserProfile) {
+        window.addMeritPoints(window.currentUserProfile.fullName, 25, 'lotus', `Viên mãn khóa lễ đồng tụng ${title}`, true);
+      }
+      if (window.showLiveGiftBanner) {
+        window.showLiveGiftBanner('Viên Mãn Khóa Lễ', `Toàn thể Đạo Tràng hoàn thành khóa tụng ${title} (+25 Công Đức)!`, 'lotus');
+      }
+      if (window.triggerGoldenLotusRain) {
+        window.triggerGoldenLotusRain(38);
+      }
+      if (window.AudioEngine && window.AudioEngine.enabled) {
+        window.AudioEngine.playTempleBell();
+      }
+    },
+
+    joinCommunalChant() {
+      this.sharedChanting.isParticipant = true;
+      this.publishMessage({
+        type: 'COMMUNAL_CHANT_JOIN',
+        senderId: clientId,
+        name: (window.currentUserProfile && window.currentUserProfile.fullName) || 'Đồng Tu'
+      });
+      this.updateCommunalBannerUI();
+      if (window.showLiveGiftBanner) {
+        window.showLiveGiftBanner('Hòa Giọng Đồng Tụng', `Bạn đã tham gia Khóa Lễ: ${this.sharedChanting.scriptureTitle}`, 'lotus');
+      }
+    },
+
+    leaveCommunalChant() {
+      this.sharedChanting.isParticipant = false;
+      this.hideCommunalBanner();
+      if (window.showLiveGiftBanner) {
+        window.showLiveGiftBanner('Rời Khóa Lễ', 'Bạn đã tạm rời khóa lễ đồng tụng', 'lotus');
+      }
+    },
+
+    onCommunalVerseAdvanced(verseIndex, verseText, isLeader) {
+      // 1. Update UI Banner in DOM
+      this.updateCommunalBannerUI();
+
+      // 2. Play synchronized wooden fish sound
+      if (window.AudioEngine && window.AudioEngine.enabled) {
+        window.AudioEngine.playWoodenFish(1);
+      }
+
+      // 3. Animate all seated devotees bowing together with the sacred verse in 2D
+      if (window.sanctuarySeats) {
+        window.sanctuarySeats.forEach(seat => {
+          if (seat.occupied && window.triggerDevoteeBow) {
+            window.triggerDevoteeBow(seat.id, verseText, 'lotus');
+          }
+        });
+      }
+
+      // 4. Animate 3D Devotees and 3D Wooden Fish
+      if (window.temple3D && window.is3DModeActive) {
+        if (Array.isArray(window.temple3D.devotees3D)) {
+          window.temple3D.devotees3D.forEach(d => {
+            if (d.group && d.group.userData && typeof d.group.userData.bow === 'function') {
+              d.group.userData.bow();
+            }
+          });
+        }
+        if (typeof window.temple3D.tapWoodenFish3D === 'function') {
+          window.temple3D.tapWoodenFish3D();
+        }
+      }
+
+      // 5. Accumulate Daily Quests progress
+      if (window.DailyQuestEngine) {
+        window.DailyQuestEngine.onAction('wooden_fish', 1);
+      }
+
+      // 6. Highlight active verse inside scripture reader modal if open
+      const readerBox = document.getElementById('scripture-reader-box');
+      if (readerBox) {
+        document.querySelectorAll('.active-chant-verse').forEach(el => el.classList.remove('active-chant-verse'));
+        const row = document.getElementById(`verse-row-${verseIndex}`);
+        if (row) {
+          row.classList.add('active-chant-verse');
+          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+    },
+
+    updateCommunalBannerUI() {
+      const banner = document.getElementById('communal-chant-banner');
+      if (!banner) return;
+
+      if (!this.sharedChanting.isActive || !this.sharedChanting.isParticipant) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      banner.classList.remove('hidden');
+
+      const titleEl = document.getElementById('communal-scripture-title');
+      const leaderEl = document.getElementById('communal-chant-leader');
+      const progEl = document.getElementById('communal-chant-progress');
+      const partEl = document.getElementById('communal-chant-participants');
+      const verseEl = document.getElementById('communal-active-verse');
+
+      if (titleEl) titleEl.textContent = this.sharedChanting.scriptureTitle;
+      if (leaderEl) {
+        const isMe = this.sharedChanting.leaderId === clientId;
+        leaderEl.textContent = isMe ? 'Chủ lễ: BẠN' : `Chủ lễ: ${this.sharedChanting.leaderName}`;
+      }
+      if (progEl) {
+        progEl.textContent = `Câu ${this.sharedChanting.verseIndex + 1} / ${this.sharedChanting.totalVerses}`;
+      }
+      if (partEl) {
+        const total = this.getOnlineCount();
+        partEl.textContent = `🟢 ${total} đồng tu đang hòa giọng`;
+      }
+      if (verseEl) {
+        verseEl.textContent = `"${this.sharedChanting.verseText}"`;
+      }
+    },
+
+    hideCommunalBanner() {
+      const banner = document.getElementById('communal-chant-banner');
+      if (banner) {
+        banner.classList.add('hidden');
+      }
+    },
+
     handleIncomingMessage(msg) {
       if (!msg || !msg.type || msg.senderId === clientId) return;
 
       switch (msg.type) {
         case 'HELLO_SYNC':
-          // Remote devotee joined, answer with our current state
+          // Remote devotee joined, answer with our current state (including shared chanting)
           this.handleDevoteePresence(msg.senderId, msg.data, true);
           this.broadcastStateAnnounce(msg.senderId);
           break;
@@ -349,6 +648,74 @@
 
         case 'REJOICE_MERIT':
           this.handleDevoteeRejoice(msg.targetName, msg.fromName);
+          break;
+
+        case 'COMMUNAL_CHANT_START':
+          this.sharedChanting.isActive = true;
+          this.sharedChanting.leaderId = msg.leaderId;
+          this.sharedChanting.leaderName = msg.leaderName;
+          this.sharedChanting.scriptureId = msg.scriptureId;
+          this.sharedChanting.scriptureTitle = msg.scriptureTitle;
+          this.sharedChanting.totalVerses = msg.totalVerses;
+          this.sharedChanting.intervalMs = msg.intervalMs || 3000;
+          this.sharedChanting.verseIndex = msg.verseIndex || 0;
+          this.sharedChanting.verseText = msg.verseText || '';
+          this.sharedChanting.isParticipant = true;
+          this.onCommunalVerseAdvanced(msg.verseIndex || 0, msg.verseText || '', false);
+
+          if (window.showLiveGiftBanner) {
+            window.showLiveGiftBanner('Khóa Lễ Đồng Tụng', `🟢 ${msg.leaderName} vừa khai mở khóa lễ: ${msg.scriptureTitle}`, 'lotus');
+          }
+          if (window.AudioEngine && window.AudioEngine.enabled) {
+            window.AudioEngine.playTempleBell();
+          }
+          break;
+
+        case 'COMMUNAL_CHANT_VERSE':
+          this.sharedChanting.isActive = true;
+          this.sharedChanting.leaderId = msg.leaderId;
+          this.sharedChanting.scriptureId = msg.scriptureId;
+          this.sharedChanting.verseIndex = msg.verseIndex;
+          this.sharedChanting.verseText = msg.verseText;
+          this.sharedChanting.totalVerses = msg.totalVerses;
+
+          if (this.sharedChanting.isParticipant) {
+            this.onCommunalVerseAdvanced(msg.verseIndex, msg.verseText, false);
+          }
+          break;
+
+        case 'COMMUNAL_CHANT_FINISH':
+          this.sharedChanting.isActive = false;
+          this.hideCommunalBanner();
+
+          if (window.showLiveGiftBanner) {
+            window.showLiveGiftBanner('Viên Mãn Khóa Lễ', `Toàn thể Đạo Tràng hoàn thành khóa tụng ${msg.scriptureTitle} (+25 Công Đức)!`, 'lotus');
+          }
+          if (window.addMeritPoints && window.currentUserProfile) {
+            window.addMeritPoints(window.currentUserProfile.fullName, 25, 'lotus', `Hoàn thành khóa lễ đồng tụng ${msg.scriptureTitle}`, true);
+          }
+          if (window.triggerGoldenLotusRain) {
+            window.triggerGoldenLotusRain(36);
+          }
+          if (window.AudioEngine && window.AudioEngine.enabled) {
+            window.AudioEngine.playTempleBell();
+          }
+          break;
+
+        case 'COMMUNAL_CHANT_STOP':
+          this.sharedChanting.isActive = false;
+          this.hideCommunalBanner();
+
+          if (window.showLiveGiftBanner) {
+            window.showLiveGiftBanner('Khóa Lễ Tạm Dừng', `Khóa lễ ${msg.scriptureTitle || 'đồng tụng'} đã kết thúc`, 'lotus');
+          }
+          break;
+
+        case 'COMMUNAL_CHANT_JOIN':
+          if (window.showLiveGiftBanner) {
+            window.showLiveGiftBanner('Đồng Tu Hòa Giọng', `🟢 ${msg.name} vừa tham gia khóa tụng cùng bạn`, 'lotus');
+          }
+          this.updateCommunalBannerUI();
           break;
 
         case 'LEAVE':
@@ -451,6 +818,21 @@
             window.AudioEngine.playGiftChime();
           }
         }
+      }
+
+      // Check if remote client announced an active communal chant we haven't joined
+      if (data.communalChant && data.communalChant.isActive && !this.sharedChanting.isActive) {
+        this.sharedChanting.isActive = true;
+        this.sharedChanting.leaderId = data.communalChant.leaderId;
+        this.sharedChanting.leaderName = data.communalChant.leaderName;
+        this.sharedChanting.scriptureId = data.communalChant.scriptureId;
+        this.sharedChanting.scriptureTitle = data.communalChant.scriptureTitle;
+        this.sharedChanting.verseIndex = data.communalChant.verseIndex;
+        this.sharedChanting.verseText = data.communalChant.verseText;
+        this.sharedChanting.totalVerses = data.communalChant.totalVerses;
+        this.sharedChanting.intervalMs = data.communalChant.intervalMs || 3000;
+        this.sharedChanting.isParticipant = true;
+        this.onCommunalVerseAdvanced(data.communalChant.verseIndex, data.communalChant.verseText, false);
       }
 
       this.updateOnlineCountHUD();
@@ -599,8 +981,51 @@
           }
         });
       }
+
+      // If leader leaves during communal chant, elect new leader or conclude
+      if (this.sharedChanting.isActive && this.sharedChanting.leaderId === senderId) {
+        this.electNewChantLeaderOrFinish();
+      }
+
       this.updateOnlineCountHUD();
       this.refreshSanctuaryViews();
+    },
+
+    electNewChantLeaderOrFinish() {
+      // Local user takes over if still active
+      if (this.sharedChanting.isActive) {
+        this.sharedChanting.leaderId = clientId;
+        this.sharedChanting.leaderName = (window.currentUserProfile && window.currentUserProfile.fullName) || 'Chủ Lễ Kế Nhiệm';
+        const verses = this.getScriptureVerses(this.sharedChanting.scriptureId);
+
+        clearInterval(this.sharedChanting.timer);
+        let curIdx = this.sharedChanting.verseIndex;
+
+        this.sharedChanting.timer = setInterval(() => {
+          curIdx++;
+          if (curIdx >= verses.length) {
+            RealtimeSanctuary.finishCommunalChant();
+            return;
+          }
+          const vText = verses[curIdx];
+          RealtimeSanctuary.sharedChanting.verseIndex = curIdx;
+          RealtimeSanctuary.sharedChanting.verseText = vText;
+          RealtimeSanctuary.publishMessage({
+            type: 'COMMUNAL_CHANT_VERSE',
+            senderId: clientId,
+            leaderId: clientId,
+            scriptureId: RealtimeSanctuary.sharedChanting.scriptureId,
+            verseIndex: curIdx,
+            verseText: vText,
+            totalVerses: verses.length
+          });
+          RealtimeSanctuary.onCommunalVerseAdvanced(curIdx, vText, true);
+        }, this.sharedChanting.intervalMs || 3000);
+
+        if (window.showLiveGiftBanner) {
+          window.showLiveGiftBanner('Chủ Lễ Kế Nhiệm', 'Bạn vừa tiếp nhận vai trò Chủ Lễ duy trì khóa tụng', 'lotus');
+        }
+      }
     },
 
     startHeartbeatLoop() {
@@ -637,6 +1062,10 @@
                 }
               });
             }
+
+            if (RealtimeSanctuary.sharedChanting.isActive && RealtimeSanctuary.sharedChanting.leaderId === sId) {
+              RealtimeSanctuary.electNewChantLeaderOrFinish();
+            }
           }
         });
 
@@ -652,6 +1081,10 @@
       const onlineEl = document.getElementById('hud-online-count');
       if (onlineEl) {
         onlineEl.textContent = totalOnline;
+      }
+      const partEl = document.getElementById('communal-chant-participants');
+      if (partEl) {
+        partEl.textContent = `🟢 ${totalOnline} đồng tu đang hòa giọng`;
       }
     },
 
