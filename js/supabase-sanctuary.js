@@ -324,20 +324,41 @@
           if (!payload || payload.senderId === this.getClientId()) return;
           console.log('[SupabaseSanctuary] Nhận broadcast CLAIM_SEAT:', payload);
           const data = payload.data || payload;
+          const remoteClientId = payload.senderId;
+          const targetSeatNo = payload.seatNo;
+
+          // 1. Giải phóng triệt để bồ đoàn cũ của client này trên sàn (tránh bị kẹt 2 ghế)
+          if (window.sanctuarySeats) {
+            window.sanctuarySeats.forEach(s => {
+              if (s.remoteClientId === remoteClientId && s.seatNo !== targetSeatNo) {
+                s.occupied = false;
+                s.remoteClientId = null;
+                s.name = '';
+                s.dharma = '';
+              }
+            });
+          }
+
+          // 2. Gán đồng tu vào bồ đoàn mới
           this.applyPresenceDevoteeToSeat({
-            clientId: payload.senderId,
-            seatNo: payload.seatNo,
-            fullName: data.name || data.fullName,
-            dharmaName: data.dharma || data.dharmaName,
-            avatarType: data.gender || data.avatarType,
+            clientId: remoteClientId,
+            seatNo: targetSeatNo,
+            fullName: data.fullName || data.name,
+            dharmaName: data.dharmaName || data.dharma,
+            avatarType: data.avatarType || data.gender || 'monk',
             age: data.age,
             hometown: data.hometown,
-            meritScore: data.points || data.meritScore,
-            clientIp: data.ip || data.clientIp,
+            meritScore: data.meritScore || data.points,
+            clientIp: data.clientIp || data.ip,
             wish: data.wish
           });
+
           if (typeof window.renderSanctuaryFloor === 'function') {
             window.renderSanctuaryFloor();
+          }
+
+          if (window.triggerDevoteeBow && targetSeatNo) {
+            window.triggerDevoteeBow(`seat-${targetSeatNo}`, data.wish || 'Nam Mô A Di Đà Phật', 'lotus');
           }
         });
 
@@ -565,7 +586,6 @@
       if (!window.sanctuarySeats || !dev) return;
       const myClientId = this.getClientId();
       if (dev.clientId === myClientId) return;
-      if (window.currentUserProfile && dev.fullName && dev.fullName === window.currentUserProfile.fullName && window.currentUserProfile.registered) return;
 
       const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
 
@@ -683,7 +703,6 @@
       const myClientId = this.getClientId();
 
       if (dbRow.client_id === myClientId) return; // Không ghi đè bản thân
-      if (window.currentUserProfile && dbRow.full_name && dbRow.full_name === window.currentUserProfile.fullName && window.currentUserProfile.registered) return; // Chống nhân bản chính mình từ DB cũ
 
       // 1. Giải phóng ghế cũ của client_id này nếu họ đã ngồi ở ghế khác
       window.sanctuarySeats.forEach(s => {

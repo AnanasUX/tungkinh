@@ -122,12 +122,14 @@
 
     /* Tối Ưu Hiển Thị Điện Thoại Xoay Ngang & Toàn Màn Hình (Mobile Landscape & Low Height) */
     @media screen and (max-height: 520px) {
-      /* 1. Header thu gọn tối đa */
+      /* 1. Header thu gọn tối đa & ẩn các nút phụ để không bị tràn viền */
       header {
-        height: 38px !important;
-        min-height: 38px !important;
+        height: 36px !important;
+        min-height: 36px !important;
         padding-top: 2px !important;
         padding-bottom: 2px !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
       }
       header h1 {
         font-size: 13px !important;
@@ -136,17 +138,29 @@
       header p {
         display: none !important;
       }
-      #bgm-volume-slider {
-        width: 40px !important;
+      #btn-ambience-mode {
+        display: none !important;
+      }
+      #btn-header-rotate-landscape {
+        display: none !important;
+      }
+      #bgm-volume-slider, #bgm-volume-label {
+        display: none !important;
+      }
+      #btn-toggle-3d #label-3d-toggle {
+        display: none !important;
+      }
+      #btn-realtime-server-badge span.font-mono {
+        display: none !important;
       }
 
-      /* 2. Side Panels (Gửi lời chúc & Bảng công đức) mặc định thu gọn, tuyệt đối không đè sàn */
+      /* 2. Side Panels mặc định thu gọn; Drawer Tabs đặt ở GIỮA CHIỀU CAO (50%) để KHÔNG BAO GIỜ chạm Banner */
       #panel-left-drawer {
         transform: translateX(-100%) !important;
         position: fixed !important;
-        top: 40px !important;
+        top: 38px !important;
         bottom: 44px !important;
-        max-height: calc(100vh - 84px) !important;
+        max-height: calc(100vh - 82px) !important;
         z-index: 50 !important;
       }
       #panel-left-drawer.drawer-open {
@@ -156,9 +170,9 @@
       #panel-right-drawer {
         transform: translateX(100%) !important;
         position: fixed !important;
-        top: 40px !important;
+        top: 38px !important;
         bottom: 44px !important;
-        max-height: calc(100vh - 84px) !important;
+        max-height: calc(100vh - 82px) !important;
         z-index: 50 !important;
       }
       #panel-right-drawer.drawer-open {
@@ -167,16 +181,48 @@
 
       #btn-tab-drawer-left, #btn-tab-drawer-right {
         display: flex !important;
-        top: 18% !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        z-index: 35 !important;
       }
 
-      /* 3. Sàn Chánh Điện thông thoáng từ 35% đến cách đáy 44px */
+      /* 3. Băng rôn Đồng Tụng (Communal Chant Banner) tinh gọn, thon gọn, không che bàn thờ Phật */
+      #communal-chant-banner {
+        top: 38px !important;
+        width: 70% !important;
+        max-width: 520px !important;
+        z-index: 40 !important;
+      }
+      #communal-chant-banner > div {
+        padding: 3px 10px !important;
+        gap: 2px !important;
+        border-radius: 9999px !important;
+      }
+      #communal-chant-banner .border-b {
+        border-bottom: none !important;
+        padding-bottom: 0 !important;
+      }
+      #communal-active-verse {
+        font-size: 11px !important;
+        line-height: 1.15 !important;
+      }
+
+      /* Widget Đếm Giờ Tụng Kinh thu gọn nhẹ nhàng góc trên phải */
+      #quest-floating-hud {
+        top: 38px !important;
+        right: 6px !important;
+        transform: scale(0.82) !important;
+        transform-origin: top right !important;
+        z-index: 38 !important;
+      }
+
+      /* 4. Sàn Chánh Điện thông thoáng từ 35% đến cách đáy 44px */
       #sanctuary-floor-stage {
-        top: 36% !important;
+        top: 35% !important;
         bottom: 44px !important;
       }
 
-      /* 4. Thanh công cụ dưới đáy (Dock) TUYỆT ĐỐI 1 HÀNG NGANG, cuộn ngang mượt ngón tay */
+      /* 5. Thanh công cụ dưới đáy (Dock) TUYỆT ĐỐI 1 HÀNG NGANG, cuộn ngang mượt ngón tay */
       footer {
         padding: 2px 4px !important;
         max-height: 44px !important;
@@ -204,7 +250,7 @@
         display: none !important;
       }
 
-      /* 5. Tỉ lệ nhân vật Chibi và Bồ Đoàn thu gọn tinh tế, sắc nét */
+      /* 6. Tỉ lệ nhân vật Chibi và Bồ Đoàn thu gọn tinh tế, sắc nét */
       .chibi-idle, .chibi-walking-step {
         width: 46px !important;
         height: 56px !important;
@@ -2485,13 +2531,27 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     const CHUA_AN_NHIEN_SESSION_KEY = 'chua_an_nhien_real_user_session';
     let currentDetectedIP = '';
 
+    const SAMPLE_NAMES = [
+      { name: 'Trần Văn Nam', dharma: 'Minh Tâm', gender: 'monk' },
+      { name: 'Lê Diệu Hoa', dharma: 'Diệu Hoa', gender: 'female' },
+      { name: 'Nguyễn Phúc Thiện', dharma: 'Phúc Thiện', gender: 'monk' },
+      { name: 'Phạm Minh Tuệ', dharma: 'Minh Tuệ', gender: 'monk' },
+      { name: 'Vũ Tịnh Tâm', dharma: 'Tịnh Tâm', gender: 'female' },
+      { name: 'Hoàng An Nhiên', dharma: 'An Nhiên', gender: 'monk' },
+      { name: 'Đặng Đức Trí', dharma: 'Đức Trí', gender: 'monk' },
+      { name: 'Bùi Diệu Hương', dharma: 'Diệu Hương', gender: 'female' },
+      { name: 'Lý Thanh Tuyền', dharma: 'Thanh Tuyền', gender: 'female' }
+    ];
+
+    const initialDevoteePick = SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)];
+
     const currentUserProfile = {
-      registered: false,
+      registered: true,
       isLocked: false,
       lockedAt: null,
       clientIp: '',
-      fullName: 'Đồng Tu Mới',
-      dharmaName: 'Tịnh Tâm',
+      fullName: initialDevoteePick.name,
+      dharmaName: initialDevoteePick.dharma,
       day: '31',
       month: '10',
       year: '1996',
@@ -2499,7 +2559,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       canChi: 'Bính Tý',
       element: 'Mệnh Thủy',
       hometown: 'Chùa An Nhiên',
-      avatarType: 'monk',
+      avatarType: initialDevoteePick.gender || 'monk',
       wish: 'Cầu bình an, sức khỏe dồi dào & gia đình sum vầy',
       sessionCode: '#AN-8899',
       assignedSeatNo: null,
@@ -3068,17 +3128,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       }
     }
 
-    const SAMPLE_NAMES = [
-      { name: 'Trần Văn Nam', dharma: 'Minh Tâm' },
-      { name: 'Lê Diệu Hoa', dharma: 'Diệu Hoa' },
-      { name: 'Nguyễn Phúc Thiện', dharma: 'Phúc Thiện' },
-      { name: 'Phạm Minh Tuệ', dharma: 'Minh Tuệ' },
-      { name: 'Vũ Tịnh Tâm', dharma: 'Tịnh Tâm' },
-      { name: 'Hoàng An Nhiên', dharma: 'An Nhiên' },
-      { name: 'Đặng Đức Trí', dharma: 'Đức Trí' },
-      { name: 'Bùi Diệu Hương', dharma: 'Diệu Hương' },
-      { name: 'Lý Thanh Tuyền', dharma: 'Thanh Tuyền' }
-    ];
 
     function rollSuggestedFullName() {
       const pick = SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)];
@@ -3285,6 +3334,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       if (window.SupabaseSanctuary) {
         window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, targetSeatNo);
         window.SupabaseSanctuary.trackCurrentUserPresence();
+        window.SupabaseSanctuary.broadcast('CLAIM_SEAT', {
+          seatNo: targetSeatNo,
+          senderId: window.SANCTUARY_CLIENT_ID,
+          data: currentUserProfile
+        });
       }
 
       walkUserToSeat(targetSeatNo, true);
@@ -3417,6 +3471,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         if (window.SupabaseSanctuary) {
           window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, targetSeat.seatNo);
           window.SupabaseSanctuary.trackCurrentUserPresence();
+          window.SupabaseSanctuary.broadcast('CLAIM_SEAT', {
+            seatNo: targetSeat.seatNo,
+            senderId: window.SANCTUARY_CLIENT_ID,
+            data: currentUserProfile
+          });
         }
 
         if (window.temple3D && is3DModeActive) {
@@ -3913,12 +3972,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
             </div>
           `;
           wrapper.addEventListener('click', () => {
-            if (!currentUserProfile.registered) {
-              currentUserProfile.assignedSeatNo = seat.seatNo;
-              openRegistrationModal();
-            } else {
-              walkUserToSeat(seat.seatNo, false);
-            }
+            walkUserToSeat(seat.seatNo, false);
           });
         } else {
           const delay = (idx * 0.29).toFixed(2);
