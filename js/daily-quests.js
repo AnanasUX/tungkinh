@@ -478,7 +478,7 @@
 
       const modal = document.createElement('div');
       modal.id = 'daily-quest-modal';
-      modal.className = 'hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4';
+      modal.className = 'hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto';
 
       modal.innerHTML = `
         <div class="temple-panel w-full max-w-[620px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative shadow-2xl">

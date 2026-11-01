@@ -138,11 +138,11 @@
     }
 
     /* Tối Ưu Hiển Thị Điện Thoại Xoay Ngang & Toàn Màn Hình (Mobile Landscape & Low Height) */
-    @media screen and (max-height: 520px) {
+    @media screen and (max-height: 640px), screen and (orientation: landscape) and (max-height: 720px), body.mobile-landscape {
       /* 1. Header thu gọn tối đa & ẩn các nút phụ để không bị tràn viền */
       header {
-        height: 36px !important;
-        min-height: 36px !important;
+        height: 34px !important;
+        min-height: 34px !important;
         padding-top: 2px !important;
         padding-bottom: 2px !important;
         padding-left: 6px !important;
@@ -175,9 +175,9 @@
       #panel-left-drawer {
         transform: translateX(-100%) !important;
         position: fixed !important;
-        top: 38px !important;
-        bottom: 44px !important;
-        max-height: calc(100vh - 82px) !important;
+        top: 36px !important;
+        bottom: 42px !important;
+        max-height: calc(100vh - 78px) !important;
         z-index: 50 !important;
       }
       #panel-left-drawer.drawer-open {
@@ -187,9 +187,9 @@
       #panel-right-drawer {
         transform: translateX(100%) !important;
         position: fixed !important;
-        top: 38px !important;
-        bottom: 44px !important;
-        max-height: calc(100vh - 82px) !important;
+        top: 36px !important;
+        bottom: 42px !important;
+        max-height: calc(100vh - 78px) !important;
         z-index: 50 !important;
       }
       #panel-right-drawer.drawer-open {
@@ -205,14 +205,17 @@
 
       /* 3. Băng rôn Đồng Tụng (Communal Chant Banner) tinh gọn, thon gọn, không che bàn thờ Phật */
       #communal-chant-banner {
-        top: 38px !important;
-        width: 70% !important;
+        position: fixed !important;
+        top: 36px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 86% !important;
         max-width: 520px !important;
-        z-index: 40 !important;
+        z-index: 45 !important;
       }
       #communal-chant-banner > div {
-        padding: 3px 10px !important;
-        gap: 2px !important;
+        padding: 2.5px 8px !important;
+        gap: 1.5px !important;
         border-radius: 9999px !important;
       }
       #communal-chant-banner .border-b {
@@ -222,35 +225,52 @@
       #communal-active-verse {
         font-size: 11px !important;
         line-height: 1.15 !important;
+        max-width: 280px !important;
+      }
+
+      /* Floating Toast Notification trên Mobile: Luôn ở z-[300], nổi bật, không bị che */
+      #live-gift-banner {
+        position: fixed !important;
+        top: 8px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 300 !important;
+        pointer-events: none !important;
+        max-width: 92vw !important;
       }
 
       /* Widget Đếm Giờ Tụng Kinh thu gọn nhẹ nhàng góc trên phải */
       #quest-floating-hud {
-        top: 38px !important;
+        top: 36px !important;
         right: 6px !important;
-        transform: scale(0.82) !important;
+        transform: scale(0.80) !important;
         transform-origin: top right !important;
         z-index: 38 !important;
       }
 
-      /* 4. Sàn Chánh Điện thông thoáng từ 35% đến cách đáy 44px */
+      /* 4. Sàn Chánh Điện thông thoáng từ 34% đến cách đáy 42px */
       #sanctuary-floor-stage {
-        top: 35% !important;
-        bottom: 44px !important;
+        top: 34% !important;
+        bottom: 42px !important;
       }
 
       /* 5. Thanh công cụ dưới đáy (Dock) TUYỆT ĐỐI 1 HÀNG NGANG, cuộn ngang mượt ngón tay */
       footer {
         padding: 2px 4px !important;
-        max-height: 44px !important;
-        height: 44px !important;
+        max-height: 42px !important;
+        height: 42px !important;
       }
       #bottom-dock-scroll {
         flex-wrap: nowrap !important;
         overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
         justify-content: flex-start !important;
-        gap: 6px !important;
+        gap: 5px !important;
         padding-bottom: 2px !important;
+        scrollbar-width: none !important;
+      }
+      #bottom-dock-scroll::-webkit-scrollbar {
+        display: none !important;
       }
       #bottom-dock-scroll > button {
         padding: 2.5px 7px !important;
@@ -269,12 +289,12 @@
 
       /* 6. Tỉ lệ nhân vật Chibi và Bồ Đoàn thu gọn tinh tế, sắc nét */
       .chibi-idle, .chibi-walking-step {
-        width: 46px !important;
-        height: 56px !important;
+        width: 44px !important;
+        height: 54px !important;
       }
       .chibi-idle svg, .chibi-walking-step svg {
-        width: 46px !important;
-        height: 56px !important;
+        width: 44px !important;
+        height: 54px !important;
       }
       [id^="label-seat-"] {
         padding: 1px 3px !important;
@@ -283,6 +303,40 @@
       }
       [id^="label-seat-"] span {
         font-size: 7.5px !important;
+      }
+
+      /* 7. Tối ưu tất cả Popups/Modals trên Mobile Landscape */
+      .temple-panel {
+        max-height: 88vh !important;
+        max-height: 88dvh !important;
+        padding: 8px 12px !important;
+      }
+      .temple-panel h3 {
+        font-size: 14px !important;
+        line-height: 1.15 !important;
+      }
+      .temple-panel p {
+        font-size: 10px !important;
+      }
+      .temple-panel .my-2, .temple-panel .my-3, .temple-panel .my-3.5 {
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
+      }
+      .temple-panel button {
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+      }
+      #oracle-cylinder-svg {
+        width: 68px !important;
+        height: 92px !important;
+      }
+      #scripture-reader-box {
+        max-height: 140px !important;
+        font-size: 12px !important;
+      }
+      #breathing-glow-ring, #breathing-lotus-center {
+        width: 85px !important;
+        height: 85px !important;
       }
     }
 
@@ -1008,6 +1062,42 @@
         </div>
       </header>
 
+      <!-- IMMERSIVE MOBILE ROTATION & FULLSCREEN OVERLAY -->
+      <div id="mobile-rotation-overlay" class="hidden fixed inset-0 z-[250] bg-gradient-to-b from-stone-950/98 via-amber-950/95 to-black/98 backdrop-blur-xl flex flex-col items-center justify-center p-5 text-center text-amber-100">
+        <div class="relative mb-5">
+          <div class="w-20 h-20 rounded-2xl border-2 border-amber-300/70 bg-amber-950/50 flex items-center justify-center shadow-[0_0_35px_rgba(245,190,70,0.4)]">
+            <svg class="w-10 h-10 text-amber-300 animate-[spin_5s_ease-in-out_infinite]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="5" y="2" width="14" height="20" rx="3" />
+              <path d="M12 18h.01" />
+              <path d="M9 6h6" opacity="0.6" />
+            </svg>
+          </div>
+          <div class="absolute -bottom-2 -right-2 text-2xl">🪷</div>
+        </div>
+
+        <div class="max-w-xs space-y-2">
+          <div class="text-[10px] tracking-[0.25em] text-amber-300 uppercase font-extrabold">✦ CHÙA AN NHIÊN · ĐẠI HÙNG BẢO ĐIỆN ✦</div>
+          <h2 class="font-serif-title text-2xl font-bold text-amber-100 title-glow">
+            Xoay Ngang Để Chiêm Bái
+          </h2>
+          <p class="text-xs text-amber-200/80 leading-relaxed">
+            Hệ thống tối ưu cho <strong>màn hình xoay ngang & toàn màn hình</strong> để hiển thị trọn vẹn Chánh Điện và đồng tụng kinh.
+          </p>
+        </div>
+
+        <div class="mt-6 flex flex-col gap-2.5 w-full max-w-[260px]">
+          <button onclick="requestMobileLandscapeFullscreen()"
+            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-stone-950 font-extrabold text-xs tracking-wide shadow-[0_0_25px_rgba(245,190,70,0.6)] flex items-center justify-center gap-2 transition active:scale-95">
+            <span>⛶</span>
+            <span>XOAY NGANG & TOÀN MÀN HÌNH</span>
+          </button>
+          <button onclick="dismissMobileRotationOverlay()"
+            class="text-[11px] text-amber-300/70 hover:text-amber-200 py-1 transition">
+            Tiếp tục xem dọc
+          </button>
+        </div>
+      </div>
+
       <!-- FLOATING MOBILE ORIENTATION HELPER BANNER -->
       <div id="mobile-orientation-banner" class="hidden fixed top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-950/95 via-stone-900/95 to-amber-950/95 border border-amber-300 text-amber-200 text-xs font-semibold shadow-2xl flex items-center gap-2 cursor-pointer pointer-events-auto animate-bounce" onclick="requestMobileLandscapeFullscreen()">
         <span>📱 Chạm để Xoay Ngang & Toàn Màn Hình</span>
@@ -1328,13 +1418,13 @@
         </div>
       </div>
 
-      <!-- Live Floating Toast Notification -->
-      <div id="live-gift-banner" class="absolute left-1/2 -translate-x-1/2 top-[13.5%] z-40 pointer-events-none transition-all duration-300 opacity-0 scale-90">
-        <div class="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-950/95 via-stone-900/95 to-amber-950/95 border border-amber-300/75 shadow-2xl flex items-center gap-2.5 whitespace-nowrap">
-          <div id="banner-svg-slot" class="w-5 h-5 flex items-center justify-center text-amber-300"></div>
-          <div class="text-left">
-            <div id="banner-sender" class="text-[11px] sm:text-xs font-bold text-amber-300 leading-none">Ngọc Mai</div>
-            <div id="banner-wish" class="text-[10px] sm:text-[11px] text-amber-50/95 leading-tight mt-0.5">Bình an mỗi ngày</div>
+      <!-- Live Floating Toast Notification (Luôn hiển thị trên đỉnh z-[300], sang trọng, không bị che) -->
+      <div id="live-gift-banner" class="fixed top-2.5 sm:top-4 left-1/2 -translate-x-1/2 z-[300] pointer-events-none transition-all duration-300 opacity-0 -translate-y-4 scale-95 max-w-[92vw]">
+        <div class="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-stone-950/95 via-amber-950/95 to-stone-950/95 border border-amber-300/85 shadow-[0_4px_25px_rgba(245,190,70,0.55)] flex items-center gap-2 sm:gap-2.5 backdrop-blur-md">
+          <div id="banner-svg-slot" class="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-300/50 flex items-center justify-center text-amber-300 shrink-0"></div>
+          <div class="text-left min-w-0 pr-1">
+            <div id="banner-sender" class="text-[11px] sm:text-xs font-bold text-amber-300 leading-none truncate">Chùa An Nhiên</div>
+            <div id="banner-wish" class="text-[10px] sm:text-[11px] text-amber-50/95 leading-tight mt-0.5 truncate">Hoan hỷ tinh tấn tu học</div>
           </div>
         </div>
       </div>
@@ -1343,7 +1433,7 @@
            5. BOTTOM ACTION BAR & RITUAL DOCK
            ====================================================================== -->
       <footer class="absolute inset-x-0 bottom-0 z-30 pb-0.5 pt-0.5 sm:pt-2 px-1 sm:px-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex flex-col items-center gap-0.5">
-        <div id="bottom-dock-scroll" class="flex items-center gap-1 sm:gap-2 flex-nowrap overflow-x-auto w-full max-w-full px-1.5 py-0.5 scrollbar-none justify-start sm:justify-center pointer-events-auto">
+        <div id="bottom-dock-scroll" class="flex items-center gap-1 sm:gap-2 flex-nowrap overflow-x-auto w-full max-w-full px-1.5 py-0.5 scrollbar-none justify-start pointer-events-auto">
           <!-- 0. Nhiệm Vụ & Việc Lành Mỗi Ngày -->
           <button onclick="DailyQuestEngine.openQuestModal()" title="Nhiệm Vụ Tu Học & Việc Tốt Trong Ngày"
             class="px-2.5 py-1 rounded-full bg-gradient-to-r from-red-600 via-amber-600 to-yellow-500 hover:brightness-110 border border-amber-200 text-[10px] sm:text-[11.5px] font-extrabold text-white flex items-center gap-1.5 shadow-lg active:scale-95 transition shrink-0 whitespace-nowrap">
@@ -1696,7 +1786,7 @@
       <!-- ======================================================================
            7. MODAL 2: SƠ ĐỒ TRA CỨU 12 VỊ TRÍ BỒ ĐOÀN
            ====================================================================== -->
-      <div id="seat-directory-modal" class="hidden absolute inset-0 z-50 bg-black/75 backdrop-blur-sm items-center justify-center p-2 sm:p-6">
+      <div id="seat-directory-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
         <div class="temple-panel w-full max-w-[580px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-5 border border-amber-300/55 text-amber-50">
           <div class="flex items-center justify-between border-b border-amber-300/25 pb-2">
             <div>
@@ -1723,7 +1813,7 @@
       <!-- ======================================================================
            8. MODAL 3: XIN XĂM TỪ BI / GIEO QUẺ ĐẦU NĂM
            ====================================================================== -->
-      <div id="oracle-fortune-modal" class="hidden absolute inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-2 sm:p-5">
+      <div id="oracle-fortune-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
         <div class="temple-panel w-full max-w-[560px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative">
           <div class="flex items-center justify-between border-b border-amber-300/25 pb-2">
             <div>
@@ -1802,7 +1892,7 @@
       <!-- ======================================================================
            9. MODAL 4: KHO TÀNG KINH THƯ & TỤNG KINH TỰ ĐỘNG
            ====================================================================== -->
-      <div id="scripture-library-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-5">
+      <div id="scripture-library-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
         <div class="temple-panel w-full max-w-[680px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative">
           <div class="flex items-center justify-between border-b border-amber-300/25 pb-2">
             <div>
@@ -1850,7 +1940,7 @@
       <!-- ======================================================================
            MODAL: PHÒNG ĐỒNG TỤNG THỜI GIAN THỰC (REAL-TIME SHARED CHANTING ROOM)
            ====================================================================== -->
-      <div id="shared-chanting-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-5">
+      <div id="shared-chanting-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
         <div class="temple-panel w-full max-w-[640px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-4 sm:p-6 border-2 border-emerald-400/80 text-amber-50 relative shadow-[0_0_35px_rgba(16,185,129,0.3)]">
           <div class="flex items-center justify-between border-b border-emerald-400/30 pb-2.5">
             <div class="flex items-center gap-2">
@@ -1915,7 +2005,7 @@
       <!-- ======================================================================
            MODAL: CẤU HÌNH & TRẠNG THÁI MÁY CHỦ LƯU TRỮ CHUNG LUỒNG (UNIVERSAL SERVER STREAM)
            ====================================================================== -->
-      <div id="sanctuary-server-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-5">
+      <div id="sanctuary-server-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
         <div class="temple-panel w-full max-w-[620px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-4 sm:p-6 border-2 border-amber-300/80 text-amber-50 relative shadow-[0_0_35px_rgba(245,158,11,0.25)]">
           <!-- Modal Header -->
           <div class="flex items-center justify-between border-b border-amber-300/30 pb-2.5">
@@ -2085,7 +2175,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       <!-- ======================================================================
            10. MODAL 5: LỜI PHẬT DẠY THEO TÂM TRẠNG (DHARMA WISDOM)
            ====================================================================== -->
-      <div id="dharma-wisdom-modal" class="hidden absolute inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-2 sm:p-5">
+      <div id="dharma-wisdom-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
         <div class="temple-panel w-full max-w-[620px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative">
           <div class="flex items-center justify-between border-b border-amber-300/25 pb-2">
             <div>
@@ -2141,7 +2231,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       <!-- ======================================================================
            11. MODAL 6: THIỀN THỞ CHÁNH NIỆM (MINDFUL BREATHING)
            ====================================================================== -->
-      <div id="mindful-breathing-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-5">
+      <div id="mindful-breathing-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
         <div class="temple-panel w-full max-w-[520px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-6 border-2 border-emerald-400/60 text-amber-50 text-center relative">
           <button onclick="closeBreathingModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-200">
             ✕
@@ -2174,7 +2264,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       <!-- ======================================================================
            12. MODAL 7: HẸN GIỜ KHÓA LỄ & XUẤT BẰNG CÔNG ĐỨC
            ====================================================================== -->
-      <div id="session-timer-modal" class="hidden absolute inset-0 z-50 bg-black/80 backdrop-blur-md items-center justify-center p-2 sm:p-5">
+      <div id="session-timer-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
         <div class="temple-panel w-full max-w-[580px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative">
           <div class="flex items-center justify-between border-b border-amber-300/25 pb-2">
             <div>
@@ -2230,7 +2320,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       <!-- ======================================================================
            13. MODAL 8: SỚ CẦU AN & CẦU SIÊU (PRAYER SUTRA)
            ====================================================================== -->
-      <div id="prayer-sutra-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-5">
+      <div id="prayer-sutra-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
         <div class="temple-panel w-full max-w-[620px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative">
           <div class="flex items-center justify-between border-b border-amber-300/25 pb-2">
             <div>
@@ -2277,7 +2367,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       <!-- ======================================================================
            14. MODAL 9: HỒ SƠ CHI TIẾT HÀNH GIẢ 3D (PRACTITIONER PROFILE MODAL)
            ====================================================================== -->
-      <div id="practitioner-profile-modal" class="hidden absolute inset-0 z-50 bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-5">
+      <div id="practitioner-profile-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
         <div class="temple-panel w-full max-w-[540px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-6 border-2 border-amber-300/65 text-amber-50 relative shadow-2xl">
           <div class="flex items-center justify-between border-b border-amber-300/25 pb-3">
             <div>
@@ -3067,6 +3157,45 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       } catch (err) {}
     }
 
+    window.mobileRotationDismissed = false;
+
+    function checkMobileOrientationBanner() {
+      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
+      const isPortrait = window.innerHeight > window.innerWidth;
+      const overlay = document.getElementById('mobile-rotation-overlay');
+      const banner = document.getElementById('mobile-orientation-banner');
+
+      if (isMobile) {
+        if (isPortrait) {
+          document.body.classList.remove('mobile-landscape');
+          document.body.classList.add('mobile-portrait');
+          if (overlay && !window.mobileRotationDismissed) {
+            overlay.classList.remove('hidden');
+          }
+          if (banner && window.mobileRotationDismissed) {
+            banner.classList.remove('hidden');
+          }
+        } else {
+          document.body.classList.add('mobile-landscape');
+          document.body.classList.remove('mobile-portrait');
+          if (overlay) overlay.classList.add('hidden');
+          if (banner) banner.classList.add('hidden');
+        }
+      } else {
+        document.body.classList.remove('mobile-landscape', 'mobile-portrait');
+        if (overlay) overlay.classList.add('hidden');
+        if (banner) banner.classList.add('hidden');
+      }
+    }
+
+    function dismissMobileRotationOverlay() {
+      window.mobileRotationDismissed = true;
+      const overlay = document.getElementById('mobile-rotation-overlay');
+      if (overlay) overlay.classList.add('hidden');
+      const banner = document.getElementById('mobile-orientation-banner');
+      if (banner && window.innerHeight > window.innerWidth) banner.classList.remove('hidden');
+    }
+
     async function requestMobileLandscapeFullscreen() {
       const docEl = document.documentElement;
       try {
@@ -3095,25 +3224,35 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         }
       }
 
+      const overlay = document.getElementById('mobile-rotation-overlay');
+      if (overlay) overlay.classList.add('hidden');
       const banner = document.getElementById('mobile-orientation-banner');
       if (banner) banner.classList.add('hidden');
+
       setTimeout(() => {
+        checkMobileOrientationBanner();
         if (typeof renderSanctuaryFloor === 'function') renderSanctuaryFloor();
       }, 350);
     }
 
-    function checkMobileOrientationBanner() {
+    // Tự động kích hoạt toàn màn hình và xoay ngang ngay khi người dùng chạm lần đầu tiên
+    function setupMobileAutoFullscreenOnFirstTap() {
       const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
-      const isPortrait = window.innerHeight > window.innerWidth;
-      const banner = document.getElementById('mobile-orientation-banner');
-      if (banner) {
-        if (isMobile && isPortrait) {
-          banner.classList.remove('hidden');
-        } else {
-          banner.classList.add('hidden');
+      if (!isMobile) return;
+
+      const onFirstInteraction = async (e) => {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) {
+          return;
         }
-      }
+        window.removeEventListener('click', onFirstInteraction, true);
+        window.removeEventListener('touchstart', onFirstInteraction, true);
+        await requestMobileLandscapeFullscreen();
+      };
+
+      window.addEventListener('click', onFirstInteraction, { capture: true, once: true });
+      window.addEventListener('touchstart', onFirstInteraction, { capture: true, once: true });
     }
+
     window.addEventListener('resize', checkMobileOrientationBanner);
     window.addEventListener('orientationchange', () => {
       setTimeout(() => {
@@ -3309,7 +3448,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       }
       if (currentUserProfile.isWalking) return;
 
-      requestAppFullscreen();
+      requestMobileLandscapeFullscreen();
 
       if (!AudioEngine.enabled) {
         AudioEngine.enabled = true;
@@ -6063,18 +6202,27 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     let bannerTimeout = null;
     function showLiveGiftBanner(sender, wish, iconKey = 'lotus') {
       const banner = document.getElementById('live-gift-banner');
-      document.getElementById('banner-svg-slot').innerHTML = getGiftIconSVG(iconKey, 'w-4 h-4');
-      document.getElementById('banner-sender').textContent = sender;
-      document.getElementById('banner-wish').textContent = wish;
+      if (!banner) return;
+      const slot = document.getElementById('banner-svg-slot');
+      const senderEl = document.getElementById('banner-sender');
+      const wishEl = document.getElementById('banner-wish');
 
-      banner.classList.remove('opacity-0', 'scale-90');
-      banner.classList.add('opacity-100', 'scale-100');
+      if (slot) slot.innerHTML = getGiftIconSVG(iconKey, 'w-4 h-4');
+      if (senderEl) senderEl.textContent = sender;
+      if (wishEl) wishEl.textContent = wish;
+
+      banner.classList.remove('opacity-0', '-translate-y-4', 'scale-95');
+      banner.classList.add('opacity-100', 'translate-y-0', 'scale-100');
+
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(35); } catch (e) {}
+      }
 
       clearTimeout(bannerTimeout);
       bannerTimeout = setTimeout(() => {
-        banner.classList.remove('opacity-100', 'scale-100');
-        banner.classList.add('opacity-0', 'scale-90');
-      }, 3200);
+        banner.classList.remove('opacity-100', 'translate-y-0', 'scale-100');
+        banner.classList.add('opacity-0', '-translate-y-4', 'scale-95');
+      }, 3400);
     }
 
     let incenseIntensity = 1.3;
@@ -6365,6 +6513,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
     window.onload = async function () {
       checkMobileOrientationBanner();
+      setupMobileAutoFullscreenOnFirstTap();
       setupSmartDobInputs();
       recalculateAgeAndPreview(false);
       initGoldMotes();
