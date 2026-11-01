@@ -711,15 +711,25 @@
         <div class="flex items-center gap-1 sm:gap-2 pointer-events-auto shrink-0">
           <button id="btn-audio-toggle" onclick="toggleAudio()" title="Bật / Tắt âm thanh Chánh Điện"
             class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 backdrop-blur-md flex items-center justify-center text-amber-100 shadow-lg transition active:scale-90">
-            <svg id="icon-muted" class="w-3.5 h-3.5 text-amber-200/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg id="icon-muted" class="w-3.5 h-3.5 hidden text-amber-200/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
               <path stroke-linecap="round" stroke-linejoin="round" d="M22 9l-6 6M16 9l6 6" />
             </svg>
-            <svg id="icon-unmuted" class="w-3.5 h-3.5 hidden text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg id="icon-unmuted" class="w-3.5 h-3.5 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" />
             </svg>
           </button>
+
+          <!-- BGM CONTROLS (NHẠC THIỀN NỀN - TỰ ĐỘNG CHẠY, LẶP VÔ TẬN, MẶC ĐỊNH 30%, CÓ THANH CHỈNH ÂM LƯỢNG) -->
+          <div id="bgm-control-pill" class="flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:py-1 rounded-full bg-black/65 hover:bg-black/85 border border-amber-300/45 backdrop-blur-md shadow-lg transition" title="Nhạc thiền nền (Lặp vô tận · Mặc định 30%)">
+            <button id="btn-bgm-toggle" onclick="toggleBackgroundMusic()" class="flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-amber-200 hover:text-amber-100 transition active:scale-90" title="Bật / Tạm dừng nhạc thiền nền">
+              <span id="bgm-status-icon" class="text-[11px] sm:text-xs">🎶</span>
+              <span class="hidden lg:inline text-amber-200">Nhạc thiền</span>
+            </button>
+            <input id="bgm-volume-slider" type="range" min="0" max="100" value="30" oninput="changeBackgroundMusicVolume(this.value)" class="w-12 sm:w-16 md:w-20 h-1.5 accent-amber-400 cursor-pointer bg-amber-950/80 rounded-lg" title="Điều chỉnh âm lượng nhạc nền">
+            <span id="bgm-volume-label" class="font-mono text-[8.5px] sm:text-[10px] text-amber-300 font-bold w-5 sm:w-6 text-right select-none">30%</span>
+          </div>
 
           <!-- 3D SANCTUARY TOGGLE BUTTON -->
           <button onclick="toggle3DMode()" id="btn-toggle-3d" title="Chuyển đổi Chánh Điện 3D Trực Quan / 2.5D Cổ Điển"
@@ -4734,74 +4744,260 @@
      **************************************************************************/
     const AudioEngine = {
       ctx: null,
-      enabled: false,
+      enabled: true,
       rainNode: null,
+
+      // Audio buffers & HTML5 audio pools for authentic sound effects
+      bellBuffer: null,
+      moBuffer: null,
+      bellAudio: null,
+      moPool: [],
+      moPoolIndex: 0,
+
+      // Background meditation music
+      bgMusic: null,
+      bgVolume: 0.3, // Mặc định 30% âm lượng
+      bgMusicPlaying: false,
+      bgMusicUnlocked: false,
 
       init() {
         if (!this.ctx) {
           const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioCtx();
+          if (AudioCtx) {
+            this.ctx = new AudioCtx();
+          }
         }
-        if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
+      },
+
+      preloadAssets() {
+        this.init();
+
+        // 1. Preload và giải mã Web Audio Buffer cho tiếng chuông và tiếng gõ mõ
+        if (this.ctx && typeof fetch === 'function') {
+          fetch('nhac/tieng_chuong_chua.mp3')
+            .then(res => res.arrayBuffer())
+            .then(buf => this.ctx.decodeAudioData(buf))
+            .then(decoded => { this.bellBuffer = decoded; })
+            .catch(() => {});
+
+          fetch('nhac/tieng_go_mo.mp3')
+            .then(res => res.arrayBuffer())
+            .then(buf => this.ctx.decodeAudioData(buf))
+            .then(decoded => { this.moBuffer = decoded; })
+            .catch(() => {});
+        }
+
+        // 2. Preload HTML5 Audio fallback pool cho tiếng gõ mõ (hỗ trợ gõ liên tục cực nhanh không bị trễ)
+        try {
+          this.moPool = Array.from({ length: 8 }, () => {
+            const a = new Audio('nhac/tieng_go_mo.mp3');
+            a.preload = 'auto';
+            return a;
+          });
+        } catch (e) {}
+
+        // 3. Preload HTML5 Audio fallback cho tiếng chuông chùa
+        try {
+          this.bellAudio = new Audio('nhac/tieng_chuong_chua.mp3');
+          this.bellAudio.preload = 'auto';
+        } catch (e) {}
+      },
+
+      initBgMusic() {
+        if (!this.bgMusic) {
+          try {
+            this.bgMusic = new Audio('nhac/nhac_thien_nen.mp3');
+            this.bgMusic.preload = 'auto';
+            this.bgMusic.loop = true;
+            this.bgMusic.volume = this.bgVolume;
+
+            // Cứ hết thì lặp lại liên tục tiếng nhạc nền
+            this.bgMusic.addEventListener('ended', () => {
+              this.bgMusic.currentTime = 0;
+              this.bgMusic.play().catch(() => {});
+            });
+          } catch (e) {
+            console.warn('BGM initialization error:', e);
+          }
+        }
+
+        this.updateBgUI();
+        this.startBgMusicAuto();
+      },
+
+      startBgMusicAuto() {
+        if (!this.bgMusic) return;
+        this.bgMusic.volume = this.bgVolume;
+
+        const playPromise = this.bgMusic.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              this.bgMusicPlaying = true;
+              this.bgMusicUnlocked = true;
+              this.updateBgUI();
+            })
+            .catch(() => {
+              // Bị chính sách autoplay của trình duyệt chặn -> kích hoạt ngay khi chạm/nhấp vào trang
+              this.bgMusicPlaying = false;
+              this.updateBgUI();
+              const unlockHandler = () => {
+                if (!this.bgMusicUnlocked && this.bgMusic) {
+                  this.bgMusicUnlocked = true;
+                  this.init();
+                  this.bgMusic.play().then(() => {
+                    this.bgMusicPlaying = true;
+                    this.updateBgUI();
+                  }).catch(() => {});
+                }
+                window.removeEventListener('pointerdown', unlockHandler);
+                window.removeEventListener('touchstart', unlockHandler);
+                window.removeEventListener('click', unlockHandler);
+                window.removeEventListener('keydown', unlockHandler);
+              };
+              window.addEventListener('pointerdown', unlockHandler, { once: true, passive: true });
+              window.addEventListener('touchstart', unlockHandler, { once: true, passive: true });
+              window.addEventListener('click', unlockHandler, { once: true, passive: true });
+              window.addEventListener('keydown', unlockHandler, { once: true, passive: true });
+            });
+        }
+      },
+
+      toggleBgMusic() {
+        if (!this.bgMusic) {
+          this.initBgMusic();
+          return;
+        }
+        if (this.bgMusic.paused) {
+          this.init();
+          this.bgMusic.play().then(() => {
+            this.bgMusicPlaying = true;
+            this.updateBgUI();
+          }).catch(() => {});
+        } else {
+          this.bgMusic.pause();
+          this.bgMusicPlaying = false;
+          this.updateBgUI();
+        }
+      },
+
+      setBgVolume(val) {
+        const vol = Math.max(0, Math.min(100, Number(val))) / 100;
+        this.bgVolume = vol;
+        if (this.bgMusic) {
+          this.bgMusic.volume = vol;
+          if (vol > 0 && this.bgMusic.paused && this.bgMusicPlaying) {
+            this.bgMusic.play().catch(() => {});
+          }
+        }
+        this.updateBgUI();
+      },
+
+      updateBgUI() {
+        const slider = document.getElementById('bgm-volume-slider');
+        const label = document.getElementById('bgm-volume-label');
+        const icon = document.getElementById('bgm-status-icon');
+        const percent = Math.round(this.bgVolume * 100);
+
+        if (slider && Number(slider.value) !== percent) {
+          slider.value = percent;
+        }
+        if (label) {
+          label.textContent = `${percent}%`;
+        }
+        if (icon) {
+          if (!this.bgMusic || this.bgMusic.paused || this.bgVolume === 0) {
+            icon.textContent = '🔇';
+            icon.title = 'Nhạc thiền nền đang tạm dừng';
+          } else {
+            icon.textContent = '🎶';
+            icon.title = 'Nhạc thiền nền đang phát';
+          }
         }
       },
 
       playTempleBell() {
         if (!this.enabled) return;
         this.init();
-        const now = this.ctx.currentTime;
-        const freqs = [216, 432, 648, 912, 1296];
-        const gains = [0.24, 0.14, 0.08, 0.04, 0.02];
 
-        freqs.forEach((f, idx) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(f, now);
+        // 1. Ưu tiên Web Audio API nếu buffer đã giải mã xong
+        if (this.ctx && this.bellBuffer) {
+          try {
+            const src = this.ctx.createBufferSource();
+            src.buffer = this.bellBuffer;
+            const gain = this.ctx.createGain();
+            gain.gain.value = 0.95;
+            src.connect(gain);
+            gain.connect(this.ctx.destination);
+            src.start(0);
+            return;
+          } catch (e) {}
+        }
 
-          gain.gain.setValueAtTime(0.0001, now);
-          gain.gain.linearRampToValueAtTime(gains[idx], now + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.0 - idx * 0.45);
-
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now);
-          osc.stop(now + 4.1);
-        });
+        // 2. Fallback sang HTML5 Audio
+        try {
+          if (this.bellAudio) {
+            this.bellAudio.currentTime = 0;
+            this.bellAudio.volume = 0.95;
+            this.bellAudio.play().catch(() => {});
+            return;
+          }
+          const a = new Audio('nhac/tieng_chuong_chua.mp3');
+          a.volume = 0.95;
+          a.play().catch(() => {});
+        } catch (e) {}
       },
 
       playWoodenFish(multiplier = 1) {
         if (!this.enabled) return;
         this.init();
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
 
-        const baseFreq = multiplier >= 3 ? 545 : 520;
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(baseFreq, now);
-        osc.frequency.exponentialRampToValueAtTime(335, now + 0.09);
+        // 1. Ưu tiên Web Audio API (không trễ, hỗ trợ gõ dồn dập hàng chục nhịp/giây)
+        if (this.ctx && this.moBuffer) {
+          try {
+            const src = this.ctx.createBufferSource();
+            src.buffer = this.moBuffer;
+            const rate = multiplier >= 3 ? 1.04 : (1.0 + (Math.random() * 0.04 - 0.02));
+            src.playbackRate.value = rate;
 
-        gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(0.28, now + 0.007);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+            const gain = this.ctx.createGain();
+            gain.gain.value = Math.min(1.0, 0.88 + (multiplier - 1) * 0.04);
+            src.connect(gain);
+            gain.connect(this.ctx.destination);
+            src.start(0);
+            return;
+          } catch (e) {}
+        }
 
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + 0.17);
+        // 2. Fallback sang pool Audio HTML5 để gõ liên tiếp không bị ngắt
+        try {
+          if (this.moPool && this.moPool.length > 0) {
+            const audio = this.moPool[this.moPoolIndex];
+            this.moPoolIndex = (this.moPoolIndex + 1) % this.moPool.length;
+            audio.currentTime = 0;
+            audio.volume = Math.min(1.0, 0.88 + (multiplier - 1) * 0.04);
+            audio.play().catch(() => {});
+            return;
+          }
+          const a = new Audio('nhac/tieng_go_mo.mp3');
+          a.volume = 0.88;
+          a.play().catch(() => {});
+        } catch (e) {}
       },
 
       playBambooShake() {
         if (!this.enabled) {
           this.enabled = true;
-          document.getElementById('icon-muted').classList.add('hidden');
-          document.getElementById('icon-unmuted').classList.remove('hidden');
+          document.getElementById('icon-muted')?.classList.add('hidden');
+          document.getElementById('icon-unmuted')?.classList.remove('hidden');
         }
         this.init();
         for (let i = 0; i < 6; i++) {
           setTimeout(() => {
+            if (!this.ctx) return;
             const now = this.ctx.currentTime;
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -4820,6 +5016,7 @@
       playGiftChime() {
         if (!this.enabled) return;
         this.init();
+        if (!this.ctx) return;
         const now = this.ctx.currentTime;
         [528, 660, 792, 1056].forEach((freq, i) => {
           const osc = this.ctx.createOscillator();
@@ -4841,6 +5038,7 @@
       startRainSound() {
         if (!this.enabled || this.rainNode) return;
         this.init();
+        if (!this.ctx) return;
         const bufferSize = this.ctx.sampleRate * 2;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -4879,18 +5077,26 @@
       const unmutedIcon = document.getElementById('icon-unmuted');
 
       if (AudioEngine.enabled) {
-        mutedIcon.classList.add('hidden');
-        unmutedIcon.classList.remove('hidden');
+        mutedIcon?.classList.add('hidden');
+        unmutedIcon?.classList.remove('hidden');
         AudioEngine.playTempleBell();
         createBellRipple(50, 26);
-        if (AMBIENCE_MODES[currentAmbienceIdx].id === 'rain') {
+        if (typeof AMBIENCE_MODES !== 'undefined' && AMBIENCE_MODES[currentAmbienceIdx]?.id === 'rain') {
           AudioEngine.startRainSound();
         }
       } else {
-        mutedIcon.classList.remove('hidden');
-        unmutedIcon.classList.add('hidden');
+        mutedIcon?.classList.remove('hidden');
+        unmutedIcon?.classList.add('hidden');
         AudioEngine.stopRainSound();
       }
+    }
+
+    function toggleBackgroundMusic() {
+      AudioEngine.toggleBgMusic();
+    }
+
+    function changeBackgroundMusicVolume(val) {
+      AudioEngine.setBgVolume(val);
     }
 
     /**************************************************************************
@@ -5335,6 +5541,10 @@
           renderSanctuaryFloor();
         }
       });
+
+      // 6. Khởi động nhạc thiền nền (mặc định 30% âm lượng, lặp vô tận) và nạp sẵn âm thanh chuông mõ MP3
+      AudioEngine.preloadAssets();
+      AudioEngine.initBgMusic();
     };
   </script>
 </body>
