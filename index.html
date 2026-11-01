@@ -3306,6 +3306,19 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         if (window.DailyQuestEngine) {
           window.DailyQuestEngine.onAction('offering', 1);
         }
+        if (window.SupabaseSanctuary) {
+          window.SupabaseSanctuary.broadcast('OFFER_INCENSE', {
+            seatNo: userSeat.seatNo,
+            name: currentUserProfile.fullName
+          });
+        }
+        if (window.RealtimeSanctuary) {
+          window.RealtimeSanctuary.publishMessage({
+            type: 'OFFER_INCENSE',
+            seatNo: userSeat.seatNo,
+            name: currentUserProfile.fullName
+          });
+        }
       });
     }
 
@@ -3757,8 +3770,34 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
             if (seat.isUser) {
               performUserWoodenFishTap();
             } else {
-              triggerDevoteeBow(seat.id, `Nam Mô A Di Đà Phật (${seat.name})`, 'lotus');
-              AudioEngine.playWoodenFish();
+              // Hai bên cùng cúi đầu đảnh lễ & tán thán công đức
+              const mySeat = sanctuarySeats.find(s => s.isUser);
+              if (mySeat) {
+                triggerDevoteeBow(mySeat.id, `🙏 Tùy hỷ công đức đạo hữu ${seat.name}`, 'lotus');
+              }
+              triggerDevoteeBow(seat.id, `🙏 Cảm niệm đạo hữu ${currentUserProfile.fullName || 'Đồng Tu'}!`, 'lotus');
+              AudioEngine.playGiftChime();
+              showLiveGiftBanner('Tùy Hỷ Công Đức', `🙏 Bạn vừa tùy hỷ tán thán công đức của đạo hữu ${seat.name} (+5 Công Đức)`, 'lotus');
+              addMeritPoints(currentUserProfile.fullName || 'Đồng Tu', 5, 'lotus', `Tùy hỷ công đức của ${seat.name}`, true);
+
+              if (window.SupabaseSanctuary) {
+                window.SupabaseSanctuary.broadcast('REJOICE_MERIT', {
+                  targetClientId: seat.remoteClientId,
+                  targetSeatNo: seat.seatNo,
+                  targetName: seat.name,
+                  fromName: currentUserProfile.fullName || 'Đồng Tu'
+                });
+              }
+              if (window.RealtimeSanctuary) {
+                window.RealtimeSanctuary.publishMessage({
+                  type: 'REJOICE_MERIT',
+                  targetClientId: seat.remoteClientId,
+                  targetSeatNo: seat.seatNo,
+                  targetName: seat.name,
+                  fromName: currentUserProfile.fullName || 'Đồng Tu'
+                });
+              }
+
               openPractitionerProfileModal(seat);
             }
           });
@@ -3892,6 +3931,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       triggerDevoteeBow(userSeat.id, `${phrase} (+${zenMultiplier}Đ)`, 'mo');
       addMeritPoints(userSeat.name, zenMultiplier, 'mo', phrase, true);
 
+      if (window.SupabaseSanctuary) {
+        window.SupabaseSanctuary.broadcast('WOODEN_FISH', {
+          seatNo: userSeat.seatNo,
+          phrase: phrase,
+          multiplier: zenMultiplier,
+          senderName: userSeat.name
+        });
+      }
+
       if (window.RealtimeSanctuary) {
         window.RealtimeSanctuary.broadcastMoTap(phrase, zenMultiplier);
       }
@@ -3956,6 +4004,20 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       AudioEngine.playGiftChime();
       triggerDevoteeBow(userSeat.id, 'Con thành tâm đảnh lễ Đức Phật', 'lotus');
       addMeritPoints(userSeat.name, 5, 'lotus', 'Thành tâm lễ Phật', true);
+
+      if (window.SupabaseSanctuary) {
+        window.SupabaseSanctuary.broadcast('BOW_BUDDHA', {
+          seatNo: userSeat.seatNo,
+          name: userSeat.name
+        });
+      }
+      if (window.RealtimeSanctuary) {
+        window.RealtimeSanctuary.publishMessage({
+          type: 'BOW_BUDDHA',
+          seatNo: userSeat.seatNo,
+          name: userSeat.name
+        });
+      }
     }
 
     function toggleAutoChanting() {
@@ -5511,6 +5573,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         window.temple3D.strikeBell3D();
       }
       showLiveGiftBanner('Tiếng Đại Hồng Chung', 'Ngân vang tĩnh tâm · Xua tan muộn phiền', 'lotus');
+      if (window.SupabaseSanctuary) {
+        const mySeat = sanctuarySeats.find(s => s.isUser);
+        window.SupabaseSanctuary.broadcast('BELL_RING', {
+          seatNo: mySeat ? mySeat.seatNo : null,
+          senderName: currentUserProfile.fullName || 'Đồng Tu'
+        });
+      }
       if (window.RealtimeSanctuary) {
         window.RealtimeSanctuary.broadcastBellRing();
       }

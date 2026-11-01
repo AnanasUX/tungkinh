@@ -84,13 +84,32 @@
         // 5. Lắng nghe sự kiện rời trang để giải phóng ghế
         this.setupUnloadHandlers();
 
-        // 6. Cập nhật giao diện HUD & Modal
+        // 6. Định kỳ cập nhật last_seen lên Database (Heartbeat)
+        this.startHeartbeatLoop();
+
+        // 7. Cập nhật giao diện HUD & Modal
         this.updateHUDStatus(true);
       } catch (err) {
         console.warn('[SupabaseSanctuary] Khởi tạo Supabase thất bại:', err);
         this.isConnected = false;
         this.updateHUDStatus(false);
       }
+    },
+
+    startHeartbeatLoop() {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = setInterval(async () => {
+        if (!this.isConnected || !this.client || !window.currentUserProfile) return;
+        const mySeatNo = window.currentUserProfile.assignedSeatNo;
+        if (mySeatNo) {
+          try {
+            await this.client
+              .from('sanctuary_devotees')
+              .update({ last_seen: new Date().toISOString() })
+              .eq('client_id', this.getClientId());
+          } catch (e) {}
+        }
+      }, 30000);
     },
 
     setupUnloadHandlers() {
@@ -143,24 +162,118 @@
           this.handlePresenceLeave(key, leftPresences);
         });
 
-      // B. LẮNG NGHE REALTIME BROADCAST (Chuông, Mõ, Khóa lễ tụng kinh, Hoa đăng, Dâng sớ, v.v.)
+      // B. LẮNG NGHE REALTIME BROADCAST (Chuông, Mõ, Lễ Phật, Dâng Hương, Tùy Hỷ, Khóa lễ tụng kinh, v.v.)
+      const handleBell = (payload) => {
+        if (!payload || payload.senderId === this.getClientId()) return;
+        if (window.AudioEngine) window.AudioEngine.playTempleBell();
+        if (window.createBellRipple) window.createBellRipple(50, 26);
+        const name = payload.senderName || payload.name || 'Đồng Tu';
+        if (window.showLiveGiftBanner) {
+          window.showLiveGiftBanner('Tiếng Đại Hồng Chung', `🔔 Đồng tu ${name} vừa thỉnh Đại Hồng Chung`, 'bell');
+        }
+        let seatNo = payload.seatNo;
+        if (!seatNo && payload.senderId && window.sanctuarySeats) {
+          const s = window.sanctuarySeats.find(item => item.remoteClientId === payload.senderId);
+          if (s) seatNo = s.seatNo;
+        }
+        if (seatNo && window.triggerDevoteeBow) {
+          window.triggerDevoteeBow(`seat-${seatNo}`, 'Nam Mô A Di Đà Phật', 'bell');
+        }
+      };
+
+      const handleWoodenFish = (payload) => {
+        if (!payload || payload.senderId === this.getClientId()) return;
+        const mult = payload.multiplier || 1;
+        if (window.AudioEngine) window.AudioEngine.playWoodenFish(mult);
+        let seatNo = payload.seatNo;
+        if (!seatNo && payload.senderId && window.sanctuarySeats) {
+          const s = window.sanctuarySeats.find(item => item.remoteClientId === payload.senderId);
+          if (s) seatNo = s.seatNo;
+        }
+        if (seatNo && window.triggerDevoteeBow) {
+          window.triggerDevoteeBow(`seat-${seatNo}`, payload.phrase || 'Nam Mô A Di Đà Phật', 'mo');
+        }
+      };
+
+      const handleBowBuddha = (payload) => {
+        if (!payload || payload.senderId === this.getClientId()) return;
+        if (window.AudioEngine) window.AudioEngine.playGiftChime();
+        let seatNo = payload.seatNo;
+        if (!seatNo && payload.senderId && window.sanctuarySeats) {
+          const s = window.sanctuarySeats.find(item => item.remoteClientId === payload.senderId);
+          if (s) seatNo = s.seatNo;
+        }
+        if (seatNo && window.triggerDevoteeBow) {
+          window.triggerDevoteeBow(`seat-${seatNo}`, 'Con thành tâm đảnh lễ Đức Phật', 'lotus');
+        }
+        if (window.showLiveGiftBanner) {
+          window.showLiveGiftBanner('Lễ Phật Trang Nghiêm', `🙏 Đồng tu ${payload.name || payload.senderName || 'Đồng Tu'} vừa thành tâm đảnh lễ Đức Phật`, 'lotus');
+        }
+      };
+
+      const handleOfferIncense = (payload) => {
+        if (!payload || payload.senderId === this.getClientId()) return;
+        if (window.AudioEngine) window.AudioEngine.playGiftChime();
+        if (window.triggerGoldenLotusRain) window.triggerGoldenLotusRain(18);
+        let seatNo = payload.seatNo;
+        if (!seatNo && payload.senderId && window.sanctuarySeats) {
+          const s = window.sanctuarySeats.find(item => item.remoteClientId === payload.senderId);
+          if (s) seatNo = s.seatNo;
+        }
+        if (seatNo && window.triggerDevoteeBow) {
+          window.triggerDevoteeBow(`seat-${seatNo}`, 'Dâng 3 nén tâm hương', 'lotus');
+        }
+        if (window.showLiveGiftBanner) {
+          window.showLiveGiftBanner('Dâng Hương Cúng Phật', `🪷 Đồng tu ${payload.name || payload.senderName || 'Đồng Tu'} vừa dâng 3 nén tâm hương (+20 Công Đức)`, 'lotus');
+        }
+      };
+
+      const handleRejoice = (payload) => {
+        if (!payload || payload.senderId === this.getClientId()) return;
+        if (window.AudioEngine) window.AudioEngine.playGiftChime();
+        if (window.triggerGoldenLotusRain) window.triggerGoldenLotusRain(12);
+
+        const myId = this.getClientId();
+        const isTargetingMe = (payload.targetClientId && payload.targetClientId === myId)
+          || (window.currentUserProfile && payload.targetName && payload.targetName === window.currentUserProfile.fullName);
+
+        if (isTargetingMe) {
+          if (window.addMeritPoints && window.currentUserProfile) {
+            window.addMeritPoints(window.currentUserProfile.fullName, 5, 'lotus', `Nhận tùy hỷ công đức từ ${payload.fromName}`, true);
+          }
+          if (window.showLiveGiftBanner) {
+            window.showLiveGiftBanner('Tùy Hỷ Công Đức', `🪷 Đạo hữu ${payload.fromName} vừa tùy hỷ tán thán công đức của bạn (+5 Công Đức)!`, 'lotus');
+          }
+          const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
+          if (mySeatNo && window.triggerDevoteeBow) {
+            window.triggerDevoteeBow(`seat-${mySeatNo}`, '🙏 Cảm niệm tùy hỷ công đức!', 'lotus');
+          }
+        } else {
+          if (window.showLiveGiftBanner) {
+            window.showLiveGiftBanner('Tùy Hỷ Công Đức', `🪷 ${payload.fromName || 'Đồng tu'} vừa tán thán công đức của ${payload.targetName || 'quý đạo hữu'}!`, 'lotus');
+          }
+          if (payload.targetSeatNo && window.triggerDevoteeBow) {
+            window.triggerDevoteeBow(`seat-${payload.targetSeatNo}`, '🙏 Cảm niệm công đức!', 'lotus');
+          }
+        }
+      };
+
       this.channel
-        .on('broadcast', { event: 'BELL_RING' }, ({ payload }) => {
-          if (window.AudioEngine) window.AudioEngine.playTempleBell();
-          if (window.createBellRipple) window.createBellRipple(50, 26);
-          if (payload && payload.senderName && window.showLiveGiftBanner) {
-            window.showLiveGiftBanner('Tiếng Đại Hồng Chung', `Đồng tu ${payload.senderName} vừa thỉnh chuông`, 'bell');
-          }
-        })
-        .on('broadcast', { event: 'WOODEN_FISH' }, ({ payload }) => {
-          if (window.AudioEngine) window.AudioEngine.playWoodenFish(payload ? payload.multiplier : 1);
-          if (payload && payload.seatNo && window.triggerDevoteeBow) {
-            window.triggerDevoteeBow(`seat-${payload.seatNo}`, payload.phrase || 'Nam Mô A Di Đà Phật', 'mo');
-          }
-        })
+        .on('broadcast', { event: 'BELL_RING' }, ({ payload }) => handleBell(payload))
+        .on('broadcast', { event: 'RING_BELL' }, ({ payload }) => handleBell(payload))
+        .on('broadcast', { event: 'WOODEN_FISH' }, ({ payload }) => handleWoodenFish(payload))
+        .on('broadcast', { event: 'TAP_MO' }, ({ payload }) => handleWoodenFish(payload))
+        .on('broadcast', { event: 'BOW_BUDDHA' }, ({ payload }) => handleBowBuddha(payload))
+        .on('broadcast', { event: 'OFFER_INCENSE' }, ({ payload }) => handleOfferIncense(payload))
+        .on('broadcast', { event: 'REJOICE_MERIT' }, ({ payload }) => handleRejoice(payload))
         .on('broadcast', { event: 'CHANT_SYNC' }, ({ payload }) => {
           if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.applyRemoteChantState === 'function') {
             window.RealtimeSanctuary.applyRemoteChantState(payload);
+          }
+        })
+        .on('broadcast', { event: 'COMMUNAL_CHANT_VERSE' }, ({ payload }) => {
+          if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.onCommunalVerseAdvanced === 'function') {
+            window.RealtimeSanctuary.onCommunalVerseAdvanced(payload.verseIndex, payload.verseText, false);
           }
         })
         .on('broadcast', { event: 'GIFT_BLESSING' }, ({ payload }) => {
@@ -179,11 +292,6 @@
         .on('broadcast', { event: 'PRAYER_SUTRA' }, ({ payload }) => {
           if (payload && window.showLiveGiftBanner) {
             window.showLiveGiftBanner('Dâng Sớ Cầu An', `Đồng tu ${payload.sender || 'Đồng tu'} vừa thành tâm dâng sớ: "${payload.wish || ''}"`, 'lotus');
-          }
-        })
-        .on('broadcast', { event: 'REJOICE_MERIT' }, ({ payload }) => {
-          if (payload && window.showLiveGiftBanner) {
-            window.showLiveGiftBanner('Tùy Hỷ Công Đức', `${payload.fromName || 'Đồng tu'} vừa tán thán công đức của ${payload.targetName || 'quý đạo hữu'}!`, 'lotus');
           }
         })
         .on('broadcast', { event: 'CLAIM_SEAT' }, ({ payload }) => {
@@ -417,6 +525,7 @@
       if (!window.sanctuarySeats || !dev) return;
       const myClientId = this.getClientId();
       if (dev.clientId === myClientId) return;
+      if (window.currentUserProfile && dev.fullName && dev.fullName === window.currentUserProfile.fullName && window.currentUserProfile.registered) return;
 
       const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
 
@@ -445,7 +554,7 @@
         if (remoteHasPriority) {
           console.log(`[SupabaseSanctuary] Nhường bồ đoàn #${mySeatNo} cho ${dev.fullName}, tự động dời sang bồ đoàn trống tiếp theo...`);
           if (typeof window.pickBestAvailableSeat === 'function' && typeof window.assignUserToSeat === 'function') {
-            const newSeat = window.pickBestAvailableSeat(mySeatNo);
+            const newSeat = window.pickBestAvailableSeat();
             window.assignUserToSeat(newSeat);
             this.trackCurrentUserPresence();
             this.saveDevoteeToDB(window.currentUserProfile, newSeat);
@@ -453,7 +562,7 @@
         } else {
           // Xếp remote sang bồ đoàn trống tiếp theo
           if (typeof window.pickBestAvailableSeat === 'function') {
-            targetSeatNo = window.pickBestAvailableSeat(mySeatNo);
+            targetSeatNo = window.pickBestAvailableSeat();
           }
         }
       }
@@ -462,7 +571,7 @@
       // Tránh trùng ghế với người dùng hiện tại hoặc remote khác
       if (!seat || seat.isUser || (seat.remoteClientId && seat.remoteClientId !== dev.clientId)) {
         if (typeof window.pickBestAvailableSeat === 'function') {
-          targetSeatNo = window.pickBestAvailableSeat(mySeatNo);
+          targetSeatNo = window.pickBestAvailableSeat();
           seat = window.sanctuarySeats.find(s => s.seatNo === targetSeatNo);
         }
       }
@@ -484,16 +593,19 @@
     },
 
     /**
-     * Tải danh sách đồng tu đã lưu trong Database Supabase (Table: sanctuary_devotees)
+     * Tải danh sách đồng tu đang hoạt động trong Database Supabase (Table: sanctuary_devotees)
      */
     async fetchDevoteesFromDB() {
       if (!this.client) return;
 
       try {
         console.log('[SupabaseSanctuary] Đang tải danh sách đồng tu từ bảng sanctuary_devotees...');
+        // Chỉ nạp đồng tu có hoạt động trong vòng 2 phút gần nhất (chống kẹt linh hồn cũ/ghost devotee)
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
         const { data, error } = await this.client
           .from('sanctuary_devotees')
           .select('*')
+          .gte('last_seen', twoMinutesAgo)
           .order('last_seen', { ascending: false })
           .limit(36);
 
@@ -503,7 +615,7 @@
         }
 
         if (data && data.length > 0) {
-          console.log(`[SupabaseSanctuary] Đã tải ${data.length} đồng tu từ Database Supabase!`);
+          console.log(`[SupabaseSanctuary] Đã tải ${data.length} đồng tu còn hoạt động từ Database Supabase!`);
 
           // Nếu số người trong database > 12 -> Tự động sinh thêm hàng mới!
           if (typeof window.ensureSeatCapacity === 'function') {
@@ -531,6 +643,7 @@
       const myClientId = this.getClientId();
 
       if (dbRow.client_id === myClientId) return; // Không ghi đè bản thân
+      if (window.currentUserProfile && dbRow.full_name && dbRow.full_name === window.currentUserProfile.fullName && window.currentUserProfile.registered) return; // Chống nhân bản chính mình từ DB cũ
 
       // 1. Giải phóng ghế cũ của client_id này nếu họ đã ngồi ở ghế khác
       window.sanctuarySeats.forEach(s => {
