@@ -260,6 +260,57 @@ class Temple3DEngine {
       hallGroup.add(beam);
     }
 
+    // 6. Traditional Hanging Red & Gold Temple Silk Lanterns (Đèn Lồng Lục Giác)
+    this.hangingLanterns = [];
+    const lanternPositions = [
+      [-3.8, 8.6, -1], [3.8, 8.6, -1],
+      [-3.8, 8.6,  4], [3.8, 8.6,  4],
+      [-3.8, 8.6,  9], [3.8, 8.6,  9]
+    ];
+    const lanternSilkMat = new THREE.MeshStandardMaterial({
+      color: 0xd93829,
+      emissive: 0x991b1b,
+      emissiveIntensity: 0.5,
+      roughness: 0.4
+    });
+    lanternPositions.forEach(([lx, ly, lz], idx) => {
+      const lGroup = new THREE.Group();
+      lGroup.position.set(lx, ly, lz);
+
+      // Cord
+      const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.2, 8), goldTrimMat);
+      cord.position.y = -0.6;
+      lGroup.add(cord);
+
+      // Lantern body
+      const lBody = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 0.65, 6), lanternSilkMat);
+      lBody.position.y = -1.45;
+      lGroup.add(lBody);
+
+      // Gold Caps
+      const topCap = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.32, 0.08, 6), goldTrimMat);
+      topCap.position.y = -1.1;
+      lGroup.add(topCap);
+
+      const botCap = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.35, 0.08, 6), goldTrimMat);
+      botCap.position.y = -1.8;
+      lGroup.add(botCap);
+
+      // Tassel
+      const lTassel = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.32, 8), new THREE.MeshBasicMaterial({ color: 0xdc2626 }));
+      lTassel.position.y = -2.0;
+      lTassel.rotation.x = Math.PI;
+      lGroup.add(lTassel);
+
+      // Light
+      const pLight = new THREE.PointLight(0xff7733, 0.65, 5);
+      pLight.position.y = -1.45;
+      lGroup.add(pLight);
+
+      hallGroup.add(lGroup);
+      this.hangingLanterns.push({ group: lGroup, phase: idx * 0.9 });
+    });
+
     this.scene.add(hallGroup);
   }
 
@@ -415,6 +466,35 @@ class Temple3DEngine {
       this.candles3D.push({ mesh: flame, light: candleLight, baseY: 1.65 });
     });
 
+    // 6. Offering Vases with Pink Lotuses (Bình Hoa Sen Dâng Phật)
+    const vaseMat = new THREE.MeshStandardMaterial({ color: 0xb8860b, metalness: 0.85, roughness: 0.25 });
+    const lotusFlowerMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.4 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.6 });
+
+    for (let vSide of [-3.2, 3.2]) {
+      const vaseGroup = new THREE.Group();
+      vaseGroup.position.set(vSide, 0.9, 0.2);
+
+      const vase = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.16, 0.85, 16), vaseMat);
+      vase.position.y = 0.42;
+      vase.castShadow = true;
+      vaseGroup.add(vase);
+
+      // Lotus Flower
+      const blossom = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), lotusFlowerMat);
+      blossom.position.set(0, 0.98, 0);
+      blossom.scale.set(1, 1.4, 1);
+      vaseGroup.add(blossom);
+
+      // Leaf
+      const leaf = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.02, 12), leafMat);
+      leaf.position.set(0.12, 0.82, 0.05);
+      leaf.rotation.z = 0.3;
+      vaseGroup.add(leaf);
+
+      altarGroup.add(vaseGroup);
+    }
+
     // Make Buddha interactive (click to view altar)
     buddhaGroup.userData = { type: 'buddha', name: 'Đức Bổn Sư Thích Ca Mâu Ni' };
     this.interactiveObjects.push(buddhaGroup);
@@ -442,12 +522,12 @@ class Temple3DEngine {
       const cushionGroup = new THREE.Group();
       cushionGroup.position.set(seat.x, 0, seat.z);
 
-      // Lotus Cushion Mesh (Đệm Bồ Đoàn Hoa Sen)
-      const cushionGeo = new THREE.CylinderGeometry(0.55, 0.62, 0.16, 24);
+      // Lotus Cushion Mesh (Đệm Bồ Đoàn Hoa Sen Vải Gấm)
+      const cushionGeo = new THREE.CylinderGeometry(0.55, 0.64, 0.16, 24);
       const cushionMat = new THREE.MeshStandardMaterial({
-        color: seat.occupied ? 0xb57829 : 0x824e16,
-        roughness: 0.72,
-        metalness: 0.1
+        color: seat.occupied ? 0xb8782a : 0x7a4914,
+        roughness: 0.65,
+        metalness: 0.15
       });
       const cushionMesh = new THREE.Mesh(cushionGeo, cushionMat);
       cushionMesh.position.y = 0.08;
@@ -455,15 +535,35 @@ class Temple3DEngine {
       cushionMesh.castShadow = true;
       cushionGroup.add(cushionMesh);
 
-      // Golden Rim Ring
+      // Golden Rim Ring with Swastika / Floral Embroidery Tone
       const rimGeo = new THREE.TorusGeometry(0.58, 0.035, 12, 24);
-      const rimMat = new THREE.MeshStandardMaterial({ color: 0xf5cf67, metalness: 0.8, roughness: 0.3 });
+      const rimMat = new THREE.MeshStandardMaterial({ color: 0xf5cf67, metalness: 0.85, roughness: 0.25 });
       const rimMesh = new THREE.Mesh(rimGeo, rimMat);
       rimMesh.rotation.x = Math.PI / 2;
       rimMesh.position.y = 0.15;
       cushionGroup.add(rimMesh);
 
-      // If occupied, render a 3D Chibi Devotee
+      // 8 Sculpted Blooming Lotus Petals around the cushion base
+      for (let p = 0; p < 8; p++) {
+        const pAngle = (p / 8) * Math.PI * 2;
+        const petalGeo = new THREE.ConeGeometry(0.18, 0.28, 4);
+        const petalMat = new THREE.MeshStandardMaterial({
+          color: seat.occupied ? 0xf59e0b : 0xc2782b,
+          roughness: 0.5,
+          metalness: 0.2
+        });
+        const petal = new THREE.Mesh(petalGeo, petalMat);
+        petal.rotation.x = Math.PI / 3;
+        petal.rotation.y = pAngle;
+        petal.position.set(
+          Math.cos(pAngle) * 0.58,
+          0.06,
+          Math.sin(pAngle) * 0.58
+        );
+        cushionGroup.add(petal);
+      }
+
+      // If occupied, render a high-detail 3D Chibi Devotee
       let devoteeMesh = null;
       if (seat.occupied) {
         devoteeMesh = this.createChibiDevotee3D(seat.type, seat.name);
@@ -492,46 +592,170 @@ class Temple3DEngine {
   createChibiDevotee3D(type = 'monk', name = '') {
     const group = new THREE.Group();
 
-    const robeColor = type === 'female' ? 0x2e557a : 0x94521e;
-    const skinMat = new THREE.MeshStandardMaterial({ color: 0xffd9b3, roughness: 0.5 });
-    const robeMat = new THREE.MeshStandardMaterial({ color: robeColor, roughness: 0.65 });
-    const hairMat = new THREE.MeshStandardMaterial({ color: 0x1a120c, roughness: 0.8 });
+    // Palette & Materials
+    const isFemale = type === 'female';
+    const mainRobeColor = isFemale ? 0x2b4c6f : 0xa6581b; // Indigo Blue / Buddhist Saffron Amber
+    const stoleColor = isFemale ? 0xd9822b : 0x7c380b;    // Saffron Monastic Sash
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfc4, roughness: 0.42 });
+    const blushMat = new THREE.MeshBasicMaterial({ color: 0xf472b6, transparent: true, opacity: 0.55 });
+    const robeMat = new THREE.MeshStandardMaterial({ color: mainRobeColor, roughness: 0.65, metalness: 0.05 });
+    const stoleMat = new THREE.MeshStandardMaterial({ color: stoleColor, roughness: 0.55, metalness: 0.1 });
+    const collarMat = new THREE.MeshStandardMaterial({ color: 0xfffaed, roughness: 0.5 });
+    const goldTrimMat = new THREE.MeshStandardMaterial({ color: 0xf5cf67, metalness: 0.85, roughness: 0.25 });
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x181008, roughness: 0.7 });
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x2b1810 });
+    const beadMat = new THREE.MeshStandardMaterial({ color: 0x5a2e12, roughness: 0.4 });
 
-    // Crossed Robed Legs
-    const legsGeo = new THREE.CylinderGeometry(0.42, 0.46, 0.22, 16);
+    // 1. Crossed Legs wrapped in robe
+    const legsGeo = new THREE.CylinderGeometry(0.44, 0.48, 0.24, 20);
     const legs = new THREE.Mesh(legsGeo, robeMat);
-    legs.position.y = 0.11;
+    legs.position.y = 0.12;
     legs.castShadow = true;
     group.add(legs);
 
-    // Torso
-    const bodyGeo = new THREE.CylinderGeometry(0.24, 0.38, 0.52, 16);
+    // Front robe drape fold
+    const drapeGeo = new THREE.CylinderGeometry(0.18, 0.26, 0.22, 12, 1, false, 0, Math.PI);
+    const drape = new THREE.Mesh(drapeGeo, stoleMat);
+    drape.position.set(0, 0.11, 0.32);
+    drape.rotation.x = 0.18;
+    group.add(drape);
+
+    // 2. Torso with inner collar & diagonal monastic stole (Dải Y Vắt Vai)
+    const bodyGeo = new THREE.CylinderGeometry(0.26, 0.4, 0.55, 18);
     const body = new THREE.Mesh(bodyGeo, robeMat);
-    body.position.y = 0.42;
+    body.position.y = 0.44;
     body.castShadow = true;
     group.add(body);
 
-    // Folded hands in Anjali Mudra (chắp tay búp sen)
-    const handsGeo = new THREE.SphereGeometry(0.08, 12, 12);
-    handsGeo.scale(0.8, 1.4, 0.6);
+    // Inner White V-Collar
+    const collarGeo = new THREE.ConeGeometry(0.22, 0.25, 8);
+    const collar = new THREE.Mesh(collarGeo, collarMat);
+    collar.position.set(0, 0.62, 0.14);
+    collar.rotation.x = 0.2;
+    group.add(collar);
+
+    // Monastic Stole draped across left shoulder to right hip
+    const stoleGeo = new THREE.TorusGeometry(0.34, 0.065, 12, 24, Math.PI * 0.95);
+    const stole = new THREE.Mesh(stoleGeo, stoleMat);
+    stole.rotation.z = -Math.PI / 4;
+    stole.rotation.x = Math.PI / 8;
+    stole.position.set(0, 0.48, 0.05);
+    group.add(stole);
+
+    // Gold hem edge along stole
+    const stoleEdgeGeo = new THREE.TorusGeometry(0.35, 0.015, 8, 24, Math.PI * 0.95);
+    const stoleEdge = new THREE.Mesh(stoleEdgeGeo, goldTrimMat);
+    stoleEdge.rotation.z = -Math.PI / 4;
+    stoleEdge.rotation.x = Math.PI / 8;
+    stoleEdge.position.set(0, 0.48, 0.06);
+    group.add(stoleEdge);
+
+    // 3. Robe Sleeves (Draped naturally over knees)
+    for (let side of [-1, 1]) {
+      const sleeveGeo = new THREE.CylinderGeometry(0.1, 0.14, 0.36, 12);
+      const sleeve = new THREE.Mesh(sleeveGeo, robeMat);
+      sleeve.position.set(side * 0.26, 0.38, 0.1);
+      sleeve.rotation.z = -side * 0.45;
+      sleeve.rotation.x = 0.3;
+      group.add(sleeve);
+    }
+
+    // 4. Folded Hands in Anjali Mudra (Chắp Tay Búp Sen)
+    const handsGeo = new THREE.SphereGeometry(0.075, 14, 14);
+    handsGeo.scale(0.7, 1.4, 0.7);
     const hands = new THREE.Mesh(handsGeo, skinMat);
-    hands.position.set(0, 0.44, 0.24);
+    hands.position.set(0, 0.46, 0.26);
+    hands.rotation.x = 0.2;
     group.add(hands);
 
-    // Head
-    const headGeo = new THREE.SphereGeometry(0.24, 20, 20);
+    // 5. 3D Mala Prayer Beads (Tràng Hạt Bồ Đề) draped over hands
+    const malaGeo = new THREE.TorusGeometry(0.1, 0.022, 10, 20);
+    const mala = new THREE.Mesh(malaGeo, beadMat);
+    mala.position.set(0, 0.42, 0.28);
+    mala.rotation.x = Math.PI / 3;
+    group.add(mala);
+
+    // Mala Tassel (Tua rua đỏ)
+    const tasselGeo = new THREE.ConeGeometry(0.02, 0.08, 8);
+    const tassel = new THREE.Mesh(tasselGeo, new THREE.MeshBasicMaterial({ color: 0xdc2626 }));
+    tassel.position.set(0, 0.33, 0.33);
+    tassel.rotation.x = Math.PI;
+    group.add(tassel);
+
+    // 6. Cute Head & Face with Serene Smile & Peaceful Eyes
+    const headGeo = new THREE.SphereGeometry(0.26, 24, 24);
     const head = new THREE.Mesh(headGeo, skinMat);
-    head.position.y = 0.82;
+    head.position.y = 0.85;
     head.castShadow = true;
     group.add(head);
 
-    if (type === 'female') {
-      // Hair bun
-      const bunGeo = new THREE.SphereGeometry(0.12, 12, 12);
-      const bun = new THREE.Mesh(bunGeo, hairMat);
-      bun.position.set(0, 1.02, -0.05);
-      group.add(bun);
+    // Two Closed Smiling Eyes (Mắt thiền khép nhẹ cười bình an)
+    for (let side of [-1, 1]) {
+      const eyeGeo = new THREE.TorusGeometry(0.038, 0.007, 8, 14, Math.PI);
+      const eye = new THREE.Mesh(eyeGeo, eyeMat);
+      eye.rotation.z = Math.PI; // upside down arch = gentle smile
+      eye.position.set(side * 0.09, 0.86, 0.23);
+      group.add(eye);
+
+      // Rosy Cheeks (Má hồng thanh tịnh)
+      const blushGeo = new THREE.SphereGeometry(0.04, 12, 12);
+      blushGeo.scale(1, 0.6, 0.4);
+      const blush = new THREE.Mesh(blushGeo, blushMat);
+      blush.position.set(side * 0.14, 0.81, 0.21);
+      group.add(blush);
     }
+
+    // Peaceful Lip Curve (Miệng mỉm cười an nhiên)
+    const lipGeo = new THREE.TorusGeometry(0.022, 0.006, 8, 12, Math.PI * 0.8);
+    const lip = new THREE.Mesh(lipGeo, new THREE.MeshBasicMaterial({ color: 0xb55151 }));
+    lip.rotation.z = Math.PI * 0.9;
+    lip.position.set(0, 0.77, 0.24);
+    group.add(lip);
+
+    if (isFemale) {
+      // Lustrous Black Hair with side bangs & top bun
+      const hairCapGeo = new THREE.SphereGeometry(0.268, 20, 20, 0, Math.PI * 2, 0, Math.PI * 0.58);
+      const hairCap = new THREE.Mesh(hairCapGeo, hairMat);
+      hairCap.position.y = 0.86;
+      group.add(hairCap);
+
+      // Lotus Hair Bun
+      const bunGeo = new THREE.SphereGeometry(0.125, 16, 16);
+      const bun = new THREE.Mesh(bunGeo, hairMat);
+      bun.position.set(0, 1.08, -0.06);
+      group.add(bun);
+
+      // Golden Hairpin (Trâm cài tóc hoa sen)
+      const pinGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.24, 8);
+      const pin = new THREE.Mesh(pinGeo, goldTrimMat);
+      pin.rotation.z = Math.PI / 3;
+      pin.position.set(0.06, 1.09, -0.05);
+      group.add(pin);
+
+      const pinJewel = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+      pinJewel.position.set(0.16, 1.15, -0.05);
+      group.add(pinJewel);
+    } else {
+      // Monk: Subtle clean hairline & 3 glowing ordination dots (Hương Đảnh)
+      for (let i = -1; i <= 1; i++) {
+        const dotGeo = new THREE.SphereGeometry(0.012, 8, 8);
+        const dot = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0xfff3be }));
+        dot.position.set(i * 0.045, 0.98, 0.215);
+        group.add(dot);
+      }
+    }
+
+    // 7. Devotee Meditation Aura (Hào quang thiền định nhẹ nhàng sau lưng)
+    const auraGeo = new THREE.RingGeometry(0.28, 0.44, 32);
+    const auraMat = new THREE.MeshBasicMaterial({
+      color: 0xfff0aa,
+      transparent: true,
+      opacity: 0.35,
+      side: THREE.DoubleSide
+    });
+    const aura = new THREE.Mesh(auraGeo, auraMat);
+    aura.position.set(0, 0.85, -0.12);
+    group.add(aura);
 
     return group;
   }
@@ -1100,6 +1324,14 @@ class Temple3DEngine {
         const breathe = Math.sin(elapsed * 2.2 + idx * 1.1) * 0.012;
         d.group.position.y = 0.16 + breathe;
       });
+
+      // 5b. Sway Hanging Silk Lanterns
+      if (this.hangingLanterns) {
+        this.hangingLanterns.forEach(hl => {
+          hl.group.rotation.z = Math.sin(elapsed * 1.3 + hl.phase) * 0.045;
+          hl.group.rotation.x = Math.cos(elapsed * 0.95 + hl.phase) * 0.03;
+        });
+      }
 
       // 6. Update OrbitControls
       if (this.controls) {
