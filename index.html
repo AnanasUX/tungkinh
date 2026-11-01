@@ -2310,27 +2310,30 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
     function isSeatTakenByRemote(seatNo) {
       const s = sanctuarySeats.find(item => item.seatNo === seatNo);
-      return !!(s && s.remoteClientId);
+      return !!(s && s.remoteClientId && s.remoteClientId !== window.SANCTUARY_CLIENT_ID && !s.isUser);
     }
 
     function pickBestAvailableSeat(preferSeatNo = null) {
       if (preferSeatNo) {
         ensureSeatCapacity(preferSeatNo);
         const pref = sanctuarySeats.find(s => s.seatNo === preferSeatNo);
-        if (pref && !pref.occupied && !pref.isUser && !pref.remoteClientId) return pref.seatNo;
+        if (pref && !pref.occupied && !pref.isUser && (!pref.remoteClientId || pref.remoteClientId === window.SANCTUARY_CLIENT_ID)) return pref.seatNo;
       }
       // 1. Tìm bồ đoàn còn trống
-      const emptySeat = sanctuarySeats.find(s => !s.occupied && !s.isUser && !s.remoteClientId);
+      const emptySeat = sanctuarySeats.find(s => !s.occupied && !s.isUser && (!s.remoteClientId || s.remoteClientId === window.SANCTUARY_CLIENT_ID));
       if (emptySeat) return emptySeat.seatNo;
 
       // 2. Tìm bồ đoàn đệ tử ảo (dummy AI)
-      const dummySeat = sanctuarySeats.find(s => s.isDummy && !s.remoteClientId && !s.isUser);
+      const dummySeat = sanctuarySeats.find(s => s.isDummy && !s.isUser && (!s.remoteClientId || s.remoteClientId === window.SANCTUARY_CLIENT_ID));
       if (dummySeat) return dummySeat.seatNo;
 
       // 3. NẾU ĐÃ HẾT TẤT CẢ 12 CHỖ (HOẶC NHIỀU HƠN) -> TỰ ĐỘNG SINH HÀNG MỚI ĐỂ LUÔN CÓ CHỖ NGỒI!
       const newSeats = generateNewSeatRow();
       return newSeats[0].seatNo;
     }
+
+    window.isSeatTakenByRemote = isSeatTakenByRemote;
+    window.pickBestAvailableSeat = pickBestAvailableSeat;
 
     const CHUA_AN_NHIEN_SESSION_KEY = 'chua_an_nhien_real_user_session';
     let currentDetectedIP = '';
@@ -2502,6 +2505,46 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       }
     }
 
+    function assignUserToSeat(seatNo, profileData) {
+      const prof = profileData || currentUserProfile;
+      ensureSeatCapacity(seatNo);
+
+      // Giải phóng triệt để bồ đoàn cũ của người dùng này trên toàn sàn (chống nhân bản)
+      sanctuarySeats.forEach(s => {
+        if (s.isUser || (s.remoteClientId && s.remoteClientId === window.SANCTUARY_CLIENT_ID)) {
+          s.isUser = false;
+          s.occupied = false;
+          s.remoteClientId = null;
+          s.name = '';
+          s.dharma = '';
+        }
+      });
+
+      let targetSeat = sanctuarySeats.find(s => s.seatNo === seatNo);
+      if (!targetSeat || isSeatTakenByRemote(seatNo)) {
+        const bestNo = pickBestAvailableSeat(seatNo);
+        targetSeat = sanctuarySeats.find(s => s.seatNo === bestNo) || sanctuarySeats[0];
+      }
+
+      if (targetSeat) {
+        targetSeat.occupied = true;
+        targetSeat.isUser = true;
+        targetSeat.isDummy = false;
+        targetSeat.remoteClientId = window.SANCTUARY_CLIENT_ID;
+        targetSeat.name = prof.fullName || 'Đồng Tu Mới';
+        targetSeat.dharma = prof.dharmaName || 'Tịnh Tâm';
+        targetSeat.age = prof.age || 26;
+        targetSeat.hometown = prof.hometown || '';
+        targetSeat.type = prof.avatarType || 'monk';
+        targetSeat.points = prof.meritScore || 0;
+        targetSeat.ip = prof.clientIp || currentDetectedIP || '117.5.x.x';
+        prof.assignedSeatNo = targetSeat.seatNo;
+      }
+      return targetSeat;
+    }
+
+    window.assignUserToSeat = assignUserToSeat;
+
     function loadRealUserSession() {
       try {
         const saved = localStorage.getItem(CHUA_AN_NHIEN_SESSION_KEY);
@@ -2529,35 +2572,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
         applyProfileLockState(true);
 
-        let targetSeat = sanctuarySeats.find(s => s.seatNo === currentUserProfile.assignedSeatNo);
-        if (!targetSeat || targetSeat.remoteClientId) {
-          const bestNo = pickBestAvailableSeat(currentUserProfile.assignedSeatNo);
-          targetSeat = sanctuarySeats.find(s => s.seatNo === bestNo) || sanctuarySeats[9];
-        }
-        sanctuarySeats.forEach(s => {
-          if (s.isUser || (currentUserProfile.fullName && s.name === currentUserProfile.fullName && !s.remoteClientId)) {
-            s.isUser = false;
-            s.occupied = false;
-            s.remoteClientId = null;
-            s.name = '';
-            s.dharma = '';
-          }
-        });
-        targetSeat.occupied = true;
-        targetSeat.isUser = true;
-        targetSeat.isDummy = false;
-        targetSeat.name = currentUserProfile.fullName;
-        targetSeat.dharma = currentUserProfile.dharmaName;
-        targetSeat.age = currentUserProfile.age;
-        targetSeat.hometown = currentUserProfile.hometown;
-        targetSeat.type = currentUserProfile.avatarType;
-        targetSeat.points = currentUserProfile.meritScore;
-        targetSeat.ip = currentUserProfile.clientIp;
-        currentUserProfile.assignedSeatNo = targetSeat.seatNo;
+        const targetSeat = assignUserToSeat(currentUserProfile.assignedSeatNo, currentUserProfile);
 
         closeRegistrationModal();
         updatePractitionerHUD();
-        renderSanctuaryFloor(targetSeat.seatNo);
+        renderSanctuaryFloor(targetSeat ? targetSeat.seatNo : null);
 
         setTimeout(() => {
           showLiveGiftBanner(currentUserProfile.fullName, `🙏 Kính chào Đồng Tu trở lại Chánh Điện (IP: ${currentUserProfile.clientIp})`, 'lotus');
@@ -3174,7 +3193,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
         // Dọn dẹp sạch sẽ đảm bảo chỉ duy nhất targetSeat giữ trạng thái isUser
         sanctuarySeats.forEach(s => {
-          if (s.seatNo !== targetSeat.seatNo && (s.isUser || (currentUserProfile.fullName && s.name === currentUserProfile.fullName && !s.remoteClientId))) {
+          if (s.seatNo !== targetSeat.seatNo && (s.isUser || (s.remoteClientId && s.remoteClientId === window.SANCTUARY_CLIENT_ID) || (currentUserProfile.fullName && s.name === currentUserProfile.fullName && !s.remoteClientId))) {
             s.occupied = false;
             s.isUser = false;
             s.remoteClientId = null;
@@ -3186,7 +3205,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         targetSeat.occupied = true;
         targetSeat.isUser = true;
         targetSeat.isDummy = false;
-        targetSeat.remoteClientId = null;
+        targetSeat.remoteClientId = window.SANCTUARY_CLIENT_ID;
         targetSeat.name = currentUserProfile.fullName;
         targetSeat.dharma = currentUserProfile.dharmaName;
         targetSeat.age = currentUserProfile.age;
@@ -5767,36 +5786,45 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       // 1. Phát hiện IP kết nối thực tế
       await detectUserRealIP();
 
-      // 2. Khởi tạo kết nối Supabase Database & Realtime Presence
+      // 2. Khởi tạo kết nối Supabase Database & Realtime Presence (AWAIT để nạp trước danh sách đồng tu từ DB)
       if (window.SupabaseSanctuary) {
-        window.SupabaseSanctuary.init();
+        try {
+          await window.SupabaseSanctuary.init();
+        } catch (e) {
+          console.warn('[window.onload] Supabase init error:', e);
+        }
       }
 
       // 3. Khởi tạo kết nối Đạo Tràng Trực Tuyến Đa Thiết Bị Thời Gian Thực (Port 443 Universal Stream)
       if (window.RealtimeSanctuary) {
-        window.RealtimeSanctuary.init();
+        try {
+          window.RealtimeSanctuary.init();
+        } catch (e) {
+          console.warn('[window.onload] Realtime init error:', e);
+        }
       }
 
       // 4. Tải phiên thực tế đã lưu và khôi phục trạng thái niêm phong
       const restored = loadRealUserSession();
-      if (restored && window.SupabaseSanctuary) {
-        window.SupabaseSanctuary.trackCurrentUserPresence();
-      }
+      let targetSeatNo = currentUserProfile.assignedSeatNo;
+
       if (!restored) {
         // Tự động phân bổ bồ đoàn còn trống cho khách đồng tu để hiện diện ngay lập tức
-        const guestSeatNo = pickBestAvailableSeat();
-        currentUserProfile.assignedSeatNo = guestSeatNo;
-        const guestSeat = sanctuarySeats.find(s => s.seatNo === guestSeatNo);
-        if (guestSeat) {
-          guestSeat.occupied = true;
-          guestSeat.isUser = true;
-          guestSeat.isDummy = false;
-          guestSeat.name = currentUserProfile.fullName || 'Đồng Tu Mới';
-          guestSeat.dharma = currentUserProfile.dharmaName || 'Tịnh Tâm';
-          guestSeat.ip = currentDetectedIP || '117.5.x.x';
-        }
-        renderSanctuaryFloor(guestSeatNo);
+        targetSeatNo = pickBestAvailableSeat();
+        currentUserProfile.assignedSeatNo = targetSeatNo;
+        assignUserToSeat(targetSeatNo, currentUserProfile);
+        renderSanctuaryFloor(targetSeatNo);
         openRegistrationModal(false);
+      }
+
+      // 5. Đồng bộ ngay vị trí và thông tin với Supabase Database & Realtime Presence
+      if (window.SupabaseSanctuary && targetSeatNo) {
+        try {
+          await window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, targetSeatNo);
+          await window.SupabaseSanctuary.trackCurrentUserPresence();
+        } catch (e) {
+          console.warn('[window.onload] Supabase presence sync error:', e);
+        }
       }
 
       startIdleFellowBowing();
