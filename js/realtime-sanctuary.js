@@ -969,6 +969,7 @@
     },
 
     handleDevoteePresence(senderId, data, isNewJoin) {
+      if (window.SupabaseSanctuary && window.SupabaseSanctuary.isConnected) return;
       if (!data || senderId === clientId || senderId === window.SANCTUARY_CLIENT_ID) return;
       const isExisting = remoteDevotees.has(senderId);
       const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
@@ -1038,6 +1039,7 @@
     },
 
     handleDevoteeSeatClaim(senderId, seatNo, data) {
+      if (window.SupabaseSanctuary && window.SupabaseSanctuary.isConnected) return;
       if (!window.sanctuarySeats || !seatNo || !data || senderId === clientId || senderId === window.SANCTUARY_CLIENT_ID) return;
       const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
 
@@ -1183,6 +1185,7 @@
     },
 
     handleDevoteeLeave(senderId, seatNo) {
+      if (window.SupabaseSanctuary && window.SupabaseSanctuary.isConnected) return;
       remoteDevotees.delete(senderId);
       if (window.sanctuarySeats) {
         const mySeatNo = (window.currentUserProfile && window.currentUserProfile.assignedSeatNo);
@@ -1254,6 +1257,7 @@
     startPruneLoop() {
       clearInterval(pruneTimer);
       pruneTimer = setInterval(() => {
+        if (window.SupabaseSanctuary && window.SupabaseSanctuary.isConnected) return;
         const now = Date.now();
         let changed = false;
         const mySeatNo = (window.currentUserProfile && window.currentUserProfile.assignedSeatNo);

@@ -76,48 +76,65 @@
     /* Mobile Portrait Optimizations (Tối Ưu Hiển Thị Điện Thoại Dọc) */
     @media screen and (max-width: 768px) and (orientation: portrait) {
       #sanctuary-svg-bg {
-        transform: scale(0.72) translateY(-12%);
+        transform: scale(0.72) translateY(-10%);
         transform-origin: 50% 0%;
       }
       #sanctuary-floor-stage {
-        top: 38% !important;
-        bottom: 52px !important;
+        top: 36% !important;
+        bottom: 48px !important;
       }
       .chibi-idle, .chibi-walking-step {
-        width: 48px !important;
-        height: 60px !important;
+        width: 42px !important;
+        height: 52px !important;
       }
       .chibi-idle svg, .chibi-walking-step svg {
-        width: 48px !important;
-        height: 60px !important;
+        width: 42px !important;
+        height: 52px !important;
       }
       [id^="label-seat-"] {
-        padding: 1.5px 4px !important;
-        font-size: 8.5px !important;
-        max-width: 72px !important;
+        padding: 1.5px 3px !important;
+        font-size: 8px !important;
+        max-width: 56px !important;
       }
       [id^="label-seat-"] span {
-        font-size: 7.5px !important;
+        font-size: 6.8px !important;
       }
       footer {
         padding: 2px 4px !important;
-        height: 48px !important;
-        max-height: 48px !important;
+        height: 44px !important;
+        max-height: 44px !important;
       }
       #bottom-dock-scroll {
         flex-wrap: nowrap !important;
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch;
         justify-content: flex-start !important;
-        gap: 6px !important;
+        gap: 5px !important;
         padding-bottom: 2px !important;
+        scrollbar-width: none;
+      }
+      #bottom-dock-scroll::-webkit-scrollbar {
+        display: none;
       }
       #bottom-dock-scroll > button {
-        padding: 4px 8px !important;
-        font-size: 10px !important;
-        height: 32px !important;
+        padding: 2.5px 6px !important;
+        font-size: 9px !important;
+        height: 28px !important;
         flex-shrink: 0 !important;
       }
+    }
+
+    /* Pseudo-landscape rotation fallback for iOS / mobile portrait */
+    .force-landscape-rotated {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vh !important;
+      height: 100vw !important;
+      transform: rotate(90deg) translateY(-100vw) !important;
+      transform-origin: top left !important;
+      z-index: 9999 !important;
+      overflow: hidden !important;
     }
 
     /* Tối Ưu Hiển Thị Điện Thoại Xoay Ngang & Toàn Màn Hình (Mobile Landscape & Low Height) */
@@ -2362,15 +2379,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex items-center justify-between gap-3 pt-1 border-t border-amber-300/20">
+          <div class="flex items-center justify-between gap-2 pt-2 border-t border-amber-300/20 flex-wrap sm:flex-nowrap">
             <button type="button" onclick="closePractitionerProfileModal()"
-              class="px-4 py-2 rounded-xl bg-stone-800/80 hover:bg-stone-700 border border-stone-600 text-stone-300 font-semibold text-xs transition">
+              class="px-3 py-2 rounded-xl bg-stone-800/80 hover:bg-stone-700 border border-stone-600 text-stone-300 font-semibold text-xs transition">
               Đóng
             </button>
-            <button type="button" onclick="rejoiceDevoteeMerit()"
-              class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-stone-950 font-bold text-xs shadow-lg transition active:scale-95 flex items-center gap-1.5">
-              <span>🌸 Tùy Hỷ Công Đức (+2 Điểm)</span>
-            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" id="btn-swap-seat-with-devotee" onclick="swapSeatWithCurrentDevotee()"
+                class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 hover:brightness-110 text-white font-bold text-xs shadow-lg transition active:scale-95 flex items-center gap-1.5 border border-emerald-300/60">
+                <span>🔄 Đổi Bồ Đoàn</span>
+              </button>
+              <button type="button" onclick="rejoiceDevoteeMerit()"
+                class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-stone-950 font-bold text-xs shadow-lg transition active:scale-95 flex items-center gap-1.5">
+                <span>🌸 Tùy Hỷ (+2)</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -2705,6 +2728,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
     function saveRealUserSession() {
       try {
+        sessionStorage.setItem(CHUA_AN_NHIEN_SESSION_KEY, JSON.stringify(currentUserProfile));
         localStorage.setItem(CHUA_AN_NHIEN_SESSION_KEY, JSON.stringify(currentUserProfile));
         sessionStorage.setItem('chua_an_nhien_session_active', 'true');
       } catch (err) {
@@ -2754,7 +2778,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
     function loadRealUserSession() {
       try {
-        const saved = localStorage.getItem(CHUA_AN_NHIEN_SESSION_KEY);
+        // Tách biệt phiên theo từng tab (sessionStorage) để khi mở 2 tab/2 máy thử nghiệm thì không bị trùng tên/ghế của nhau
+        const tabSaved = sessionStorage.getItem(CHUA_AN_NHIEN_SESSION_KEY);
+        const globalSaved = localStorage.getItem(CHUA_AN_NHIEN_SESSION_KEY);
+        const saved = tabSaved || (globalSaved && JSON.parse(globalSaved).isLocked ? globalSaved : null);
         if (!saved) return false;
         const data = JSON.parse(saved);
         if (!data || !data.registered) return false;
@@ -3078,17 +3105,29 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       try {
         if (!document.fullscreenElement && !document.webkitFullscreenElement) {
           if (docEl.requestFullscreen) {
-            await docEl.requestFullscreen();
+            await docEl.requestFullscreen().catch(() => {});
           } else if (docEl.webkitRequestFullscreen) {
             await docEl.webkitRequestFullscreen();
           }
         }
       } catch (err) {}
+
+      let orientationLocked = false;
       try {
         if (screen.orientation && screen.orientation.lock) {
           await screen.orientation.lock('landscape');
+          orientationLocked = true;
         }
       } catch (err) {}
+
+      // Nếu trình duyệt (như iOS Safari) không hỗ trợ screen.orientation.lock và đang ở màn hình dọc
+      if (!orientationLocked && window.innerHeight > window.innerWidth) {
+        const stage = document.getElementById('temple-stage');
+        if (stage) {
+          stage.classList.toggle('force-landscape-rotated');
+        }
+      }
+
       const banner = document.getElementById('mobile-orientation-banner');
       if (banner) banner.classList.add('hidden');
       setTimeout(() => {
@@ -3129,14 +3168,29 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     }
 
 
+    function pickUniqueSampleDevotee() {
+      const occupiedNames = new Set();
+      if (window.sanctuarySeats) {
+        window.sanctuarySeats.forEach(s => {
+          if (s.occupied && s.name) occupiedNames.add(s.name);
+        });
+      }
+      const available = SAMPLE_NAMES.filter(item => !occupiedNames.has(item.name));
+      if (available.length > 0) {
+        return available[Math.floor(Math.random() * available.length)];
+      }
+      return SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)];
+    }
+
     function rollSuggestedFullName() {
-      const pick = SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)];
+      const pick = pickUniqueSampleDevotee();
       const nameInput = document.getElementById('reg-fullname');
       const dharmaInput = document.getElementById('reg-dharma-name');
       if (nameInput) nameInput.value = pick.name;
       if (dharmaInput) dharmaInput.value = pick.dharma;
       currentUserProfile.fullName = pick.name;
       currentUserProfile.dharmaName = pick.dharma;
+      currentUserProfile.avatarType = pick.gender || 'monk';
     }
 
     function renderRegSeatsSelector() {
@@ -3363,29 +3417,90 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       setTimeout(() => fp.remove(), 2500);
     }
 
-    function walkUserToSeat(targetSeatNo, isEnteringFromGate = false) {
-      if (currentUserProfile.isWalking) return;
+    function animateDevoteeWalking(dev, fromSeatNo, toSeatNo, clientId, onComplete) {
+      const walkLayer = document.getElementById('walking-practitioner-layer');
+      if (!walkLayer) {
+        if (typeof onComplete === 'function') onComplete();
+        return;
+      }
 
       let startX = 50;
       let startY = 88;
-
-      const previousUserSeat = sanctuarySeats.find(s => s.isUser);
-      if (previousUserSeat && !isEnteringFromGate) {
-        startX = previousUserSeat.x;
-        startY = previousUserSeat.y;
+      if (fromSeatNo && window.sanctuarySeats) {
+        const fromSeat = window.sanctuarySeats.find(s => s.seatNo === fromSeatNo);
+        if (fromSeat) {
+          startX = fromSeat.x;
+          startY = fromSeat.y;
+        }
       }
 
-      // Giải phóng triệt để TẤT CẢ các bồ đoàn cũ của người dùng này trên toàn bộ sàn (chống nhân bản tuyệt đối)
+      let targetSeat = window.sanctuarySeats ? window.sanctuarySeats.find(s => s.seatNo === toSeatNo) : null;
+      if (!targetSeat) {
+        if (typeof onComplete === 'function') onComplete();
+        return;
+      }
+
+      const walkerId = 'walker_' + (clientId || 'client').replace(/[^a-zA-Z0-9]/g, '_') + '_' + Math.random().toString(36).substring(2, 6);
+      const walkerEl = document.createElement('div');
+      walkerEl.id = walkerId;
+      walkerEl.className = 'absolute flex flex-col items-center pointer-events-none transition-none';
+      walkerEl.style.left = `${startX}%`;
+      walkerEl.style.top = `${startY}%`;
+      walkerEl.style.transform = `translate(-50%, 0) scale(1.02)`;
+      walkerEl.style.zIndex = '999';
+
+      const isMe = (clientId === window.SANCTUARY_CLIENT_ID);
+      const devName = dev.fullName || dev.name || 'Đồng Tu';
+      const devDharma = dev.dharmaName || dev.dharma || 'Tịnh Tâm';
+      const devAvatar = dev.avatarType || dev.gender || 'monk';
+      const badgeClass = isMe
+        ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-stone-950 font-extrabold border border-white'
+        : 'bg-emerald-950/95 text-emerald-100 border border-emerald-400 font-bold';
+
+      walkerEl.innerHTML = `
+        <div id="walker-status-pill" class="-mt-7 mb-1 px-2.5 py-0.5 rounded-full bg-amber-950/95 border border-amber-300 text-[10px] font-bold text-amber-200 shadow-lg whitespace-nowrap">
+          🚶 ${isMe ? 'Bạn đang bước trên Thảm Đỏ...' : devName + ' đang di chuyển...'}
+        </div>
+        <div id="walker-figure" class="w-[56px] h-[68px] sm:w-[88px] sm:h-[104px] chibi-walking-step">
+          ${createChibiSVG(devAvatar, walkerId, isMe, false, dev.realmLevel || 1)}
+        </div>
+        <div class="-mt-1.5 px-2.5 py-0.5 rounded-md ${badgeClass} text-[10px] shadow-md whitespace-nowrap">
+          ${devName} • PD: ${devDharma}
+        </div>
+      `;
+      walkLayer.appendChild(walkerEl);
+
+      const waypoints = [];
+      if (Math.abs(startX - 50) > 2) {
+        waypoints.push({ x: 50, y: startY, duration: 650, label: '🚶 Bước ra Thảm Đỏ Hoa Sen...' });
+      }
+      if (Math.abs(startY - targetSeat.y) > 2) {
+        waypoints.push({ x: 50, y: targetSeat.y, duration: 1200, label: '🚶 Tiến bước trên Thảm Đỏ...' });
+      }
+      waypoints.push({ x: 50, y: targetSeat.y, duration: 750, bowPause: true, label: '🙏 Thành tâm đảnh lễ Đức Phật...' });
+      waypoints.push({ x: targetSeat.x, y: targetSeat.y, duration: 750, label: `🧘 Vào Bồ đoàn số #${targetSeat.seatNo}...` });
+
+      runWaypointSequence(walkerEl, startX, startY, waypoints, () => {
+        walkerEl.remove();
+        if (typeof onComplete === 'function') onComplete();
+      });
+    }
+    window.animateDevoteeWalking = animateDevoteeWalking;
+
+    function walkUserToSeat(targetSeatNo, isEnteringFromGate = false) {
+      if (currentUserProfile.isWalking) return;
+
+      const previousUserSeat = sanctuarySeats.find(s => s.isUser);
+      const previousSeatNo = (previousUserSeat && !isEnteringFromGate) ? previousUserSeat.seatNo : null;
+
+      // Giải phóng triệt để bồ đoàn cũ của người dùng này trên toàn sàn
       sanctuarySeats.forEach(s => {
-        if (s.isUser || (currentUserProfile.fullName && s.name === currentUserProfile.fullName && !s.remoteClientId)) {
+        if (s.isUser || (s.remoteClientId && s.remoteClientId === window.SANCTUARY_CLIENT_ID)) {
           s.occupied = false;
           s.isUser = false;
           s.remoteClientId = null;
           s.name = '';
           s.dharma = '';
-          s.age = 0;
-          s.hometown = '';
-          s.points = 0;
         }
       });
 
@@ -3399,45 +3514,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       currentUserProfile.assignedSeatNo = targetSeat.seatNo;
       renderSanctuaryFloor();
 
-      const walkLayer = document.getElementById('walking-practitioner-layer');
-      walkLayer.innerHTML = '';
-
-      const walkerEl = document.createElement('div');
-      walkerEl.className = 'absolute flex flex-col items-center pointer-events-none';
-      walkerEl.style.left = `${startX}%`;
-      walkerEl.style.top = `${startY}%`;
-      walkerEl.style.transform = `translate(-50%, 0) scale(1.02)`;
-      walkerEl.style.zIndex = '999';
-
-      walkerEl.innerHTML = `
-        <div id="walker-status-pill" class="-mt-7 mb-1 px-2.5 py-0.5 rounded-full bg-amber-950/95 border border-amber-300 text-[10px] font-bold text-amber-200 shadow-lg whitespace-nowrap">
-          🚶 Đang bước lên Thảm Đỏ Hoa Sen...
-        </div>
-        <div id="walker-figure" class="w-[56px] h-[68px] sm:w-[88px] sm:h-[104px] chibi-walking-step">
-          ${createChibiSVG(currentUserProfile.avatarType, 'walker-user', true, false, currentUserProfile.realmLevel)}
-        </div>
-        <div class="-mt-1.5 px-2.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-stone-950 border border-white font-extrabold text-[10px] shadow-md whitespace-nowrap">
-          ${currentUserProfile.fullName} • PD: ${currentUserProfile.dharmaName}
-        </div>
-      `;
-      walkLayer.appendChild(walkerEl);
-
-      const waypoints = [];
-      if (Math.abs(startX - 50) > 2) {
-        waypoints.push({ x: 50, y: startY, duration: 700, label: '🚶 Bước ra Thảm Đỏ Hoa Sen...' });
+      // 1. Phát sóng DEVOTEE_WALKING ngay lập tức để tất cả thiết bị khác cùng thấy nhân vật bước đi
+      if (window.SupabaseSanctuary) {
+        window.SupabaseSanctuary.broadcast('DEVOTEE_WALKING', {
+          clientId: window.SANCTUARY_CLIENT_ID,
+          fromSeatNo: previousSeatNo,
+          toSeatNo: targetSeat.seatNo,
+          devotee: {
+            fullName: currentUserProfile.fullName,
+            dharmaName: currentUserProfile.dharmaName,
+            avatarType: currentUserProfile.avatarType,
+            age: currentUserProfile.age,
+            hometown: currentUserProfile.hometown,
+            meritScore: currentUserProfile.meritScore,
+            wish: currentUserProfile.wish
+          }
+        });
       }
-      if (Math.abs(startY - targetSeat.y) > 2) {
-        waypoints.push({ x: 50, y: targetSeat.y, duration: 1450, label: '🚶 Tiến bước trên Thảm Đỏ...' });
-      }
-      waypoints.push({ x: 50, y: targetSeat.y, duration: 900, bowPause: true, label: '🙏 Thành tâm đảnh lễ Đức Phật...' });
-      waypoints.push({ x: targetSeat.x, y: targetSeat.y, duration: 900, label: `🧘 Vào Bồ đoàn số #${targetSeat.seatNo}...` });
 
-      runWaypointSequence(walkerEl, startX, startY, waypoints, () => {
-        walkLayer.innerHTML = '';
-
-        // Dọn dẹp sạch sẽ đảm bảo chỉ duy nhất targetSeat giữ trạng thái isUser
+      // 2. Chạy hoạt ảnh bước đi tại chỗ
+      animateDevoteeWalking(currentUserProfile, previousSeatNo, targetSeat.seatNo, window.SANCTUARY_CLIENT_ID, () => {
         sanctuarySeats.forEach(s => {
-          if (s.seatNo !== targetSeat.seatNo && (s.isUser || (s.remoteClientId && s.remoteClientId === window.SANCTUARY_CLIENT_ID) || (currentUserProfile.fullName && s.name === currentUserProfile.fullName && !s.remoteClientId))) {
+          if (s.seatNo !== targetSeat.seatNo && (s.isUser || (s.remoteClientId && s.remoteClientId === window.SANCTUARY_CLIENT_ID))) {
             s.occupied = false;
             s.isUser = false;
             s.remoteClientId = null;
@@ -3465,9 +3563,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         updatePractitionerHUD();
         saveRealUserSession();
 
-        if (window.RealtimeSanctuary) {
-          window.RealtimeSanctuary.broadcastSeatClaim(targetSeat.seatNo, currentUserProfile);
-        }
+        // 3. Khi đã ngồi yên vị: Lưu DB Supabase, track presence và broadcast CLAIM_SEAT
         if (window.SupabaseSanctuary) {
           window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, targetSeat.seatNo);
           window.SupabaseSanctuary.trackCurrentUserPresence();
@@ -3488,6 +3584,195 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         spawnFloatingSkyLantern(currentUserProfile.fullName, currentUserProfile.wish, true);
       });
     }
+
+    function handleRemoteDevoteeWalking(payload) {
+      if (!payload || !payload.toSeatNo) return;
+      const remoteId = payload.clientId || payload.senderId;
+      if (remoteId === window.SANCTUARY_CLIENT_ID) return;
+
+      const dev = payload.devotee || payload;
+      const fromSeatNo = payload.fromSeatNo;
+      const toSeatNo = payload.toSeatNo;
+
+      // 1. Giải phóng ghế cũ ngay trên sàn
+      if (window.sanctuarySeats) {
+        window.sanctuarySeats.forEach(s => {
+          if (s.seatNo === fromSeatNo || (remoteId && s.remoteClientId === remoteId && s.seatNo !== toSeatNo)) {
+            s.occupied = false;
+            s.remoteClientId = null;
+            s.name = '';
+            s.dharma = '';
+          }
+        });
+      }
+      renderSanctuaryFloor();
+
+      // 2. Chạy hoạt ảnh bước đi thời gian thực cho đồng tu từ xa
+      animateDevoteeWalking(dev, fromSeatNo, toSeatNo, remoteId, () => {
+        if (window.sanctuarySeats) {
+          if (typeof window.ensureSeatCapacity === 'function') {
+            window.ensureSeatCapacity(toSeatNo);
+          }
+          const targetSeat = window.sanctuarySeats.find(s => s.seatNo === toSeatNo);
+          if (targetSeat && !targetSeat.isUser) {
+            targetSeat.occupied = true;
+            targetSeat.isUser = false;
+            targetSeat.isDummy = false;
+            targetSeat.remoteClientId = remoteId;
+            targetSeat.name = dev.fullName || dev.name || 'Đồng Tu';
+            targetSeat.dharma = dev.dharmaName || dev.dharma || 'Tịnh Tâm';
+            targetSeat.type = dev.avatarType || dev.gender || 'monk';
+            targetSeat.age = dev.age || 26;
+            targetSeat.hometown = dev.hometown || 'Chùa An Nhiên';
+            targetSeat.points = dev.meritScore || dev.points || 0;
+            targetSeat.ip = dev.clientIp || dev.ip || '';
+          }
+        }
+        renderSanctuaryFloor();
+        if (window.triggerDevoteeBow && toSeatNo) {
+          window.triggerDevoteeBow(`seat-${toSeatNo}`, dev.wish || 'Nam Mô A Di Đà Phật', 'lotus');
+        }
+      });
+    }
+    window.handleRemoteDevoteeWalking = handleRemoteDevoteeWalking;
+
+    function swapSeatWithCurrentDevotee() {
+      if (!window.currentViewingSeatData) return;
+      const targetSeatData = window.currentViewingSeatData;
+      const mySeatNo = currentUserProfile.assignedSeatNo;
+      const targetSeatNo = targetSeatData.seatNo;
+
+      if (!mySeatNo || mySeatNo === targetSeatNo) {
+        closePractitionerProfileModal();
+        return;
+      }
+
+      closePractitionerProfileModal();
+
+      const swapPayload = {
+        userA: {
+          clientId: window.SANCTUARY_CLIENT_ID,
+          fromSeatNo: mySeatNo,
+          toSeatNo: targetSeatNo,
+          fullName: currentUserProfile.fullName,
+          dharmaName: currentUserProfile.dharmaName,
+          avatarType: currentUserProfile.avatarType,
+          age: currentUserProfile.age,
+          hometown: currentUserProfile.hometown,
+          meritScore: currentUserProfile.meritScore,
+          wish: currentUserProfile.wish
+        },
+        userB: {
+          clientId: targetSeatData.remoteClientId || ('remote_' + targetSeatNo),
+          fromSeatNo: targetSeatNo,
+          toSeatNo: mySeatNo,
+          fullName: targetSeatData.name || 'Đồng Tu',
+          dharmaName: targetSeatData.dharma || 'Tịnh Tâm',
+          avatarType: targetSeatData.type || 'monk',
+          age: targetSeatData.age || 26,
+          hometown: targetSeatData.hometown || 'Chùa An Nhiên',
+          meritScore: targetSeatData.points || 0,
+          wish: targetSeatData.wish || ''
+        }
+      };
+
+      if (window.SupabaseSanctuary) {
+        window.SupabaseSanctuary.broadcast('SWAP_SEATS', swapPayload);
+      }
+
+      handleRemoteDevoteeSwap(swapPayload);
+    }
+    window.swapSeatWithCurrentDevotee = swapSeatWithCurrentDevotee;
+
+    function handleRemoteDevoteeSwap(payload) {
+      if (!payload || !payload.userA || !payload.userB) return;
+      const uA = payload.userA;
+      const uB = payload.userB;
+
+      // 1. Tạm thời giải phóng 2 bồ đoàn để cả 2 nhân vật cùng bước ra thảm đỏ
+      if (window.sanctuarySeats) {
+        window.sanctuarySeats.forEach(s => {
+          if (s.seatNo === uA.fromSeatNo || s.seatNo === uB.fromSeatNo) {
+            s.occupied = false;
+            s.isUser = false;
+            s.remoteClientId = null;
+            s.name = '';
+            s.dharma = '';
+          }
+        });
+      }
+      renderSanctuaryFloor();
+
+      // 2. Chạy đồng thời 2 hoạt ảnh bước đi đổi chỗ
+      let finished = 0;
+      const onOneDone = () => {
+        finished++;
+        if (finished >= 2) {
+          const isMeA = (uA.clientId === window.SANCTUARY_CLIENT_ID);
+          const isMeB = (uB.clientId === window.SANCTUARY_CLIENT_ID);
+
+          if (isMeA) {
+            currentUserProfile.assignedSeatNo = uA.toSeatNo;
+            assignUserToSeat(uA.toSeatNo, currentUserProfile);
+            saveRealUserSession();
+            if (window.SupabaseSanctuary) {
+              window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, uA.toSeatNo);
+              window.SupabaseSanctuary.trackCurrentUserPresence();
+            }
+          } else {
+            const sA = sanctuarySeats.find(s => s.seatNo === uA.toSeatNo);
+            if (sA) {
+              sA.occupied = true;
+              sA.isUser = false;
+              sA.remoteClientId = uA.clientId;
+              sA.name = uA.fullName;
+              sA.dharma = uA.dharmaName;
+              sA.type = uA.avatarType;
+              sA.points = uA.meritScore;
+            }
+          }
+
+          if (isMeB) {
+            currentUserProfile.assignedSeatNo = uB.toSeatNo;
+            assignUserToSeat(uB.toSeatNo, currentUserProfile);
+            saveRealUserSession();
+            if (window.SupabaseSanctuary) {
+              window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, uB.toSeatNo);
+              window.SupabaseSanctuary.trackCurrentUserPresence();
+            }
+          } else {
+            const sB = sanctuarySeats.find(s => s.seatNo === uB.toSeatNo);
+            if (sB) {
+              sB.occupied = true;
+              sB.isUser = false;
+              sB.remoteClientId = uB.clientId;
+              sB.name = uB.fullName;
+              sB.dharma = uB.dharmaName;
+              sB.type = uB.avatarType;
+              sB.points = uB.meritScore;
+            }
+          }
+
+          renderSanctuaryFloor();
+          if (window.AudioEngine) AudioEngine.playTempleBell();
+          if (window.showLiveGiftBanner) {
+            window.showLiveGiftBanner(
+              'Đổi Bồ Đoàn Hoan Hỷ',
+              `🔄 Đạo hữu ${uA.fullName} và đạo hữu ${uB.fullName} vừa hoan hỷ đổi chỗ cho nhau!`,
+              'lotus'
+            );
+          }
+          if (window.triggerDevoteeBow) {
+            window.triggerDevoteeBow(`seat-${uA.toSeatNo}`, 'Nam Mô A Di Đà Phật', 'lotus');
+            window.triggerDevoteeBow(`seat-${uB.toSeatNo}`, 'Nam Mô A Di Đà Phật', 'lotus');
+          }
+        }
+      };
+
+      animateDevoteeWalking(uA, uA.fromSeatNo, uA.toSeatNo, uA.clientId, onOneDone);
+      animateDevoteeWalking(uB, uB.fromSeatNo, uB.toSeatNo, uB.clientId, onOneDone);
+    }
+    window.handleRemoteDevoteeSwap = handleRemoteDevoteeSwap;
 
     function performWalkAndOfferIncense() {
       if (!currentUserProfile.registered) {
@@ -5296,6 +5581,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       document.getElementById('prof-modal-beads').textContent = `${beads}/108 hạt chuỗi`;
       document.getElementById('prof-modal-wish').textContent = `"${wish}"`;
 
+      window.currentViewingSeatData = seatData;
+      const swapBtn = document.getElementById('btn-swap-seat-with-devotee');
+      if (swapBtn) {
+        if (isMe || !seatData.occupied) {
+          swapBtn.classList.add('hidden');
+        } else {
+          swapBtn.classList.remove('hidden');
+        }
+      }
+
       modal.classList.remove('hidden');
       modal.classList.add('flex');
       if (window.AudioEngine) AudioEngine.playGiftChime();
@@ -6142,9 +6437,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         }
         assignUserToSeat(targetSeatNo, currentUserProfile);
         renderSanctuaryFloor(targetSeatNo);
-        if (!restored) {
-          openRegistrationModal(false);
-        }
+        saveRealUserSession();
       } else {
         assignUserToSeat(targetSeatNo, currentUserProfile);
         renderSanctuaryFloor(targetSeatNo);
@@ -6155,9 +6448,24 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         try {
           await window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, targetSeatNo);
           await window.SupabaseSanctuary.trackCurrentUserPresence();
+          window.SupabaseSanctuary.broadcast('CLAIM_SEAT', {
+            seatNo: targetSeatNo,
+            senderId: window.SANCTUARY_CLIENT_ID,
+            data: currentUserProfile
+          });
         } catch (e) {
           console.warn('[window.onload] Supabase presence sync error:', e);
         }
+      }
+
+      if (window.showLiveGiftBanner) {
+        setTimeout(() => {
+          window.showLiveGiftBanner(
+            'Quang Lâm Chánh Điện',
+            `🙏 Đạo hữu ${currentUserProfile.fullName} (PD: ${currentUserProfile.dharmaName}) đã an tọa bồ đoàn #${targetSeatNo}`,
+            'lotus'
+          );
+        }, 800);
       }
 
       startIdleFellowBowing();

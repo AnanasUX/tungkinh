@@ -360,6 +360,20 @@
           if (window.triggerDevoteeBow && targetSeatNo) {
             window.triggerDevoteeBow(`seat-${targetSeatNo}`, data.wish || 'Nam Mô A Di Đà Phật', 'lotus');
           }
+        })
+        .on('broadcast', { event: 'DEVOTEE_WALKING' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId() || payload.clientId === this.getClientId()) return;
+          console.log('[SupabaseSanctuary] Nhận broadcast DEVOTEE_WALKING:', payload);
+          if (typeof window.handleRemoteDevoteeWalking === 'function') {
+            window.handleRemoteDevoteeWalking(payload);
+          }
+        })
+        .on('broadcast', { event: 'SWAP_SEATS' }, ({ payload }) => {
+          if (!payload) return;
+          console.log('[SupabaseSanctuary] Nhận broadcast SWAP_SEATS:', payload);
+          if (typeof window.handleRemoteDevoteeSwap === 'function') {
+            window.handleRemoteDevoteeSwap(payload);
+          }
         });
 
       // C. LẮNG NGHE POSTGRES CHANGES (Cập nhật tức thì khi có bản ghi mới trong bảng)
