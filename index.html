@@ -138,7 +138,7 @@
     }
 
     /* Tối Ưu Hiển Thị Điện Thoại Xoay Ngang & Toàn Màn Hình (Mobile Landscape & Low Height) */
-    @media screen and (max-height: 640px), screen and (orientation: landscape) and (max-height: 720px), body.mobile-landscape {
+    @media screen and (max-height: 600px) and (max-width: 1024px), screen and (orientation: landscape) and (max-height: 520px) {
       /* 1. Header thu gọn tối đa & ẩn các nút phụ để không bị tràn viền */
       header {
         height: 34px !important;
@@ -3043,24 +3043,29 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           age--;
         }
         age = Math.max(1, Math.min(120, age));
-        document.getElementById('reg-age').value = age;
+        const ageEl = document.getElementById('reg-age');
+        if (ageEl) ageEl.value = age;
 
         const info = computeCanChiAndElement(yearVal);
-        document.getElementById('destiny-canchi').textContent = `${info.canChi} (${yearVal})`;
-        document.getElementById('destiny-element').textContent = info.elementObj.label;
+        const canChiEl = document.getElementById('destiny-canchi');
+        if (canChiEl) canChiEl.textContent = `${info.canChi} (${yearVal})`;
+        const elementEl = document.getElementById('destiny-element');
+        if (elementEl) elementEl.textContent = info.elementObj.label;
         currentUserProfile.canChi = info.canChi;
         currentUserProfile.element = info.elementObj.label;
 
         if (updateDharmaSuggestion) {
           const dharmaPick = info.elementObj.dharmaList[Math.floor(Math.random() * info.elementObj.dharmaList.length)];
-          document.getElementById('reg-dharma-name').value = dharmaPick;
+          const dharmaEl = document.getElementById('reg-dharma-name');
+          if (dharmaEl) dharmaEl.value = dharmaPick;
         }
       }
 
       const dFormatted = String(validDay).padStart(2, '0');
       const mFormatted = String(monthVal).padStart(2, '0');
       const yFormatted = yearStr.length === 4 ? yearStr : '1996';
-      document.getElementById('dob-preview-badge').textContent = `Sinh ngày: ${dFormatted}/${mFormatted}/${yFormatted}`;
+      const badge = document.getElementById('dob-preview-badge');
+      if (badge) badge.textContent = `Sinh ngày: ${dFormatted}/${mFormatted}/${yFormatted}`;
     }
 
     function rollSuggestedDharmaName() {
@@ -4119,26 +4124,40 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         : sanctuarySeats.filter(s => s.occupied).length;
       const countEl = document.getElementById('hud-online-count');
       if (countEl) countEl.textContent = onlineCount;
-      document.getElementById('hud-session-code').textContent = currentUserProfile.sessionCode;
+      const sessionCodeEl = document.getElementById('hud-session-code');
+      if (sessionCodeEl) sessionCodeEl.textContent = currentUserProfile.sessionCode;
 
       const realm = getRealmByPoints(currentUserProfile.meritScore);
       const prevLevel = currentUserProfile.realmLevel;
       currentUserProfile.realmLevel = realm.level;
       currentUserProfile.realmName = realm.name;
 
-      document.getElementById('left-realm-title').textContent = `Cấp ${realm.level}: ${realm.name}`;
-      document.getElementById('left-realm-points').textContent = `${currentUserProfile.meritScore} / ${realm.next} Đ`;
-      const progressPct = Math.min(100, Math.max(8, ((currentUserProfile.meritScore - realm.min) / (realm.next - realm.min)) * 100));
-      document.getElementById('left-realm-bar').style.width = `${progressPct}%`;
+      const realmTitleEl = document.getElementById('left-realm-title');
+      if (realmTitleEl) realmTitleEl.textContent = `Cấp ${realm.level}: ${realm.name}`;
+      const realmPointsEl = document.getElementById('left-realm-points');
+      if (realmPointsEl) realmPointsEl.textContent = `${currentUserProfile.meritScore} / ${realm.next} Đ`;
+      const realmBarEl = document.getElementById('left-realm-bar');
+      if (realmBarEl) {
+        const progressPct = Math.min(100, Math.max(8, ((currentUserProfile.meritScore - realm.min) / (realm.next - realm.min)) * 100));
+        realmBarEl.style.width = `${progressPct}%`;
+      }
 
       if (!currentUserProfile.registered) return;
       const hud = document.getElementById('practitioner-hud');
-      hud.classList.remove('hidden');
-      document.getElementById('hud-user-name').textContent = currentUserProfile.fullName;
-      const ipBadge = currentUserProfile.clientIp ? `[🔒 ${currentUserProfile.clientIp}] ` : '';
-      document.getElementById('hud-dharma-name').textContent = `${ipBadge}(PD: ${currentUserProfile.dharmaName})`;
-      document.getElementById('hud-realm-badge').textContent = `Cấp ${realm.level} · ${realm.name}`;
-      document.getElementById('hud-seat-num').textContent = `${currentUserProfile.assignedSeatNo}`;
+      if (hud) {
+        hud.classList.remove('hidden');
+        const userNameEl = document.getElementById('hud-user-name');
+        if (userNameEl) userNameEl.textContent = currentUserProfile.fullName;
+        const dharmaNameEl = document.getElementById('hud-dharma-name');
+        if (dharmaNameEl) {
+          const ipBadge = currentUserProfile.clientIp ? `[🔒 ${currentUserProfile.clientIp}] ` : '';
+          dharmaNameEl.textContent = `${ipBadge}(PD: ${currentUserProfile.dharmaName})`;
+        }
+        const realmBadgeEl = document.getElementById('hud-realm-badge');
+        if (realmBadgeEl) realmBadgeEl.textContent = `Cấp ${realm.level} · ${realm.name}`;
+        const seatNumEl = document.getElementById('hud-seat-num');
+        if (seatNumEl) seatNumEl.textContent = `${currentUserProfile.assignedSeatNo}`;
+      }
 
       if (realm.level > prevLevel) {
         AudioEngine.playTempleBell();
@@ -6512,14 +6531,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     }
 
     window.onload = async function () {
-      checkMobileOrientationBanner();
-      setupMobileAutoFullscreenOnFirstTap();
-      setupSmartDobInputs();
-      recalculateAgeAndPreview(false);
-      initGoldMotes();
+      try { checkMobileOrientationBanner(); } catch (e) { console.warn(e); }
+      try { setupMobileAutoFullscreenOnFirstTap(); } catch (e) { console.warn(e); }
+      try { setupSmartDobInputs(); } catch (e) { console.warn(e); }
+      try { recalculateAgeAndPreview(false); } catch (e) { console.warn(e); }
+      try { initGoldMotes(); } catch (e) { console.warn(e); }
 
       // 1. Phát hiện IP kết nối thực tế
-      await detectUserRealIP();
+      try { await detectUserRealIP(); } catch (e) { console.warn(e); }
 
       // 2. Khởi tạo kết nối Supabase Database & Realtime Presence (AWAIT để nạp trước danh sách đồng tu từ DB)
       if (window.SupabaseSanctuary) {
@@ -6540,45 +6559,53 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       }
 
       // 4. Tải phiên thực tế đã lưu và khôi phục trạng thái niêm phong
-      const restored = loadRealUserSession();
-      let targetSeatNo = currentUserProfile.assignedSeatNo;
+      try {
+        const restored = loadRealUserSession();
+        let targetSeatNo = currentUserProfile.assignedSeatNo;
 
-      // Nếu chưa có sớ hoặc ghế cũ bị người khác ngồi hoặc chưa có ghế -> Tự động chọn bồ đoàn trống tiếp theo
-      if (!restored || !targetSeatNo || isSeatTakenByRemote(targetSeatNo)) {
-        targetSeatNo = pickBestAvailableSeat();
-        currentUserProfile.assignedSeatNo = targetSeatNo;
-        // Gợi ý tên mẫu ngẫu nhiên độc nhất nếu chưa có tên thật
-        if (!restored || !currentUserProfile.registered) {
-          rollSuggestedFullName();
+        // Nếu chưa có sớ hoặc ghế cũ bị người khác ngồi hoặc chưa có ghế -> Tự động chọn bồ đoàn trống tiếp theo
+        if (!restored || !targetSeatNo || isSeatTakenByRemote(targetSeatNo)) {
+          targetSeatNo = pickBestAvailableSeat();
+          currentUserProfile.assignedSeatNo = targetSeatNo;
+          // Gợi ý tên mẫu ngẫu nhiên độc nhất nếu chưa có tên thật
+          if (!restored || !currentUserProfile.registered) {
+            rollSuggestedFullName();
+          }
+          assignUserToSeat(targetSeatNo, currentUserProfile);
+          renderSanctuaryFloor(targetSeatNo);
+          saveRealUserSession();
+        } else {
+          assignUserToSeat(targetSeatNo, currentUserProfile);
+          renderSanctuaryFloor(targetSeatNo);
         }
-        assignUserToSeat(targetSeatNo, currentUserProfile);
-        renderSanctuaryFloor(targetSeatNo);
-        saveRealUserSession();
-      } else {
-        assignUserToSeat(targetSeatNo, currentUserProfile);
-        renderSanctuaryFloor(targetSeatNo);
+
+        // 5. Đồng bộ ngay vị trí và thông tin với Supabase Database & Realtime Presence
+        if (window.SupabaseSanctuary && targetSeatNo) {
+          try {
+            await window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, targetSeatNo);
+            await window.SupabaseSanctuary.trackCurrentUserPresence();
+            window.SupabaseSanctuary.broadcast('CLAIM_SEAT', {
+              seatNo: targetSeatNo,
+              senderId: window.SANCTUARY_CLIENT_ID,
+              data: currentUserProfile
+            });
+          } catch (e) {
+            console.warn('[window.onload] Supabase presence sync error:', e);
+          }
+        }
+      } catch (seatErr) {
+        console.error('[window.onload] Lỗi khởi tạo chỗ ngồi:', seatErr);
+        renderSanctuaryFloor();
       }
 
-      // 5. Đồng bộ ngay vị trí và thông tin với Supabase Database & Realtime Presence
-      if (window.SupabaseSanctuary && targetSeatNo) {
-        try {
-          await window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, targetSeatNo);
-          await window.SupabaseSanctuary.trackCurrentUserPresence();
-          window.SupabaseSanctuary.broadcast('CLAIM_SEAT', {
-            seatNo: targetSeatNo,
-            senderId: window.SANCTUARY_CLIENT_ID,
-            data: currentUserProfile
-          });
-        } catch (e) {
-          console.warn('[window.onload] Supabase presence sync error:', e);
-        }
-      }
+
 
       if (window.showLiveGiftBanner) {
         setTimeout(() => {
+          const seatNum = currentUserProfile.assignedSeatNo || '';
           window.showLiveGiftBanner(
             'Quang Lâm Chánh Điện',
-            `🙏 Đạo hữu ${currentUserProfile.fullName} (PD: ${currentUserProfile.dharmaName}) đã an tọa bồ đoàn #${targetSeatNo}`,
+            `🙏 Đạo hữu ${currentUserProfile.fullName} (PD: ${currentUserProfile.dharmaName}) đã an tọa bồ đoàn #${seatNum}`,
             'lotus'
           );
         }, 800);
