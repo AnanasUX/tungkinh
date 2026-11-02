@@ -59,27 +59,6 @@
       overflow: hidden;
     }
 
-    /* Tự động xoay ngang 100% khi màn hình ở chế độ dọc (Mobile/Tablet Portrait) */
-    body.auto-rotate-landscape #orientation-viewport {
-      position: fixed !important;
-      top: 50% !important;
-      left: 50% !important;
-      width: 100dvh !important;
-      height: 100dvw !important;
-      max-width: 100dvh !important;
-      max-height: 100dvw !important;
-      transform: translate(-50%, -50%) rotate(90deg) !important;
-      transform-origin: center center !important;
-      overflow: hidden !important;
-    }
-
-    body.auto-rotate-landscape #temple-stage {
-      width: 100% !important;
-      height: 100% !important;
-      max-width: none !important;
-      max-height: none !important;
-    }
-
     /* Đảm bảo tất cả popup vừa khít chiều cao sân khấu ngang */
     #registration-gate-modal > .temple-panel,
     #seat-directory-modal > .temple-panel,
@@ -165,7 +144,7 @@
     }
 
     /* Tối Ưu Hiển Thị Điện Thoại Xoay Ngang & Toàn Màn Hình (Mobile Landscape & Low Height) */
-    @media screen and (max-height: 640px) and (max-width: 1024px), screen and (orientation: landscape) and (max-height: 640px), body.auto-rotate-landscape, body.mobile-landscape {
+    @media screen and (max-height: 640px) and (max-width: 1024px), screen and (orientation: landscape) and (max-height: 640px), body.mobile-landscape {
       /* 1. Header thu gọn tối đa & ẩn các nút phụ để không bị tràn viền */
       header {
         height: 34px !important;
@@ -3123,29 +3102,43 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       showLiveGiftBanner('Không Gian Chánh Điện', `Đã chuyển sang chế độ: ${mode.label}`, 'lotus');
     }
 
-    async function requestAppFullscreen() {
+    function requestFullscreenUniversal() {
       const doc = document;
-      const docEl = document.documentElement;
-      try {
-        if (!doc.fullscreenElement && !doc.webkitFullscreenElement && !doc.mozFullScreenElement && !doc.msFullscreenElement) {
-          if (docEl.requestFullscreen) {
-            await docEl.requestFullscreen();
-          } else if (docEl.webkitRequestFullscreen) {
-            await docEl.webkitRequestFullscreen();
-          } else if (docEl.mozRequestFullScreen) {
-            await docEl.mozRequestFullScreen();
-          } else if (docEl.msRequestFullscreen) {
-            await docEl.msRequestFullscreen();
-          }
-        }
-      } catch (err) {
-        // Ignored if user gesture required
-      }
+      const el = doc.documentElement;
+      const rfs = el.requestFullscreen || el.webkitRequestFullscreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+      if (!rfs) return Promise.resolve(false);
 
-      // Khóa xoay ngang thiết bị khi đã yêu cầu/vào toàn màn hình
+      try {
+        const res = rfs.call(el, { navigationUI: 'hide' });
+        if (res && typeof res.catch === 'function') {
+          return res.catch(() => {
+            try {
+              const res2 = rfs.call(el);
+              if (res2 && typeof res2.catch === 'function') return res2.catch(() => false);
+              return true;
+            } catch (e2) {
+              return false;
+            }
+          });
+        }
+        return Promise.resolve(true);
+      } catch (err) {
+        try {
+          const res2 = rfs.call(el);
+          if (res2 && typeof res2.catch === 'function') return res2.catch(() => false);
+          return Promise.resolve(true);
+        } catch (e2) {
+          return Promise.resolve(false);
+        }
+      }
+    }
+
+    function lockLandscapeUniversal() {
       try {
         if (screen.orientation && typeof screen.orientation.lock === 'function') {
-          await screen.orientation.lock('landscape').catch(() => {});
+          screen.orientation.lock('landscape').catch(() => {
+            screen.orientation.lock('landscape-primary').catch(() => {});
+          });
         } else if (screen.lockOrientation) {
           screen.lockOrientation('landscape');
         } else if (screen.mozLockOrientation) {
@@ -3153,7 +3146,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         } else if (screen.msLockOrientation) {
           screen.msLockOrientation('landscape');
         }
-      } catch (err) {}
+      } catch (e) {}
+    }
+
+    async function requestAppFullscreen() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+      if (!isFs) {
+        await requestFullscreenUniversal();
+      }
+      lockLandscapeUniversal();
 
       setTimeout(() => {
         checkMobileOrientationBanner();
@@ -3166,21 +3167,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     async function exitAppFullscreen() {
       const doc = document;
       try {
-        if (doc.exitFullscreen) {
-          await doc.exitFullscreen();
-        } else if (doc.webkitExitFullscreen) {
-          await doc.webkitExitFullscreen();
-        } else if (doc.mozCancelFullScreen) {
-          await doc.mozCancelFullScreen();
-        } else if (doc.msExitFullscreen) {
-          await doc.msExitFullscreen();
+        const efs = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+        if (efs) {
+          await efs.call(doc);
         }
       } catch (err) {
         console.warn('[Fullscreen] Exit failed:', err);
       }
 
       try {
-        if (screen.orientation && screen.orientation.unlock) {
+        if (screen.orientation && typeof screen.orientation.unlock === 'function') {
           screen.orientation.unlock();
         }
       } catch (err) {}
@@ -3205,31 +3201,29 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
       if (isMobile) {
         if (isLandscape) {
-          document.body.classList.remove('auto-rotate-landscape');
           document.body.classList.add('mobile-landscape');
           document.body.classList.remove('mobile-portrait');
         } else {
-          // Bắt buộc xoay ngang trên Mobile bằng CSS khi màn hình đang ở chiều dọc
-          document.body.classList.add('auto-rotate-landscape');
-          document.body.classList.add('mobile-landscape');
-          document.body.classList.remove('mobile-portrait');
+          document.body.classList.remove('mobile-landscape');
+          document.body.classList.add('mobile-portrait');
         }
       } else {
-        document.body.classList.remove('auto-rotate-landscape', 'mobile-landscape', 'mobile-portrait');
+        document.body.classList.remove('mobile-landscape', 'mobile-portrait');
       }
     }
 
     function setupAutoFullscreenAndOrientation() {
       checkMobileOrientationBanner();
 
-      // Bất kỳ thao tác chạm hoặc nhấp chuột nào của người dùng đều kích hoạt toàn màn hình & xoay ngang
       const onUserInteraction = () => {
-        requestAppFullscreen();
+        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+        if (!isFs) {
+          requestAppFullscreen();
+        }
       };
 
       window.addEventListener('click', onUserInteraction, { passive: true });
       window.addEventListener('touchend', onUserInteraction, { passive: true });
-      window.addEventListener('pointerup', onUserInteraction, { passive: true });
     }
 
     function updateFullscreenUI() {
@@ -4322,9 +4316,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       if (!container) return;
       container.innerHTML = '';
 
-      const isRotated = document.body.classList.contains('auto-rotate-landscape');
-      const isMobilePortrait = !isRotated && (window.innerWidth < 768 && window.innerHeight > window.innerWidth);
-      const isMobileLandscape = isRotated || (window.innerHeight <= 640 && window.innerWidth > window.innerHeight);
+      const isMobilePortrait = (window.innerWidth < 768 && window.innerHeight > window.innerWidth);
+      const isMobileLandscape = (window.innerHeight <= 640 && window.innerWidth > window.innerHeight);
       const stage = document.getElementById('sanctuary-floor-stage');
 
       // Tự động mở rộng chiều cao sân Chánh Điện khi có nhiều hơn 12 bồ đoàn (sinh thêm hàng)
