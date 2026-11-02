@@ -3348,6 +3348,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-sanctuary.js"></script>
   <script src="js/realtime-sanctuary.js"></script>
+  <script src="js/room-chat.js"></script>
   <script src="js/daily-quests.js"></script>
   <script>
     /**************************************************************************
@@ -4054,7 +4055,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       } catch (e) {}
     }
 
-    async function requestAppFullscreen() {
+    async function requestAppFullscreen(userGesture = false) {
+      // Browsers reject fullscreen calls that are not triggered by a user gesture.
+      if (!userGesture) return false;
       const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
       if (!isFs) {
         await requestFullscreenUniversal();
@@ -4090,7 +4093,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     async function toggleFullscreenMode() {
       const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
       if (!isFs) {
-        await requestAppFullscreen();
+        await requestAppFullscreen(true);
       } else {
         await exitAppFullscreen();
       }
@@ -4173,7 +4176,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
         const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
         if (isMobile && !isFs) {
-          requestAppFullscreen().catch(() => {});
+          requestAppFullscreen(true).catch(() => {});
         }
         window.removeEventListener('click', onFirstInteraction);
         window.removeEventListener('touchend', onFirstInteraction);
@@ -4398,7 +4401,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       e.preventDefault();
       if (currentUserProfile.isWalking) return;
 
-      requestAppFullscreen();
+      requestAppFullscreen(true);
 
       if (!AudioEngine.enabled) {
         AudioEngine.enabled = true;

@@ -83,9 +83,18 @@
 
     init() {
       console.log(`[RealtimeSanctuary v3.0] Initializing with clientId: ${clientId}`);
+      const hasDedicatedServer = Boolean(
+        localStorage.getItem('chua_an_nhien_server_url')
+        || window.location.hostname === 'localhost'
+        || window.location.hostname === '127.0.0.1'
+      );
       this.detectAndInitServerConnection();
-      this.initUniversalStream();
-      this.connectBroker();
+      // A dedicated Node server already provides the realtime transport.
+      // Avoid duplicate public connections and noisy timeout logs locally.
+      if (!hasDedicatedServer) {
+        this.initUniversalStream();
+        this.connectBroker();
+      }
       this.setupLocalChannel();
       this.startHeartbeatLoop();
       this.startPruneLoop();
