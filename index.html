@@ -465,13 +465,14 @@
 
     /* Floating Wish Bubble */
     @keyframes floatUpFade {
-      0% { opacity: 0; transform: translate(-50%, 6px) scale(0.82); }
-      15% { opacity: 1; transform: translate(-50%, -6px) scale(1); }
-      82% { opacity: 1; transform: translate(-50%, -26px) scale(1); }
-      100% { opacity: 0; transform: translate(-50%, -42px) scale(0.92); }
+      0% { opacity: 0; transform: translate(-50%, 4px) scale(0.88); }
+      12% { opacity: 1; transform: translate(-50%, -4px) scale(1); }
+      80% { opacity: 1; transform: translate(-50%, -18px) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -28px) scale(0.92); }
     }
     .wish-bubble {
       animation: floatUpFade 3.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      will-change: transform, opacity;
     }
 
     /* Floating Sky Lantern */
@@ -1360,7 +1361,7 @@
       <!-- ======================================================================
            4. SANCTUARY FLOOR (CHÁNH ĐIỆN BỒ ĐOÀN ĐỒNG TU - TỰ ĐỘNG SINH HÀNG MỚI KHI > 12 NGƯỜI)
            ====================================================================== -->
-      <section id="sanctuary-floor-stage" class="absolute inset-x-0 top-[46%] bottom-[11%] z-20 overflow-y-auto overflow-x-hidden custom-scrollbar pointer-events-auto">
+      <section id="sanctuary-floor-stage" class="absolute inset-x-0 top-[46%] bottom-[11%] z-20 overflow-visible pointer-events-auto">
         <button onclick="performWalkAndOfferIncense()" title="Nhấp để đi bộ lên trước Bàn Thờ Phật và Dâng 3 Nén Tâm Hương"
           class="absolute left-1/2 -translate-x-1/2 -top-[18%] w-24 h-20 rounded-full pointer-events-auto cursor-pointer opacity-0 hover:opacity-100 flex items-end justify-center pb-1 transition">
           <span class="px-2 py-0.5 rounded-full bg-amber-950/90 border border-amber-300 text-[9px] text-amber-200 font-bold shadow whitespace-nowrap">
@@ -4335,11 +4336,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         container.style.minHeight = `${100 + extraPercent}%`;
         if (stage) {
           stage.classList.add('overflow-y-auto');
-          stage.classList.remove('overflow-hidden');
+          stage.classList.remove('overflow-visible');
         }
       } else {
         container.style.height = '100%';
         container.style.minHeight = '100%';
+        if (stage) {
+          stage.classList.remove('overflow-y-auto');
+          stage.classList.add('overflow-visible');
+        }
       }
 
       sanctuarySeats.forEach((seat, idx) => {
@@ -4490,6 +4495,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           <span class="text-[10px] sm:text-[11px] font-semibold text-amber-100">${messageText}</span>
         </div>
       `;
+
+      setTimeout(() => {
+        if (bubbleHost) {
+          bubbleHost.innerHTML = '';
+        }
+      }, 3300);
 
       const seatObj = sanctuarySeats.find(s => s.id === seatId);
       if (seatObj) {
