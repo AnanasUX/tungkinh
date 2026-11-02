@@ -477,15 +477,15 @@
       inset-x: 0;
       bottom: 0;
       z-index: 30;
-      padding: 3px 6px;
-      padding-bottom: max(3px, env(safe-area-inset-bottom));
-      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(9,4,1,0.85) 30%, rgba(9,4,1,0.98) 100%);
+      padding: 4px 8px;
+      padding-bottom: max(6px, env(safe-area-inset-bottom));
+      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(9,4,1,0.75) 25%, rgba(9,4,1,0.96) 100%);
       pointer-events: none;
     }
 
     #bottom-dock-scroll {
       pointer-events: auto;
-      max-width: 1440px;
+      max-width: 1380px;
       margin: 0 auto;
       scrollbar-width: none;
     }
@@ -499,6 +499,9 @@
       padding: var(--dock-padding);
       white-space: nowrap;
       transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     #bottom-dock-scroll > button svg {
       width: var(--dock-icon-size);
@@ -506,24 +509,32 @@
       flex-shrink: 0;
     }
 
-    /* 1. Large Screen (>= 1200px): Centered Single Row */
-    @media screen and (min-width: 1200px) {
+    /* 1. Màn hình cực rộng (>= 1650px): Co giãn linh hoạt 1 hoặc 2 hàng, không bao giờ tràn âm */
+    @media screen and (min-width: 1650px) {
       #bottom-dock-scroll {
         display: flex !important;
-        flex-wrap: nowrap !important;
+        flex-wrap: wrap !important;
         justify-content: center !important;
         align-items: center !important;
-        gap: 6px !important;
+        gap: 5px 6px !important;
       }
     }
 
-    /* 2. Tablet & Laptop (768px - 1199px): Balanced 2 Rows of 7 Buttons */
-    @media screen and (min-width: 768px) and (max-width: 1199px) {
+    /* 2. Desktop, Laptop & Tablet (576px - 1649px): Bố cục chuẩn mực 2 HÀNG x 7 CỘT (Hiển thị 100% 14 nút, không lệch, không cắt) */
+    @media screen and (min-width: 576px) and (max-width: 1649px) {
       #bottom-dock-scroll {
         display: grid !important;
         grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
         gap: 3.5px 5px !important;
+        max-width: 1120px !important;
         justify-items: stretch !important;
+      }
+      #bottom-dock-scroll > button {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 3px 4px !important;
+        justify-content: center !important;
+        text-align: center !important;
       }
     }
 
@@ -1896,12 +1907,6 @@
             </svg>
             <span><span class="hidden lg:inline">Bằng </span>Công Đức</span>
           </button>
-        </div>
-
-        <div class="hidden lg:block text-center leading-tight">
-          <p class="text-[9px] sm:text-[10.5px] text-amber-100/85 font-medium tracking-wide drop-shadow">
-            Dâng hoa sen · Gõ mõ tịnh tâm · Tụng kinh tự động · Xin xăm đầu năm — Nhấp vào Bồ Đoàn trống để đi bộ vào chỗ ngồi
-          </p>
         </div>
       </footer>
 
@@ -4263,6 +4268,27 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       currentUserProfile.isWalking = true;
       renderSanctuaryFloor();
 
+      // Phát sóng ngay lập tức để TẤT CẢ đồng tu khác cùng thấy hành động bước lên dâng hương
+      const incensePayload = {
+        clientId: window.SANCTUARY_CLIENT_ID,
+        seatNo: userSeat.seatNo,
+        seatX: seatX,
+        seatY: seatY,
+        name: currentUserProfile.fullName,
+        fullName: currentUserProfile.fullName,
+        dharmaName: currentUserProfile.dharmaName,
+        avatarType: currentUserProfile.avatarType,
+        realmLevel: currentUserProfile.realmLevel || 1
+      };
+
+      if (window.SupabaseSanctuary) {
+        window.SupabaseSanctuary.broadcast('DEVOTEE_OFFER_INCENSE', incensePayload);
+        window.SupabaseSanctuary.broadcast('OFFER_INCENSE', incensePayload);
+      }
+      if (window.RealtimeSanctuary) {
+        window.RealtimeSanctuary.publishMessage(Object.assign({ type: 'DEVOTEE_OFFER_INCENSE' }, incensePayload));
+      }
+
       const walkLayer = document.getElementById('walking-practitioner-layer');
       walkLayer.innerHTML = '';
 
@@ -4313,21 +4339,100 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         if (window.DailyQuestEngine) {
           window.DailyQuestEngine.onAction('offering', 1);
         }
-        if (window.SupabaseSanctuary) {
-          window.SupabaseSanctuary.broadcast('OFFER_INCENSE', {
-            seatNo: userSeat.seatNo,
-            name: currentUserProfile.fullName
-          });
-        }
-        if (window.RealtimeSanctuary) {
-          window.RealtimeSanctuary.publishMessage({
-            type: 'OFFER_INCENSE',
-            seatNo: userSeat.seatNo,
-            name: currentUserProfile.fullName
-          });
+      });
+    }
+
+    function animateRemoteIncenseOffering(payload) {
+      if (!payload) return;
+      const remoteId = payload.clientId || payload.senderId;
+      if (remoteId && remoteId === window.SANCTUARY_CLIENT_ID) return;
+
+      const seatNo = payload.seatNo;
+      const devName = payload.fullName || payload.name || payload.senderName || 'Đồng Tu';
+      const devDharma = payload.dharmaName || payload.dharma || 'Tịnh Tâm';
+      const devAvatar = payload.avatarType || payload.type || 'monk';
+      const devRealm = payload.realmLevel || 1;
+
+      // 1. Tìm bồ đoàn của đồng tu này
+      let seat = null;
+      if (seatNo && window.sanctuarySeats) {
+        seat = window.sanctuarySeats.find(s => s.seatNo === seatNo);
+      }
+      if (!seat && remoteId && window.sanctuarySeats) {
+        seat = window.sanctuarySeats.find(s => s.remoteClientId === remoteId);
+      }
+
+      const seatX = (seat && seat.x) || payload.seatX || 20;
+      const seatY = (seat && seat.y) || payload.seatY || 59;
+
+      // 2. Tạm rời bồ đoàn để bước đi
+      if (seat && !seat.isUser) {
+        seat.occupied = false;
+        renderSanctuaryFloor();
+      }
+
+      // 3. Khởi tạo nhân vật bước đi
+      const walkLayer = document.getElementById('walking-practitioner-layer');
+      if (!walkLayer) return;
+
+      const walkerId = 'remote_incense_' + Math.random().toString(36).substring(2, 6);
+      const walkerEl = document.createElement('div');
+      walkerEl.id = walkerId;
+      walkerEl.className = 'absolute flex flex-col items-center pointer-events-none transition-none';
+      walkerEl.style.left = `${seatX}%`;
+      walkerEl.style.top = `${seatY}%`;
+      walkerEl.style.zIndex = '999';
+
+      walkerEl.innerHTML = `
+        <div id="walker-status-pill" class="-mt-7 mb-1 px-2.5 py-0.5 rounded-full bg-orange-950/95 border border-amber-300 text-[10px] font-bold text-amber-200 shadow-lg whitespace-nowrap">
+          🔥 ${devName} đang tiến lên dâng hương...
+        </div>
+        <div id="walker-figure" class="chibi-walking-step" style="width: var(--chibi-w); height: var(--chibi-h);">
+          ${createChibiSVG(devAvatar, walkerId, false, false, devRealm)}
+        </div>
+        <div class="-mt-1.5 px-2.5 py-0.5 rounded-md bg-emerald-950/95 text-emerald-100 border border-emerald-400 font-bold text-[10px] shadow-md whitespace-nowrap">
+          ${devName} (Dâng Hương)
+        </div>
+      `;
+      walkLayer.appendChild(walkerEl);
+
+      // 4. Lộ trình bước đi lên lư đồng dâng hương
+      const waypoints = [
+        { x: 50, y: seatY, duration: 750, label: `🚶 ${devName} bước ra Thảm Đỏ Hoa Sen...` },
+        { x: 50, y: 53,    duration: 950, label: `🔥 ${devName} tiến trước Lư Hương Đồng...` },
+        {
+          x: 50, y: 53, duration: 1500, bowPause: true,
+          label: `🙏 ${devName} thành tâm dâng 3 nén hương cúng Phật...`,
+          onReach: () => {
+            if (typeof incenseIntensity !== 'undefined') {
+              incenseIntensity = 3.2;
+              setTimeout(() => { incenseIntensity = 1.3; }, 7500);
+            }
+            if (window.AudioEngine) window.AudioEngine.playTempleBell();
+            if (window.createBellRipple) window.createBellRipple(50, 44);
+            if (window.triggerGoldenLotusRain) window.triggerGoldenLotusRain(18);
+            if (window.showLiveGiftBanner) {
+              window.showLiveGiftBanner('Dâng Hương Cúng Phật', `🙏 Đạo hữu ${devName} (PD: ${devDharma}) vừa dâng 3 nén tâm hương cúng Phật (+20 Công Đức)`, 'lotus');
+            }
+          }
+        },
+        { x: 50,    y: seatY, duration: 900, label: `🚶 ${devName} quay về bồ đoàn tu tập...` },
+        { x: seatX, y: seatY, duration: 750, label: `🧘 ${devName} an tọa tại Bồ đoàn #${seatNo || ''}` }
+      ];
+
+      runWaypointSequence(walkerEl, seatX, seatY, waypoints, () => {
+        walkerEl.remove();
+        if (seat && !seat.isUser) {
+          seat.occupied = true;
+          seat.remoteClientId = remoteId || seat.remoteClientId;
+          seat.name = devName;
+          seat.dharma = devDharma;
+          seat.type = devAvatar;
+          renderSanctuaryFloor(seatNo);
         }
       });
     }
+    window.animateRemoteIncenseOffering = animateRemoteIncenseOffering;
 
     function runWaypointSequence(walkerEl, initX, initY, waypoints, onComplete) {
       let curX = initX;

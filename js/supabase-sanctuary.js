@@ -237,7 +237,11 @@
       };
 
       const handleOfferIncense = (payload) => {
-        if (!payload || payload.senderId === this.getClientId()) return;
+        if (!payload || payload.senderId === this.getClientId() || payload.clientId === this.getClientId()) return;
+        if (typeof window.animateRemoteIncenseOffering === 'function') {
+          window.animateRemoteIncenseOffering(payload);
+          return;
+        }
         if (window.AudioEngine) window.AudioEngine.playGiftChime();
         if (window.triggerGoldenLotusRain) window.triggerGoldenLotusRain(18);
         let seatNo = payload.seatNo;
@@ -291,6 +295,7 @@
         .on('broadcast', { event: 'TAP_MO' }, ({ payload }) => handleWoodenFish(payload))
         .on('broadcast', { event: 'BOW_BUDDHA' }, ({ payload }) => handleBowBuddha(payload))
         .on('broadcast', { event: 'OFFER_INCENSE' }, ({ payload }) => handleOfferIncense(payload))
+        .on('broadcast', { event: 'DEVOTEE_OFFER_INCENSE' }, ({ payload }) => handleOfferIncense(payload))
         .on('broadcast', { event: 'REJOICE_MERIT' }, ({ payload }) => handleRejoice(payload))
         .on('broadcast', { event: 'CHANT_SYNC' }, ({ payload }) => {
           if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.applyRemoteChantState === 'function') {

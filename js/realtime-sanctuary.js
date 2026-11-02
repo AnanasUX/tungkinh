@@ -849,6 +849,15 @@
           this.handleDevoteeRejoice(msg.targetName, msg.fromName);
           break;
 
+        case 'DEVOTEE_OFFER_INCENSE':
+        case 'OFFER_INCENSE':
+          if (typeof window.animateRemoteIncenseOffering === 'function') {
+            window.animateRemoteIncenseOffering(msg);
+          } else if (typeof window.triggerDevoteeBow === 'function' && msg.seatNo) {
+            window.triggerDevoteeBow(`seat-${msg.seatNo}`, 'Dâng 3 nén tâm hương', 'lotus');
+          }
+          break;
+
         case 'COMMUNAL_CHANT_START':
           this.sharedChanting.isActive = true;
           this.sharedChanting.leaderId = msg.leaderId;
