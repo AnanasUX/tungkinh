@@ -26,10 +26,13 @@
       padding: 0;
       width: 100%;
       height: 100%;
+      height: 100dvh;
       background-color: #090401;
       font-family: 'Be Vietnam Pro', sans-serif;
       color: #fdf6e9;
       overflow: hidden;
+      position: fixed;
+      inset: 0;
     }
 
     .font-serif-title {
@@ -122,19 +125,6 @@
         height: 28px !important;
         flex-shrink: 0 !important;
       }
-    }
-
-    /* Pseudo-landscape rotation fallback for iOS / mobile portrait */
-    .force-landscape-rotated {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vh !important;
-      height: 100vw !important;
-      transform: rotate(90deg) translateY(-100vw) !important;
-      transform-origin: top left !important;
-      z-index: 9999 !important;
-      overflow: hidden !important;
     }
 
     /* Tối Ưu Hiển Thị Điện Thoại Xoay Ngang & Toàn Màn Hình (Mobile Landscape & Low Height) */
@@ -1047,7 +1037,7 @@
             <span id="badge-header-lock" class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white text-[7px] flex items-center justify-center font-bold text-stone-950">🔒</span>
           </button>
 
-          <button onclick="toggleFullscreenMode()" title="Toàn màn hình"
+          <button onclick="toggleFullscreenMode()" id="btn-header-fullscreen" title="Toàn màn hình"
             class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 flex items-center justify-center text-amber-200 shadow-lg transition active:scale-90">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
@@ -1055,55 +1045,13 @@
           </button>
 
           <!-- MOBILE ROTATE & FULLSCREEN BUTTON -->
-          <button onclick="requestMobileLandscapeFullscreen()" id="btn-header-rotate-landscape" title="Xoay ngang & Toàn màn hình (Tối ưu Mobile)"
+          <button onclick="toggleFullscreenMode()" id="btn-header-rotate-landscape" title="Toàn màn hình (Tối ưu Mobile)"
             class="px-2 py-1 rounded-full bg-gradient-to-r from-amber-600/80 to-yellow-600/80 hover:brightness-110 border border-amber-300/60 text-[9px] sm:text-[10px] text-stone-950 font-bold flex items-center gap-1 shadow-lg transition active:scale-90">
             <span>⛶</span>
-            <span class="hidden sm:inline">Xoay Ngang</span>
+            <span class="hidden sm:inline">Toàn Màn Hình</span>
           </button>
         </div>
       </header>
-
-      <!-- IMMERSIVE MOBILE ROTATION & FULLSCREEN OVERLAY -->
-      <div id="mobile-rotation-overlay" class="hidden fixed inset-0 z-[250] bg-gradient-to-b from-stone-950/98 via-amber-950/95 to-black/98 backdrop-blur-xl flex flex-col items-center justify-center p-5 text-center text-amber-100">
-        <div class="relative mb-5">
-          <div class="w-20 h-20 rounded-2xl border-2 border-amber-300/70 bg-amber-950/50 flex items-center justify-center shadow-[0_0_35px_rgba(245,190,70,0.4)]">
-            <svg class="w-10 h-10 text-amber-300 animate-[spin_5s_ease-in-out_infinite]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <rect x="5" y="2" width="14" height="20" rx="3" />
-              <path d="M12 18h.01" />
-              <path d="M9 6h6" opacity="0.6" />
-            </svg>
-          </div>
-          <div class="absolute -bottom-2 -right-2 text-2xl">🪷</div>
-        </div>
-
-        <div class="max-w-xs space-y-2">
-          <div class="text-[10px] tracking-[0.25em] text-amber-300 uppercase font-extrabold">✦ CHÙA AN NHIÊN · ĐẠI HÙNG BẢO ĐIỆN ✦</div>
-          <h2 class="font-serif-title text-2xl font-bold text-amber-100 title-glow">
-            Xoay Ngang Để Chiêm Bái
-          </h2>
-          <p class="text-xs text-amber-200/80 leading-relaxed">
-            Hệ thống tối ưu cho <strong>màn hình xoay ngang & toàn màn hình</strong> để hiển thị trọn vẹn Chánh Điện và đồng tụng kinh.
-          </p>
-        </div>
-
-        <div class="mt-6 flex flex-col gap-2.5 w-full max-w-[260px]">
-          <button onclick="requestMobileLandscapeFullscreen()"
-            class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-stone-950 font-extrabold text-xs tracking-wide shadow-[0_0_25px_rgba(245,190,70,0.6)] flex items-center justify-center gap-2 transition active:scale-95">
-            <span>⛶</span>
-            <span>XOAY NGANG & TOÀN MÀN HÌNH</span>
-          </button>
-          <button onclick="dismissMobileRotationOverlay()"
-            class="text-[11px] text-amber-300/70 hover:text-amber-200 py-1 transition">
-            Tiếp tục xem dọc
-          </button>
-        </div>
-      </div>
-
-      <!-- FLOATING MOBILE ORIENTATION HELPER BANNER -->
-      <div id="mobile-orientation-banner" class="hidden fixed top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-950/95 via-stone-900/95 to-amber-950/95 border border-amber-300 text-amber-200 text-xs font-semibold shadow-2xl flex items-center gap-2 cursor-pointer pointer-events-auto animate-bounce" onclick="requestMobileLandscapeFullscreen()">
-        <span>📱 Chạm để Xoay Ngang & Toàn Màn Hình</span>
-        <span class="px-2 py-0.5 rounded-full bg-amber-500 text-stone-950 font-extrabold text-[10px]">Xoay ngay</span>
-      </div>
 
       <!-- ======================================================================
            3D CAMERA VIEWPOINTS & TOUR BAR (Active in 3D Mode)
@@ -2627,7 +2575,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     const initialDevoteePick = SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)];
 
     const currentUserProfile = {
-      registered: true,
+      registered: false,
       isLocked: false,
       lockedAt: null,
       clientIp: '',
@@ -2839,22 +2787,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         // Tách biệt phiên theo từng tab (sessionStorage) để khi mở 2 tab/2 máy thử nghiệm thì không bị trùng tên/ghế của nhau
         const tabSaved = sessionStorage.getItem(CHUA_AN_NHIEN_SESSION_KEY);
         const globalSaved = localStorage.getItem(CHUA_AN_NHIEN_SESSION_KEY);
-        const saved = tabSaved || (globalSaved && JSON.parse(globalSaved).isLocked ? globalSaved : null);
+        const saved = tabSaved || globalSaved;
         if (!saved) return false;
         const data = JSON.parse(saved);
-        if (!data || !data.registered) return false;
+        if (!data) return false;
 
         Object.assign(currentUserProfile, data);
-        currentUserProfile.isLocked = true;
 
-        if (document.getElementById('reg-fullname')) document.getElementById('reg-fullname').value = currentUserProfile.fullName;
-        if (document.getElementById('reg-dharma-name')) document.getElementById('reg-dharma-name').value = currentUserProfile.dharmaName;
-        if (document.getElementById('reg-hometown')) document.getElementById('reg-hometown').value = currentUserProfile.hometown;
-        if (document.getElementById('reg-day')) document.getElementById('reg-day').value = currentUserProfile.day;
-        if (document.getElementById('reg-month')) document.getElementById('reg-month').value = currentUserProfile.month;
-        if (document.getElementById('reg-year')) document.getElementById('reg-year').value = currentUserProfile.year;
-        if (document.getElementById('reg-age')) document.getElementById('reg-age').value = currentUserProfile.age;
-        if (document.getElementById('reg-wish')) document.getElementById('reg-wish').value = currentUserProfile.wish;
+        if (document.getElementById('reg-fullname') && currentUserProfile.fullName) document.getElementById('reg-fullname').value = currentUserProfile.fullName;
+        if (document.getElementById('reg-dharma-name') && currentUserProfile.dharmaName) document.getElementById('reg-dharma-name').value = currentUserProfile.dharmaName;
+        if (document.getElementById('reg-hometown') && currentUserProfile.hometown) document.getElementById('reg-hometown').value = currentUserProfile.hometown;
+        if (document.getElementById('reg-day') && currentUserProfile.day) document.getElementById('reg-day').value = currentUserProfile.day;
+        if (document.getElementById('reg-month') && currentUserProfile.month) document.getElementById('reg-month').value = currentUserProfile.month;
+        if (document.getElementById('reg-year') && currentUserProfile.year) document.getElementById('reg-year').value = currentUserProfile.year;
+        if (document.getElementById('reg-age') && currentUserProfile.age) document.getElementById('reg-age').value = currentUserProfile.age;
+        if (document.getElementById('reg-wish') && currentUserProfile.wish) document.getElementById('reg-wish').value = currentUserProfile.wish;
         const avRadio = document.querySelector(`input[name="regAvatarType"][value="${currentUserProfile.avatarType}"]`);
         if (avRadio) avRadio.checked = true;
 
@@ -2862,17 +2809,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           updateIPDisplayUI(currentUserProfile.clientIp);
         }
 
-        applyProfileLockState(true);
-
-        const targetSeat = assignUserToSeat(currentUserProfile.assignedSeatNo, currentUserProfile);
-
-        closeRegistrationModal();
-        updatePractitionerHUD();
-        renderSanctuaryFloor(targetSeat ? targetSeat.seatNo : null);
-
-        setTimeout(() => {
-          showLiveGiftBanner(currentUserProfile.fullName, `🙏 Kính chào Đồng Tu trở lại Chánh Điện (IP: ${currentUserProfile.clientIp})`, 'lotus');
-        }, 900);
+        if (typeof recalculateAgeAndPreview === 'function') {
+          recalculateAgeAndPreview(false);
+        }
 
         return true;
       } catch (err) {
@@ -3147,137 +3086,126 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       showLiveGiftBanner('Không Gian Chánh Điện', `Đã chuyển sang chế độ: ${mode.label}`, 'lotus');
     }
 
-    function requestAppFullscreen() {
+    async function requestAppFullscreen() {
       const docEl = document.documentElement;
       try {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
           if (docEl.requestFullscreen) {
-            docEl.requestFullscreen().catch(() => {});
+            await docEl.requestFullscreen();
           } else if (docEl.webkitRequestFullscreen) {
-            docEl.webkitRequestFullscreen();
+            await docEl.webkitRequestFullscreen();
+          } else if (docEl.mozRequestFullScreen) {
+            await docEl.mozRequestFullScreen();
+          } else if (docEl.msRequestFullscreen) {
+            await docEl.msRequestFullscreen();
           }
         }
+      } catch (err) {
+        console.warn('[Fullscreen] Request failed:', err);
+      }
+
+      try {
         if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch(() => {});
+          await screen.orientation.lock('landscape').catch(() => {});
         }
       } catch (err) {}
     }
 
-    window.mobileRotationDismissed = false;
+    async function exitAppFullscreen() {
+      const doc = document;
+      try {
+        if (doc.exitFullscreen) {
+          await doc.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+          await doc.webkitExitFullscreen();
+        } else if (doc.mozCancelFullScreen) {
+          await doc.mozCancelFullScreen();
+        } else if (doc.msExitFullscreen) {
+          await doc.msExitFullscreen();
+        }
+      } catch (err) {
+        console.warn('[Fullscreen] Exit failed:', err);
+      }
+
+      try {
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      } catch (err) {}
+    }
+
+    async function toggleFullscreenMode() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+      if (!isFs) {
+        await requestAppFullscreen();
+      } else {
+        await exitAppFullscreen();
+      }
+    }
+
+    function requestMobileLandscapeFullscreen() {
+      return toggleFullscreenMode();
+    }
 
     function checkMobileOrientationBanner() {
       const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
-      const isPortrait = window.innerHeight > window.innerWidth;
-      const overlay = document.getElementById('mobile-rotation-overlay');
-      const banner = document.getElementById('mobile-orientation-banner');
+      const isLandscape = window.innerWidth > window.innerHeight;
 
       if (isMobile) {
-        if (isPortrait) {
-          document.body.classList.remove('mobile-landscape');
-          document.body.classList.add('mobile-portrait');
-          if (overlay && !window.mobileRotationDismissed) {
-            overlay.classList.remove('hidden');
-          }
-          if (banner && window.mobileRotationDismissed) {
-            banner.classList.remove('hidden');
-          }
-        } else {
+        if (isLandscape) {
           document.body.classList.add('mobile-landscape');
           document.body.classList.remove('mobile-portrait');
-          if (overlay) overlay.classList.add('hidden');
-          if (banner) banner.classList.add('hidden');
+        } else {
+          document.body.classList.remove('mobile-landscape');
+          document.body.classList.add('mobile-portrait');
         }
       } else {
         document.body.classList.remove('mobile-landscape', 'mobile-portrait');
-        if (overlay) overlay.classList.add('hidden');
-        if (banner) banner.classList.add('hidden');
       }
     }
 
-    function dismissMobileRotationOverlay() {
-      window.mobileRotationDismissed = true;
-      const overlay = document.getElementById('mobile-rotation-overlay');
-      if (overlay) overlay.classList.add('hidden');
-      const banner = document.getElementById('mobile-orientation-banner');
-      if (banner && window.innerHeight > window.innerWidth) banner.classList.remove('hidden');
-    }
-
-    async function requestMobileLandscapeFullscreen() {
-      const docEl = document.documentElement;
-      try {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-          if (docEl.requestFullscreen) {
-            await docEl.requestFullscreen().catch(() => {});
-          } else if (docEl.webkitRequestFullscreen) {
-            await docEl.webkitRequestFullscreen();
-          }
-        }
-      } catch (err) {}
-
-      let orientationLocked = false;
-      try {
-        if (screen.orientation && screen.orientation.lock) {
-          await screen.orientation.lock('landscape');
-          orientationLocked = true;
-        }
-      } catch (err) {}
-
-      // Nếu trình duyệt (như iOS Safari) không hỗ trợ screen.orientation.lock và đang ở màn hình dọc
-      if (!orientationLocked && window.innerHeight > window.innerWidth) {
-        const stage = document.getElementById('temple-stage');
-        if (stage) {
-          stage.classList.toggle('force-landscape-rotated');
-        }
+    function updateFullscreenUI() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      const fsBtn = document.getElementById('btn-header-fullscreen');
+      const mobileFsBtn = document.getElementById('btn-header-rotate-landscape');
+      if (fsBtn) {
+        fsBtn.title = isFs ? "Thoát toàn màn hình" : "Toàn màn hình";
+        fsBtn.innerHTML = isFs ? `
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9L4 4m0 0v4m0-4h4m6 6l5-5m0 0v4m0-4h-4m-6 6l-5 5m0 0v-4m0 4h4m6-6l5 5m0 0v-4m0 4h-4" />
+          </svg>
+        ` : `
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+        `;
       }
-
-      const overlay = document.getElementById('mobile-rotation-overlay');
-      if (overlay) overlay.classList.add('hidden');
-      const banner = document.getElementById('mobile-orientation-banner');
-      if (banner) banner.classList.add('hidden');
-
-      setTimeout(() => {
-        checkMobileOrientationBanner();
-        if (typeof renderSanctuaryFloor === 'function') renderSanctuaryFloor();
-      }, 350);
+      if (mobileFsBtn) {
+        mobileFsBtn.innerHTML = isFs ? `<span>🗗</span><span class="hidden sm:inline">Thu Nhỏ</span>` : `<span>⛶</span><span class="hidden sm:inline">Toàn Màn Hình</span>`;
+      }
+      if (typeof renderSanctuaryFloor === 'function' && !is3DModeActive) {
+        renderSanctuaryFloor();
+      }
     }
 
-    // Tự động kích hoạt toàn màn hình và xoay ngang ngay khi người dùng chạm lần đầu tiên
-    function setupMobileAutoFullscreenOnFirstTap() {
-      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
-      if (!isMobile) return;
+    document.addEventListener('fullscreenchange', updateFullscreenUI);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
 
-      const onFirstInteraction = async (e) => {
-        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA')) {
-          return;
-        }
-        window.removeEventListener('click', onFirstInteraction, true);
-        window.removeEventListener('touchstart', onFirstInteraction, true);
-        await requestMobileLandscapeFullscreen();
-      };
+    window.addEventListener('resize', () => {
+      checkMobileOrientationBanner();
+      if (typeof renderSanctuaryFloor === 'function' && !is3DModeActive) {
+        renderSanctuaryFloor();
+      }
+    });
 
-      window.addEventListener('click', onFirstInteraction, { capture: true, once: true });
-      window.addEventListener('touchstart', onFirstInteraction, { capture: true, once: true });
-    }
-
-    window.addEventListener('resize', checkMobileOrientationBanner);
     window.addEventListener('orientationchange', () => {
       setTimeout(() => {
         checkMobileOrientationBanner();
-        if (typeof renderSanctuaryFloor === 'function') renderSanctuaryFloor();
-      }, 350);
-    });
-
-    function toggleFullscreenMode() {
-      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        requestAppFullscreen();
-      } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen().catch(() => {});
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
+        if (typeof renderSanctuaryFloor === 'function' && !is3DModeActive) {
+          renderSanctuaryFloor();
         }
-      }
-    }
+      }, 300);
+    });
 
 
     function pickUniqueSampleDevotee() {
@@ -3372,28 +3300,29 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     function openRegistrationModal(isEditing = false) {
       const modal = document.getElementById('registration-gate-modal');
       const cancelBtn = document.getElementById('btn-cancel-edit');
+      if (!modal) return;
       modal.classList.remove('hidden');
       modal.classList.add('flex');
 
       const nameInput = document.getElementById('reg-fullname');
       const dharmaInput = document.getElementById('reg-dharma-name');
 
-      if (!currentUserProfile.registered && (!nameInput.value || nameInput.value === 'Nguyễn Bá Ngọc')) {
-        const pick = SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)];
+      if (!nameInput.value || nameInput.value === 'Nguyễn Bá Ngọc' || nameInput.value === 'Đồng Tu Mới') {
+        const pick = pickUniqueSampleDevotee();
         nameInput.value = pick.name;
-        dharmaInput.value = pick.dharma;
+        if (dharmaInput) dharmaInput.value = pick.dharma;
         currentUserProfile.fullName = pick.name;
         currentUserProfile.dharmaName = pick.dharma;
+        currentUserProfile.avatarType = pick.gender || 'monk';
+        const avRadio = document.querySelector(`input[name="regAvatarType"][value="${currentUserProfile.avatarType}"]`);
+        if (avRadio) avRadio.checked = true;
       }
 
       renderRegSeatsSelector();
 
-      if (currentUserProfile.isLocked || currentUserProfile.registered) {
-        if (cancelBtn) cancelBtn.classList.remove('hidden');
-        applyProfileLockState(true);
-      } else {
-        applyProfileLockState(false);
-      }
+      // Luôn mở khoá cho phép đạo hữu nhập hoặc chỉnh sửa thông tin khi mở sớ
+      applyProfileLockState(false);
+      if (cancelBtn) cancelBtn.classList.remove('hidden');
     }
 
     function closeRegistrationModal() {
@@ -3448,13 +3377,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
      **************************************************************************/
     function handleEnterTempleSubmit(e) {
       e.preventDefault();
-      if (currentUserProfile.isLocked) {
-        closeRegistrationModal();
-        return;
-      }
       if (currentUserProfile.isWalking) return;
 
-      requestMobileLandscapeFullscreen();
+      requestAppFullscreen();
 
       if (!AudioEngine.enabled) {
         AudioEngine.enabled = true;
@@ -3694,6 +3619,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         triggerDevoteeBow(targetSeat.id, currentUserProfile.wish, 'lotus');
         addMeritPoints(currentUserProfile.fullName, 10, 'lotus', currentUserProfile.wish, true);
         spawnFloatingSkyLantern(currentUserProfile.fullName, currentUserProfile.wish, true);
+        if (typeof showLiveGiftBanner === 'function') {
+          showLiveGiftBanner(
+            'Quang Lâm Chánh Điện',
+            `🙏 Đạo hữu ${currentUserProfile.fullName} (PD: ${currentUserProfile.dharmaName}) đã an tọa bồ đoàn #${targetSeat.seatNo}`,
+            'lotus'
+          );
+        }
       });
     }
 
@@ -6543,7 +6475,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
     window.onload = async function () {
       try { checkMobileOrientationBanner(); } catch (e) { console.warn(e); }
-      try { setupMobileAutoFullscreenOnFirstTap(); } catch (e) { console.warn(e); }
       try { setupSmartDobInputs(); } catch (e) { console.warn(e); }
       try { recalculateAgeAndPreview(false); } catch (e) { console.warn(e); }
       try { initGoldMotes(); } catch (e) { console.warn(e); }
@@ -6569,75 +6500,48 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         }
       }
 
-      // 4. Tải phiên thực tế đã lưu và khôi phục trạng thái niêm phong
+      // 4. Nạp thông tin phiên thực tế (nếu có) hoặc tạo thông tin mẫu
       try {
         const restored = loadRealUserSession();
         let targetSeatNo = currentUserProfile.assignedSeatNo;
 
-        // Nếu chưa có sớ hoặc ghế cũ bị người khác ngồi hoặc chưa có ghế -> Tự động chọn bồ đoàn trống tiếp theo
-        if (!restored || !targetSeatNo || isSeatTakenByRemote(targetSeatNo)) {
+        if (!targetSeatNo || isSeatTakenByRemote(targetSeatNo)) {
           targetSeatNo = pickBestAvailableSeat();
           currentUserProfile.assignedSeatNo = targetSeatNo;
-          // Gợi ý tên mẫu ngẫu nhiên độc nhất nếu chưa có tên thật
-          if (!restored || !currentUserProfile.registered) {
-            rollSuggestedFullName();
-          }
-          assignUserToSeat(targetSeatNo, currentUserProfile);
-          renderSanctuaryFloor(targetSeatNo);
-          saveRealUserSession();
-        } else {
-          assignUserToSeat(targetSeatNo, currentUserProfile);
-          renderSanctuaryFloor(targetSeatNo);
         }
 
-        // 5. Đồng bộ ngay vị trí và thông tin với Supabase Database & Realtime Presence
-        if (window.SupabaseSanctuary && targetSeatNo) {
-          try {
-            await window.SupabaseSanctuary.saveDevoteeToDB(currentUserProfile, targetSeatNo);
-            await window.SupabaseSanctuary.trackCurrentUserPresence();
-            window.SupabaseSanctuary.broadcast('CLAIM_SEAT', {
-              seatNo: targetSeatNo,
-              senderId: window.SANCTUARY_CLIENT_ID,
-              data: currentUserProfile
-            });
-          } catch (e) {
-            console.warn('[window.onload] Supabase presence sync error:', e);
-          }
+        if (!restored) {
+          rollSuggestedFullName();
         }
+
+        assignUserToSeat(targetSeatNo, currentUserProfile);
+        renderSanctuaryFloor(targetSeatNo);
       } catch (seatErr) {
         console.error('[window.onload] Lỗi khởi tạo chỗ ngồi:', seatErr);
         renderSanctuaryFloor();
       }
 
-
-
-      if (window.showLiveGiftBanner) {
-        setTimeout(() => {
-          const seatNum = currentUserProfile.assignedSeatNo || '';
-          window.showLiveGiftBanner(
-            'Quang Lâm Chánh Điện',
-            `🙏 Đạo hữu ${currentUserProfile.fullName} (PD: ${currentUserProfile.dharmaName}) đã an tọa bồ đoàn #${seatNum}`,
-            'lotus'
-          );
-        }, 800);
-      }
+      // 5. Hiển thị popup nhập thông tin người dùng ngay khi vào hệ thống
+      setTimeout(() => {
+        openRegistrationModal(false);
+      }, 100);
 
       startIdleFellowBowing();
       animateAtmosphere();
 
-      // 4. Khởi tạo Hệ Thống Nhiệm Vụ Tu Học & Đếm Ngược Tụng Kinh
+      // 6. Khởi tạo Hệ Thống Nhiệm Vụ Tu Học & Đếm Ngược Tụng Kinh
       if (window.DailyQuestEngine) {
         window.DailyQuestEngine.init();
       }
 
-      // 5. Lắng nghe thay đổi kích thước màn hình để tự căn chỉnh Bồ đoàn
+      // 7. Lắng nghe thay đổi kích thước màn hình để tự căn chỉnh Bồ đoàn
       window.addEventListener('resize', () => {
         if (!is3DModeActive) {
           renderSanctuaryFloor();
         }
       });
 
-      // 6. Khởi động nhạc thiền nền (mặc định 30% âm lượng, lặp vô tận) và nạp sẵn âm thanh chuông mõ MP3
+      // 8. Khởi động nhạc thiền nền (mặc định 30% âm lượng, lặp vô tận) và nạp sẵn âm thanh chuông mõ MP3
       AudioEngine.preloadAssets();
       AudioEngine.initBgMusic();
     };
