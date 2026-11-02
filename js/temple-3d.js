@@ -62,12 +62,12 @@ class Temple3DEngine {
     // Camera view presets (responsive for mobile portrait vs landscape)
     const isPortrait = (typeof window !== 'undefined' && window.innerWidth < window.innerHeight);
     this.cameraViews = {
-      overview: { pos: isPortrait ? new THREE.Vector3(0, 7.2, 17.5) : new THREE.Vector3(0, 6.2, 14.8),  target: new THREE.Vector3(0, 3.2, -3.5) },
-      userSeat: { pos: new THREE.Vector3(0, 1.9, 4.2),    target: new THREE.Vector3(0, 3.8, -4.5) },
-      buddha:   { pos: new THREE.Vector3(0, 4.2, -1.8),   target: new THREE.Vector3(0, 4.6, -5.4) },
-      altar:    { pos: new THREE.Vector3(0, 3.0, 0.5),    target: new THREE.Vector3(0, 3.2, -4.8) },
-      bell:     { pos: new THREE.Vector3(-5.8, 3.4, 0.8), target: new THREE.Vector3(-6.2, 3.6, -1.8) },
-      mo:       { pos: new THREE.Vector3(5.6, 2.6, 0.6),  target: new THREE.Vector3(6.0, 2.0, -1.8) }
+      overview: { pos: isPortrait ? new THREE.Vector3(0, 9.6, 24) : new THREE.Vector3(0, 8.2, 22), target: new THREE.Vector3(0, 2.8, -4.2) },
+      userSeat: { pos: new THREE.Vector3(0, 4.8, 11.5), target: new THREE.Vector3(0, 2.8, -4.5) },
+      buddha:   { pos: new THREE.Vector3(0, 7.2, 5.5),  target: new THREE.Vector3(0, 4.4, -5.4) },
+      altar:    { pos: new THREE.Vector3(0, 5.8, 8.5),  target: new THREE.Vector3(0, 3.0, -4.8) },
+      bell:     { pos: new THREE.Vector3(-9.5, 6.2, 8.5), target: new THREE.Vector3(-6.2, 3.2, -1.8) },
+      mo:       { pos: new THREE.Vector3(9.5, 5.6, 8.5), target: new THREE.Vector3(6.0, 2.0, -1.8) }
     };
     this.currentViewKey = 'overview';
     this.clock = new THREE.Clock();
@@ -129,8 +129,8 @@ class Temple3DEngine {
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.06;
       this.controls.maxPolarAngle = Math.PI / 2 + 0.02;
-      this.controls.minDistance = 2.2;
-      this.controls.maxDistance = 24;
+      this.controls.minDistance = 8;
+      this.controls.maxDistance = 34;
       this.controls.target.copy(this.cameraViews.overview.target);
       this.controls.addEventListener('start', () => {
         if (this.isCinematicTour) {

@@ -63,6 +63,7 @@
     lastSyncTime: null,
     syncLatency: 0,
     serverUrl: (typeof localStorage !== 'undefined' ? localStorage.getItem('chua_an_nhien_server_url') : '') || '',
+    roomChatHistory: [],
 
     // Real-time Shared Chanting Room State
     sharedChanting: {
@@ -263,6 +264,10 @@
 
     applyNodeServerState(serverState) {
       if (!serverState) return;
+      if (Array.isArray(serverState.chatHistory)) {
+        this.roomChatHistory = serverState.chatHistory;
+        window.dispatchEvent(new CustomEvent('room-chat-history', { detail: serverState.chatHistory }));
+      }
       if (serverState.seats && window.sanctuarySeats) {
         // Sync seats from server database
         serverState.seats.forEach(s => {
@@ -810,6 +815,10 @@
       if (!msg || !msg.type || msg.senderId === clientId || msg.senderId === window.SANCTUARY_CLIENT_ID) return;
 
       switch (msg.type) {
+        case 'ROOM_CHAT':
+        case 'ROOM_PRESENCE':
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: msg }));
+          break;
         case 'HELLO_SYNC':
           this.handleDevoteePresence(msg.senderId, msg.data, true);
           this.broadcastStateAnnounce(msg.senderId);

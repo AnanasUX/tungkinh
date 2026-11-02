@@ -67,7 +67,9 @@ let sanctuaryDB = {
     intervalMs: 3000,
     startedAt: null
   },
-  recentEvents: []
+  recentEvents: [],
+  // Recent room messages are persisted so a new device can catch up.
+  chatHistory: []
 };
 
 // Load existing DB if present
@@ -77,6 +79,7 @@ if (fs.existsSync(DB_FILE)) {
     const parsed = JSON.parse(raw);
     if (parsed && Array.isArray(parsed.seats)) {
       sanctuaryDB = parsed;
+      if (!Array.isArray(sanctuaryDB.chatHistory)) sanctuaryDB.chatHistory = [];
       // Reset active connections from previous process
       sanctuaryDB.devotees = {};
       sanctuaryDB.seats.forEach(s => {
@@ -107,6 +110,25 @@ const wsClients = new Set();
 
 function broadcastEvent(eventData) {
   eventData.timestamp = eventData.timestamp || Date.now();
+
+  if (eventData.type === 'ROOM_CHAT' && eventData.roomId && eventData.text) {
+    const chatMessage = {
+      messageId: eventData.messageId || `${eventData.senderId || 'guest'}-${eventData.timestamp}-${eventData.text.slice(0, 16)}`,
+      type: 'ROOM_CHAT',
+      roomId: String(eventData.roomId).slice(0, 64),
+      channel: eventData.channel === 'dm' ? 'dm' : 'lobby',
+      senderId: eventData.senderId || '',
+      name: String(eventData.name || 'Đồng Tu').slice(0, 80),
+      text: String(eventData.text).trim().slice(0, 500),
+      timestamp: eventData.timestamp
+    };
+    const duplicate = sanctuaryDB.chatHistory.some(item => item.messageId === chatMessage.messageId);
+    if (!duplicate) {
+      sanctuaryDB.chatHistory.push(chatMessage);
+      if (sanctuaryDB.chatHistory.length > 300) sanctuaryDB.chatHistory.splice(0, sanctuaryDB.chatHistory.length - 300);
+      saveDatabase();
+    }
+  }
 
   // Keep last 40 events
   sanctuaryDB.recentEvents.push(eventData);
@@ -393,7 +415,8 @@ const server = http.createServer((req, res) => {
       seats: sanctuaryDB.seats,
       devotees: sanctuaryDB.devotees,
       communalChant: sanctuaryDB.communalChant,
-      recentEvents: sanctuaryDB.recentEvents.slice(-10)
+      recentEvents: sanctuaryDB.recentEvents.slice(-10),
+      chatHistory: sanctuaryDB.chatHistory.slice(-120)
     }));
     return;
   }
