@@ -856,6 +856,57 @@
       scrollbar-width: none;
     }
 
+    /* Keep bottom information inside its viewport on every screen size. */
+    footer {
+      max-width: 100vw !important;
+      overflow: hidden !important;
+    }
+    #bottom-dock-scroll {
+      min-width: 0 !important;
+      max-width: 100% !important;
+      overflow-y: hidden !important;
+    }
+    #bottom-dock-scroll > button {
+      min-width: 0 !important;
+      max-width: 100% !important;
+      overflow: hidden !important;
+    }
+    #bottom-dock-scroll > button > span {
+      display: block;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #merit-footer-label {
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media screen and (max-height: 560px) and (orientation: landscape) {
+      footer {
+        height: 50px !important;
+        max-height: 50px !important;
+        overflow: hidden !important;
+      }
+      #bottom-dock-scroll {
+        max-height: 46px !important;
+        overflow: hidden !important;
+        align-content: center !important;
+      }
+    }
+
+    @media screen and (max-width: 767px) and (orientation: portrait) {
+      #bottom-dock-scroll {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+      }
+    }
+
     /* Ambience Theme Filters */
     .theme-night #sanctuary-svg-bg {
       filter: brightness(0.68) contrast(1.12) saturate(1.15) hue-rotate(-6deg);
