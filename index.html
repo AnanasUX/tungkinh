@@ -335,15 +335,54 @@
       box-sizing: border-box;
     }
 
-    #temple-stage {
+    
+    /* ==========================================================================
+       ORIENTATION GUARD: BẮT BUỘC XOAY NGANG TRÊN MOBILE & TABLET (RIÊNG PC KHÔNG CẦN)
+       ========================================================================== */
+    #orientation-guard-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: radial-gradient(circle at 50% 40%, #2b1306 0%, #0c0502 85%, #050201 100%);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: #fff3c4;
+      box-sizing: border-box;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Hiển thị khi màn hình ở chế độ Dọc (Portrait) */
+    @media screen and (orientation: portrait) {
+      #orientation-guard-overlay {
+        display: flex !important;
+      }
+    }
+
+    /* Riêng PC (Màn hình Desktop/Laptop >= 1024px và có chuột fine) KHÔNG CẦN XOAY */
+    @media screen and (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+      #orientation-guard-overlay {
+        display: none !important;
+      }
+    }
+
+    /* Khi màn hình đã xoay ngang (Landscape) thì ẩn hoàn toàn */
+    @media screen and (orientation: landscape) {
+      #orientation-guard-overlay {
+        display: none !important;
+      }
+    }
+
+#temple-stage {
       position: relative;
-      width: 100%;
-      height: 100%;
-      max-width: calc(100vh * 16 / 9);
-      max-width: calc(100dvh * 16 / 9);
-      max-height: 100vh;
-      max-height: 100dvh;
-      aspect-ratio: 16 / 9;
+      width: 100% !important;
+      height: 100% !important;
+      width: 100dvw !important;
+      height: 100dvh !important;
+      max-width: 100% !important;
+      max-height: 100% !important;
       margin: 0 auto;
       overflow: hidden;
       background: linear-gradient(180deg, #3c1d0b 0%, #683513 34%, #8e4c1d 52%, #d5a66c 76%, #c68f56 100%);
@@ -495,37 +534,38 @@
        -------------------------------------------------------------------------- */
     @media screen and (min-width: 1400px) {
       footer {
-        padding: 6px 16px !important;
+        padding: 4px 16px !important;
         padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
       }
       #bottom-dock-scroll {
-        display: inline-flex !important;
-        flex-wrap: nowrap !important;
-        justify-content: center !important;
-        align-items: center !important;
-        gap: 5px 6px !important;
-        width: auto !important;
-        max-width: 96% !important;
+        display: grid !important;
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 4px 6px !important;
+        width: 100% !important;
+        max-width: 980px !important;
         margin: 0 auto !important;
-        padding: 5px 14px !important;
-        background: rgba(18, 9, 4, 0.84) !important;
+        padding: 6px 14px !important;
+        background: linear-gradient(180deg, rgba(35, 18, 8, 0.92) 0%, rgba(15, 7, 2, 0.98) 100%) !important;
         backdrop-filter: blur(14px) !important;
         -webkit-backdrop-filter: blur(14px) !important;
-        border: 1px solid rgba(245, 190, 70, 0.45) !important;
-        border-radius: 9999px !important;
-        box-shadow: 0 10px 35px rgba(0, 0, 0, 0.85) !important;
+        border: 1.5px solid rgba(245, 190, 70, 0.5) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(245, 180, 60, 0.2) !important;
+        justify-items: stretch !important;
       }
       #bottom-dock-scroll > button {
-        height: 35px !important;
-        font-size: 11.5px !important;
-        padding: 4px 10px !important;
+        height: 33px !important;
+        font-size: 11px !important;
+        padding: 3px 6px !important;
         white-space: nowrap !important;
-        flex-shrink: 0 !important;
         border-radius: 9999px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        justify-content: center !important;
       }
       #bottom-dock-scroll > button svg {
-        width: 14px !important;
-        height: 14px !important;
+        width: 13px !important;
+        height: 13px !important;
       }
     }
 
@@ -1074,6 +1114,70 @@
   </style>
 </head>
 <body>
+
+  <!-- ==========================================================================
+       DEVICE ORIENTATION GUARD: BẮT BUỘC XOAY NGANG TRÊN MOBILE & TABLET (RIÊNG PC KHÔNG CẦN)
+       ========================================================================== -->
+  <div id="orientation-guard-overlay" class="fixed inset-0 z-[99999] bg-[#0c0602] flex flex-col items-center justify-center p-4 sm:p-6 text-center select-none" style="display: none;">
+    <!-- Sacred Lotus Aura Glow Background -->
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-600/30 via-[#1a0c04]/85 to-[#0c0602] pointer-events-none"></div>
+    <div class="absolute w-80 h-80 rounded-full bg-amber-500/15 blur-3xl pointer-events-none animate-pulse"></div>
+
+    <!-- Sacred Content Card -->
+    <div class="relative z-10 max-w-sm w-full bg-stone-900/95 border-2 border-amber-400/60 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-[0_0_60px_rgba(245,180,60,0.35)] flex flex-col items-center gap-4 text-amber-100">
+      
+      <!-- Lotus Icon with Rotating Golden Halo -->
+      <div class="relative w-20 h-20 flex items-center justify-center">
+        <div class="absolute inset-0 rounded-full border-2 border-dashed border-amber-300/70 animate-spin" style="animation-duration: 20s;"></div>
+        <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-600 to-yellow-500 p-0.5 shadow-[0_0_25px_rgba(245,180,60,0.6)] flex items-center justify-center">
+          <div class="w-full h-full rounded-full bg-stone-950 flex items-center justify-center text-3xl">
+            🪷
+          </div>
+        </div>
+      </div>
+
+      <!-- Sacred Titles -->
+      <div class="space-y-1">
+        <h2 class="text-xl sm:text-2xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-300 font-scripture">
+          ĐẠO TRÀNG THANH TỊNH
+        </h2>
+        <p class="text-xs text-amber-200/80 font-medium">
+          Chánh Điện Tụng Kinh & Tu Tập Trực Tuyến
+        </p>
+      </div>
+
+      <!-- Animated Device Rotation Graphic -->
+      <div class="py-2 flex flex-col items-center gap-2">
+        <div class="w-24 h-24 rounded-2xl bg-black/60 border border-amber-300/40 flex items-center justify-center relative overflow-hidden shadow-inner">
+          <svg class="w-12 h-12 text-amber-300 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="2" y="5" width="20" height="14" rx="2.5" stroke-width="2" class="text-yellow-400" />
+            <circle cx="19" cy="12" r="1" fill="currentColor"/>
+          </svg>
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <svg class="w-20 h-20 text-amber-400/40 animate-spin" style="animation-duration: 7s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <path stroke-linecap="round" stroke-dasharray="4 4" d="M4 12a8 8 0 0114.93-4M20 12a8 8 0 01-14.93 4"/>
+            </svg>
+          </div>
+        </div>
+        <p class="text-xs text-amber-100 leading-relaxed px-2 font-medium">
+          Quý Đạo hữu vui lòng <span class="text-yellow-300 font-bold uppercase tracking-wider">XOAY NGANG MÀN HÌNH</span> để bước vào Chánh Điện và chọn bồ đoàn.
+        </p>
+      </div>
+
+      <!-- Action Button -->
+      <button type="button" onclick="handleEnterLandscapeFullscreen()" 
+        class="w-full py-3 px-5 rounded-2xl bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 hover:from-amber-500 hover:to-yellow-400 text-stone-950 font-bold text-sm tracking-wide shadow-[0_0_25px_rgba(245,180,60,0.5)] border border-amber-200/80 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
+        <svg class="w-4 h-4 text-stone-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+        </svg>
+        <span>VÀO CHÁNH ĐIỆN (XOAY NGANG)</span>
+      </button>
+
+      <span class="text-[10px] text-amber-300/60 italic">
+        (Hệ thống tự động chuyển sang chế độ ngang toàn màn hình)
+      </span>
+    </div>
+  </div>
 
   <!-- ==========================================================================
        AUTO-LANDSCAPE 16:9 VIEWPORT WRAPPER
@@ -3988,6 +4092,53 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       return toggleFullscreenMode();
     }
 
+    function checkDeviceOrientationGuard() {
+      const overlay = document.getElementById('orientation-guard-overlay');
+      if (!overlay) return;
+
+      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      const isPortrait = window.innerHeight > window.innerWidth;
+      const isPC = window.innerWidth >= 1024 && !isTouch;
+
+      // Riêng PC thì không cần thiết và tự động ẩn
+      if (isPC) {
+        overlay.style.display = 'none';
+        return;
+      }
+
+      // Trên Mobile & Tablet, nếu màn hình đang Dọc thì yêu cầu xoay ngang
+      if (isPortrait) {
+        overlay.style.display = 'flex';
+      } else {
+        overlay.style.display = 'none';
+      }
+    }
+
+    async function handleEnterLandscapeFullscreen() {
+      try {
+        await requestFullscreenUniversal();
+      } catch (e) {}
+
+      try {
+        if (screen.orientation && typeof screen.orientation.lock === 'function') {
+          await screen.orientation.lock('landscape').catch(() => {
+            return screen.orientation.lock('landscape-primary').catch(() => {});
+          });
+        } else if (screen.lockOrientation) {
+          screen.lockOrientation('landscape');
+        }
+      } catch (e) {}
+
+      setTimeout(() => {
+        checkDeviceOrientationGuard();
+        checkMobileOrientationBanner();
+        if (typeof renderSanctuaryFloor === 'function' && !is3DModeActive) {
+          renderSanctuaryFloor();
+        }
+      }, 250);
+    }
+    window.handleEnterLandscapeFullscreen = handleEnterLandscapeFullscreen;
+
     function checkMobileOrientationBanner() {
       const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
       const isLandscape = window.innerWidth >= window.innerHeight;
@@ -4003,6 +4154,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       } else {
         document.body.classList.remove('mobile-landscape', 'mobile-portrait');
       }
+
+      checkDeviceOrientationGuard();
     }
 
     function setupAutoFullscreenAndOrientation() {
@@ -5254,15 +5407,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           const row = Math.floor(idx / 6);
           const col = idx % 6;
           if (row === 0) {
-            const colXsRow0 = [20, 30.5, 41, 59, 69.5, 80];
+            const colXsRow0 = [19, 30, 41, 59, 70, 81];
             seatX = colXsRow0[col] !== undefined ? colXsRow0[col] : (18 + col * 12.8);
-            seatY = 59;
-            seatScale = seat.isUser ? 0.92 : 0.86;
+            seatY = isMobileLandscape ? 55 : 56.5;
+            seatScale = seat.isUser ? 0.90 : 0.84;
           } else if (row === 1) {
-            const colXsRow1 = [17, 28, 39, 61, 72, 83];
+            const colXsRow1 = [16, 27.5, 39, 61, 72.5, 84];
             seatX = colXsRow1[col] !== undefined ? colXsRow1[col] : (16 + col * 13.6);
-            seatY = 77;
-            seatScale = seat.isUser ? 1.05 : 0.98;
+            seatY = isMobileLandscape ? 70 : 71.5;
+            seatScale = seat.isUser ? 1.02 : 0.95;
           } else {
             const extraRow = row - 1;
             const colXsExtra = [
