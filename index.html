@@ -4008,15 +4008,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     function setupAutoFullscreenAndOrientation() {
       checkMobileOrientationBanner();
 
-      const onUserInteraction = () => {
+      const onFirstInteraction = () => {
+        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
         const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
-        if (!isFs) {
-          requestAppFullscreen();
+        if (isMobile && !isFs) {
+          requestAppFullscreen().catch(() => {});
         }
+        window.removeEventListener('click', onFirstInteraction);
+        window.removeEventListener('touchend', onFirstInteraction);
       };
 
-      window.addEventListener('click', onUserInteraction, { passive: true });
-      window.addEventListener('touchend', onUserInteraction, { passive: true });
+      window.addEventListener('click', onFirstInteraction, { passive: true, once: true });
+      window.addEventListener('touchend', onFirstInteraction, { passive: true, once: true });
     }
 
     function updateFullscreenUI() {
