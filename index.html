@@ -59,6 +59,43 @@
       overflow: hidden;
     }
 
+    /* Tự động xoay ngang 100% khi màn hình ở chế độ dọc (Mobile/Tablet Portrait) */
+    body.auto-rotate-landscape #orientation-viewport {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      width: 100dvh !important;
+      height: 100dvw !important;
+      max-width: 100dvh !important;
+      max-height: 100dvw !important;
+      transform: translate(-50%, -50%) rotate(90deg) !important;
+      transform-origin: center center !important;
+      overflow: hidden !important;
+    }
+
+    body.auto-rotate-landscape #temple-stage {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      max-height: none !important;
+    }
+
+    /* Đảm bảo tất cả popup vừa khít chiều cao sân khấu ngang */
+    #registration-gate-modal > .temple-panel,
+    #seat-directory-modal > .temple-panel,
+    #oracle-fortune-modal > .temple-panel,
+    #scripture-library-modal > .temple-panel,
+    #shared-chanting-modal > .temple-panel,
+    #breathing-meditation-modal > .temple-panel,
+    #dharma-wisdom-modal > .temple-panel,
+    #prayer-sutra-modal > .temple-panel,
+    #session-timer-modal > .temple-panel,
+    #realtime-server-modal > .temple-panel,
+    #practitioner-profile-modal > .temple-panel {
+      max-height: 92% !important;
+      overflow-y: auto !important;
+    }
+
     #temple-stage {
       position: relative;
       width: 100%;
@@ -128,7 +165,7 @@
     }
 
     /* Tối Ưu Hiển Thị Điện Thoại Xoay Ngang & Toàn Màn Hình (Mobile Landscape & Low Height) */
-    @media screen and (max-height: 600px) and (max-width: 1024px), screen and (orientation: landscape) and (max-height: 520px) {
+    @media screen and (max-height: 640px) and (max-width: 1024px), screen and (orientation: landscape) and (max-height: 640px), body.auto-rotate-landscape, body.mobile-landscape {
       /* 1. Header thu gọn tối đa & ẩn các nút phụ để không bị tràn viền */
       header {
         height: 34px !important;
@@ -3087,9 +3124,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     }
 
     async function requestAppFullscreen() {
+      const doc = document;
       const docEl = document.documentElement;
       try {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+        if (!doc.fullscreenElement && !doc.webkitFullscreenElement && !doc.mozFullScreenElement && !doc.msFullscreenElement) {
           if (docEl.requestFullscreen) {
             await docEl.requestFullscreen();
           } else if (docEl.webkitRequestFullscreen) {
@@ -3101,14 +3139,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           }
         }
       } catch (err) {
-        console.warn('[Fullscreen] Request failed:', err);
+        // Ignored if user gesture required
       }
 
+      // Khóa xoay ngang thiết bị khi đã yêu cầu/vào toàn màn hình
       try {
-        if (screen.orientation && screen.orientation.lock) {
+        if (screen.orientation && typeof screen.orientation.lock === 'function') {
           await screen.orientation.lock('landscape').catch(() => {});
+        } else if (screen.lockOrientation) {
+          screen.lockOrientation('landscape');
+        } else if (screen.mozLockOrientation) {
+          screen.mozLockOrientation('landscape');
+        } else if (screen.msLockOrientation) {
+          screen.msLockOrientation('landscape');
         }
       } catch (err) {}
+
+      setTimeout(() => {
+        checkMobileOrientationBanner();
+        if (typeof renderSanctuaryFloor === 'function' && !is3DModeActive) {
+          renderSanctuaryFloor();
+        }
+      }, 150);
     }
 
     async function exitAppFullscreen() {
@@ -3149,19 +3201,35 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
     function checkMobileOrientationBanner() {
       const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
-      const isLandscape = window.innerWidth > window.innerHeight;
+      const isLandscape = window.innerWidth >= window.innerHeight;
 
       if (isMobile) {
         if (isLandscape) {
+          document.body.classList.remove('auto-rotate-landscape');
           document.body.classList.add('mobile-landscape');
           document.body.classList.remove('mobile-portrait');
         } else {
-          document.body.classList.remove('mobile-landscape');
-          document.body.classList.add('mobile-portrait');
+          // Bắt buộc xoay ngang trên Mobile bằng CSS khi màn hình đang ở chiều dọc
+          document.body.classList.add('auto-rotate-landscape');
+          document.body.classList.add('mobile-landscape');
+          document.body.classList.remove('mobile-portrait');
         }
       } else {
-        document.body.classList.remove('mobile-landscape', 'mobile-portrait');
+        document.body.classList.remove('auto-rotate-landscape', 'mobile-landscape', 'mobile-portrait');
       }
+    }
+
+    function setupAutoFullscreenAndOrientation() {
+      checkMobileOrientationBanner();
+
+      // Bất kỳ thao tác chạm hoặc nhấp chuột nào của người dùng đều kích hoạt toàn màn hình & xoay ngang
+      const onUserInteraction = () => {
+        requestAppFullscreen();
+      };
+
+      window.addEventListener('click', onUserInteraction, { passive: true });
+      window.addEventListener('touchend', onUserInteraction, { passive: true });
+      window.addEventListener('pointerup', onUserInteraction, { passive: true });
     }
 
     function updateFullscreenUI() {
@@ -4254,8 +4322,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       if (!container) return;
       container.innerHTML = '';
 
-      const isMobilePortrait = (window.innerWidth < 768 && window.innerHeight > window.innerWidth);
-      const isMobileLandscape = (window.innerHeight <= 520 && window.innerWidth > window.innerHeight);
+      const isRotated = document.body.classList.contains('auto-rotate-landscape');
+      const isMobilePortrait = !isRotated && (window.innerWidth < 768 && window.innerHeight > window.innerWidth);
+      const isMobileLandscape = isRotated || (window.innerHeight <= 640 && window.innerWidth > window.innerHeight);
       const stage = document.getElementById('sanctuary-floor-stage');
 
       // Tự động mở rộng chiều cao sân Chánh Điện khi có nhiều hơn 12 bồ đoàn (sinh thêm hàng)
@@ -6474,7 +6543,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     }
 
     window.onload = async function () {
-      try { checkMobileOrientationBanner(); } catch (e) { console.warn(e); }
+      try { setupAutoFullscreenAndOrientation(); } catch (e) { console.warn(e); }
+      try { requestAppFullscreen(); } catch (e) {}
       try { setupSmartDobInputs(); } catch (e) { console.warn(e); }
       try { recalculateAgeAndPreview(false); } catch (e) { console.warn(e); }
       try { initGoldMotes(); } catch (e) { console.warn(e); }
