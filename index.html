@@ -79,16 +79,22 @@
       position: relative;
       width: 100%;
       height: 100%;
+      max-width: calc(100vh * 16 / 9);
+      max-width: calc(100dvh * 16 / 9);
+      max-height: 100vh;
+      max-height: 100dvh;
+      aspect-ratio: 16 / 9;
+      margin: 0 auto;
       overflow: hidden;
       background: linear-gradient(180deg, #3c1d0b 0%, #683513 34%, #8e4c1d 52%, #d5a66c 76%, #c68f56 100%);
       box-shadow: 0 0 90px rgba(0, 0, 0, 0.95);
       transition: filter 0.8s ease;
     }
 
-    @media screen and (min-width: 1024px) {
+    @media screen and (orientation: portrait) {
       #temple-stage {
-        max-width: calc(100vh * 16 / 9);
-        max-height: 100vh;
+        max-width: 100% !important;
+        aspect-ratio: auto !important;
       }
     }
 
@@ -205,11 +211,9 @@
         transform: translateX(0) !important;
       }
 
+      /* Ẩn các nút tab nổi hai bên sườn trên mobile landscape để không che sàn Chánh Điện */
       #btn-tab-drawer-left, #btn-tab-drawer-right {
-        display: flex !important;
-        top: 50% !important;
-        transform: translateY(-50%) !important;
-        z-index: 35 !important;
+        display: none !important;
       }
 
       /* 3. Băng rôn Đồng Tụng (Communal Chant Banner) tinh gọn, thon gọn, không che bàn thờ Phật */
@@ -257,10 +261,11 @@
         z-index: 38 !important;
       }
 
-      /* 4. Sàn Chánh Điện thông thoáng từ 34% đến cách đáy 56px */
+      /* 4. Sàn Chánh Điện chiếm toàn bộ không gian tọa độ 16:9 đồng nhất */
       #sanctuary-floor-stage {
-        top: 34% !important;
-        bottom: 56px !important;
+        inset: 0 !important;
+        top: 0 !important;
+        bottom: 0 !important;
       }
 
       /* 5. Thanh công cụ dưới đáy (Dock): 2 HÀNG x 7 CỘT HIỂN THỊ ĐẦY ĐỦ 100% CÁC ICON, KHÔNG BỊ CẮT XÉN */
@@ -1048,6 +1053,16 @@
 
         <!-- RIGHT CONTROLS -->
         <div class="flex items-center gap-1 sm:gap-2 pointer-events-auto shrink-0 justify-end">
+          <!-- Mobile Drawer Triggers -->
+          <button onclick="toggleMobileDrawer('left')" title="Gửi Lời Chúc & Tặng Quà"
+            class="md:hidden w-7 h-7 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 backdrop-blur-md flex items-center justify-center text-amber-200 text-xs shadow-lg transition active:scale-90">
+            🎁
+          </button>
+          <button onclick="toggleMobileDrawer('right')" title="Bảng Vàng Công Đức"
+            class="md:hidden w-7 h-7 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 backdrop-blur-md flex items-center justify-center text-amber-200 text-xs shadow-lg transition active:scale-90">
+            📜
+          </button>
+
           <button onclick="openSeatDirectoryModal()" title="Tra cứu sơ đồ 12 vị trí Bồ Đoàn"
             class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 backdrop-blur-md flex items-center justify-center text-amber-200 shadow-lg transition active:scale-90">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -1344,9 +1359,9 @@
       <!-- ======================================================================
            4. SANCTUARY FLOOR (CHÁNH ĐIỆN BỒ ĐOÀN ĐỒNG TU - TỰ ĐỘNG SINH HÀNG MỚI KHI > 12 NGƯỜI)
            ====================================================================== -->
-      <section id="sanctuary-floor-stage" class="absolute inset-x-0 top-[46%] bottom-[11%] z-20 overflow-visible pointer-events-auto">
+      <section id="sanctuary-floor-stage" class="absolute inset-0 z-20 overflow-visible pointer-events-auto">
         <button onclick="performWalkAndOfferIncense()" title="Nhấp để đi bộ lên trước Bàn Thờ Phật và Dâng 3 Nén Tâm Hương"
-          class="absolute left-1/2 -translate-x-1/2 -top-[18%] w-24 h-20 rounded-full pointer-events-auto cursor-pointer opacity-0 hover:opacity-100 flex items-end justify-center pb-1 transition">
+          class="absolute left-1/2 -translate-x-1/2 top-[46%] w-28 h-16 rounded-full pointer-events-auto cursor-pointer opacity-0 hover:opacity-100 flex items-center justify-center pb-1 transition z-30">
           <span class="px-2 py-0.5 rounded-full bg-amber-950/90 border border-amber-300 text-[9px] text-amber-200 font-bold shadow whitespace-nowrap">
             🔥 Dâng 3 Nén Tâm Hương
           </span>
@@ -1422,7 +1437,7 @@
           <button onclick="DailyQuestEngine.openQuestModal()" title="Nhiệm Vụ Tu Học & Việc Tốt Trong Ngày"
             class="px-2 sm:px-2.5 py-1 rounded-full bg-gradient-to-r from-red-600 via-amber-600 to-yellow-500 hover:brightness-110 border border-amber-200 text-[10px] sm:text-[11.5px] font-extrabold text-white flex items-center justify-center gap-1 sm:gap-1.5 shadow-lg active:scale-95 transition shrink-0 whitespace-nowrap">
             <span class="text-xs shrink-0">📜</span>
-            <span>Việc Lành <span class="hidden md:inline font-normal opacity-90">(Nhiệm Vụ)</span></span>
+            <span>Việc Lành <span class="hidden lg:inline font-normal opacity-90">(Nhiệm Vụ)</span></span>
           </button>
 
           <!-- 1. Gõ Mõ -->
@@ -1431,7 +1446,7 @@
             <svg class="w-3.5 h-3.5 text-stone-950 shrink-0" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 3C7 3 3 7 3 12c0 3.5 2 6.5 5 8h8c3-1.5 5-4.5 5-8 0-5-4-9-9-9zm0 3c3.5 0 6 2.5 6 6 0 1.2-.4 2.3-1 3.2-1.5-1.5-3.5-2.2-5-2.2-2 0-3.5 1-4.8 2.2C6.5 14.3 6 13.2 6 12c0-3.5 2.5-6 6-6z"/>
             </svg>
-            <span>Gõ Mõ <span class="hidden md:inline font-normal opacity-75">(Space)</span></span>
+            <span>Gõ Mõ <span class="hidden lg:inline font-normal opacity-75">(Space)</span></span>
           </button>
 
           <!-- 2. Lễ Phật -->
@@ -1450,7 +1465,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v6m-4-3v3m8-3v3M6 14h12c1 0 2 1 2 2.5s-1 2.5-2 2.5H6c-1 0-2-1-2-2.5S5 14 6 14z" fill="rgba(249,115,22,0.2)"/>
               <path stroke-linecap="round" stroke-linejoin="round" d="M8 19l-1 3m9-3l1 3"/>
             </svg>
-            <span>Dâng Hương <span class="hidden md:inline font-normal opacity-75">(+20Đ)</span></span>
+            <span>Dâng Hương <span class="hidden lg:inline font-normal opacity-75">(+20Đ)</span></span>
           </button>
 
           <!-- 4. Xin Xăm Từ Bi -->
@@ -1461,14 +1476,14 @@
               <path d="M6 9h12v11a2 2 0 01-2 2H8a2 2 0 01-2-2V9z" fill="rgba(245,158,11,0.2)" />
               <circle cx="12" cy="15" r="2" fill="#fde047" stroke="none" />
             </svg>
-            <span>Xin Xăm <span class="hidden md:inline font-normal opacity-75">Từ Bi</span></span>
+            <span>Xin Xăm <span class="hidden lg:inline font-normal opacity-75">Từ Bi</span></span>
           </button>
 
           <!-- 4B. Đồng Tụng Thời Gian Thực (Shared Room) -->
           <button onclick="openSharedChantingModal()" id="btn-shared-chanting-dock" title="Phòng Đồng Tụng Thời Gian Thực Cùng Đạo Tràng Toàn Cầu"
             class="px-2 sm:px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-950 via-teal-900 to-emerald-950 hover:brightness-125 border border-emerald-400/80 text-[10px] sm:text-[11.5px] font-bold text-emerald-200 flex items-center justify-center gap-1 sm:gap-1.5 shadow-lg active:scale-95 transition shrink-0 whitespace-nowrap ring-1 ring-emerald-400/40">
             <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-            <span>Đồng Tụng <span class="hidden md:inline font-normal opacity-75">Chung (Shared)</span></span>
+            <span>Đồng Tụng <span class="hidden lg:inline font-normal opacity-75">Chung (Shared)</span></span>
           </button>
 
           <!-- 5. Kinh Thư Tụng Niệm -->
@@ -1477,7 +1492,7 @@
             <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.25v13.5m0-13.5C10.8 5.5 9.2 5 7.5 5S4.2 5.5 3 6.25v13.5C4.2 19 5.8 18.5 7.5 18.5s3.3.5 4.5 1.25m0-13.5c1.2-.75 2.8-1.25 4.5-1.25s3.3.5 4.5 1.25v13.5c-1.2-.75-2.8-1.25-4.5-1.25s-3.3.5-4.5 1.25" />
             </svg>
-            <span>Kinh Thư <span class="hidden md:inline font-normal opacity-75">(Phím K)</span></span>
+            <span>Kinh Thư <span class="hidden lg:inline font-normal opacity-75">(Phím K)</span></span>
           </button>
 
           <!-- 6. Thả Hoa Đăng -->
@@ -1488,7 +1503,7 @@
               <path d="M12 9c-2 0-3.5 1-4.5 2.5 1 2 2.8 3.5 4.5 3.5s3.5-1.5 4.5-3.5C15.5 10 14 9 12 9z"/>
               <path d="M4 15.5C6.5 18 9 19 12 19s5.5-1 8-3.5c-2.5-.8-5.2-1.2-8-1.2s-5.5.4-8 1.2z" fill="#f59e0b"/>
             </svg>
-            <span><span class="hidden md:inline">Thả </span>Hoa Đăng</span>
+            <span><span class="hidden lg:inline">Thả </span>Hoa Đăng</span>
           </button>
 
           <!-- 7. Thỉnh Chuông -->
@@ -1520,7 +1535,7 @@
               <circle cx="12" cy="12" r="2.5" fill="rgba(245,158,11,0.4)"/>
               <path d="M12 4v5.5m0 5V20M4 12h5.5m5 0H20"/>
             </svg>
-            <span>Lời Phật<span class="hidden md:inline"> Dạy</span></span>
+            <span>Lời Phật<span class="hidden lg:inline"> Dạy</span></span>
           </button>
 
           <!-- 10. Phóng Sanh Tự Do -->
@@ -1529,7 +1544,7 @@
             <svg class="w-3.5 h-3.5 text-sky-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C8 2 4 6 4 10c0 4 3 7 7 8v4h2v-4c4-1 7-4 7-8 0-4-4-8-8-8zm-1 4a2 2 0 114 0 2 2 0 01-4 0z"/>
             </svg>
-            <span>Phóng Sanh <span class="hidden md:inline font-normal opacity-75">(+15Đ)</span></span>
+            <span>Phóng Sanh <span class="hidden lg:inline font-normal opacity-75">(+15Đ)</span></span>
           </button>
 
           <!-- 11. Sớ Cầu An & Cầu Siêu -->
@@ -1538,7 +1553,7 @@
             <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h4m4 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" fill="rgba(245,158,11,0.2)"/>
             </svg>
-            <span>Sớ Cầu An<span class="hidden md:inline">/Siêu</span></span>
+            <span>Sớ Cầu An<span class="hidden lg:inline">/Siêu</span></span>
           </button>
 
           <!-- 12. Bằng Công Đức -->
@@ -1547,7 +1562,7 @@
             <svg class="w-3.5 h-3.5 text-stone-950 shrink-0" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2l2.4 4.8 5.3.8-3.8 3.7.9 5.3-4.8-2.5-4.8 2.5.9-5.3-3.8-3.7 5.3-.8L12 2z"/>
             </svg>
-            <span><span class="hidden md:inline">Bằng </span>Công Đức</span>
+            <span><span class="hidden lg:inline">Bằng </span>Công Đức</span>
           </button>
         </div>
 
@@ -2475,18 +2490,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
      * 1. DỮ LIỆU BỒ ĐOÀN TRONG CHÁNH ĐIỆN (MẶC ĐỊNH 12 CHỖ & TỰ ĐỘNG SINH HÀNG MỚI KHI > 12)
      **************************************************************************/
     const sanctuarySeats = [
-      { seatNo: 1,  id: 'seat-1',  x: 19,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 2,  id: 'seat-2',  x: 29.5, y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
-      { seatNo: 3,  id: 'seat-3',  x: 40,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 4,  id: 'seat-4',  x: 60,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
-      { seatNo: 5,  id: 'seat-5',  x: 70.5, y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 6,  id: 'seat-6',  x: 81,   y: 8,  scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
-      { seatNo: 7,  id: 'seat-7',  x: 16,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 8,  id: 'seat-8',  x: 27.5, y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
-      { seatNo: 9,  id: 'seat-9',  x: 39,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 10, id: 'seat-10', x: 61,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
-      { seatNo: 11, id: 'seat-11', x: 72.5, y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 12, id: 'seat-12', x: 84,   y: 42, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' }
+      { seatNo: 1,  id: 'seat-1',  x: 18,   y: 62.5, scale: 0.78, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 2,  id: 'seat-2',  x: 28.5, y: 62.5, scale: 0.78, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 3,  id: 'seat-3',  x: 39,   y: 62.5, scale: 0.78, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 4,  id: 'seat-4',  x: 61,   y: 62.5, scale: 0.78, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 5,  id: 'seat-5',  x: 71.5, y: 62.5, scale: 0.78, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 6,  id: 'seat-6',  x: 82,   y: 62.5, scale: 0.78, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 7,  id: 'seat-7',  x: 14,   y: 79,   scale: 0.90, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 8,  id: 'seat-8',  x: 26,   y: 79,   scale: 0.90, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 9,  id: 'seat-9',  x: 37.5, y: 79,   scale: 0.90, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 10, id: 'seat-10', x: 62.5, y: 79,   scale: 0.90, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 11, id: 'seat-11', x: 74,   y: 79,   scale: 0.90, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 12, id: 'seat-12', x: 86,   y: 79,   scale: 0.90, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' }
     ];
     window.sanctuarySeats = sanctuarySeats;
 
@@ -2497,20 +2512,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       const currentCount = sanctuarySeats.length;
       const nextRowIdx = Math.floor(currentCount / 6); // 0 (1-6), 1 (7-12), 2 (13-18), 3 (19-24)...
       const newSeats = [];
+      const extraRow = nextRowIdx - 1;
 
       for (let col = 0; col < 6; col++) {
         const seatNo = currentCount + col + 1;
         const id = `seat-${seatNo}`;
         let x = 0;
-        if (col === 0) x = Math.max(6, 19 - nextRowIdx * 2.6);
-        else if (col === 1) x = Math.max(16, 29.5 - nextRowIdx * 1.6);
-        else if (col === 2) x = Math.max(28, 40 - nextRowIdx * 0.7);
-        else if (col === 3) x = Math.min(72, 60 + nextRowIdx * 0.7);
-        else if (col === 4) x = Math.min(84, 70.5 + nextRowIdx * 1.6);
-        else if (col === 5) x = Math.min(94, 81 + nextRowIdx * 2.6);
+        if (col === 0) x = Math.max(6, 14 - extraRow * 2.5);
+        else if (col === 1) x = Math.max(16, 26 - extraRow * 1.5);
+        else if (col === 2) x = Math.max(28, 37.5 - extraRow * 0.7);
+        else if (col === 3) x = Math.min(72, 62.5 + extraRow * 0.7);
+        else if (col === 4) x = Math.min(84, 74 + extraRow * 1.5);
+        else if (col === 5) x = Math.min(94, 86 + extraRow * 2.5);
 
-        const y = 8 + nextRowIdx * 34;
-        const scale = Math.min(1.15, 0.86 + nextRowIdx * 0.10);
+        const y = 79 + extraRow * 16;
+        const scale = Math.min(1.15, 0.90 + extraRow * 0.08);
         const avatarType = (seatNo % 2 === 0) ? 'monk' : 'female';
 
         const seatObj = {
@@ -3939,9 +3955,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
       const waypoints = [
         { x: 50, y: seatY, duration: 750, label: '🚶 Bước ra Thảm Đỏ Hoa Sen...' },
-        { x: 50, y: 2,     duration: 950, label: '🔥 Tiến lên trước Lư Hương Đồng...' },
+        { x: 50, y: 53,    duration: 950, label: '🔥 Tiến lên trước Lư Hương Đồng...' },
         {
-          x: 50, y: 2, duration: 1500, bowPause: true,
+          x: 50, y: 53, duration: 1500, bowPause: true,
           label: '🙏 Thành tâm dâng 3 nén tâm hương (+20 Công Đức)...',
           onReach: () => {
             incenseIntensity = 3.2;
@@ -4368,34 +4384,56 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         if (isMobilePortrait) {
           const row = Math.floor(idx / 4);
           const col = idx % 4;
-          // 4 cột cân xứng: 2 cột bên trái thảm đỏ (16%, 33%), 2 cột bên phải thảm đỏ (67%, 84%), thảm đỏ ở giữa thông thoáng
           const colXs = [16, 33, 67, 84];
           seatX = colXs[col] !== undefined ? colXs[col] : 50;
-          seatY = 8 + row * 28;
+          seatY = 56 + row * 13;
           seatScale = seat.isUser ? 0.78 : 0.68;
-        } else if (isMobileLandscape) {
+        } else {
+          // Perspective layout in landscape: Row 0 on upper floor, Row 1 on lower floor
           const row = Math.floor(idx / 6);
           const col = idx % 6;
-          const colXs = [16, 27.5, 39, 61, 72.5, 84];
-          seatX = colXs[col] !== undefined ? colXs[col] : (15 + col * 14);
-          seatY = 6 + row * 40;
-          seatScale = seat.isUser ? 0.82 : 0.72;
+          if (row === 0) {
+            const colXsRow0 = [18, 28.5, 39, 61, 71.5, 82];
+            seatX = colXsRow0[col] !== undefined ? colXsRow0[col] : (16 + col * 14);
+            seatY = 62.5;
+            seatScale = seat.isUser ? 0.84 : 0.78;
+          } else if (row === 1) {
+            const colXsRow1 = [14, 26, 37.5, 62.5, 74, 86];
+            seatX = colXsRow1[col] !== undefined ? colXsRow1[col] : (14 + col * 14.4);
+            seatY = 79;
+            seatScale = seat.isUser ? 0.98 : 0.90;
+          } else {
+            const extraRow = row - 1;
+            const colXsExtra = [
+              Math.max(6, 14 - extraRow * 2.5),
+              Math.max(16, 26 - extraRow * 1.5),
+              Math.max(28, 37.5 - extraRow * 0.7),
+              Math.min(72, 62.5 + extraRow * 0.7),
+              Math.min(84, 74 + extraRow * 1.5),
+              Math.min(94, 86 + extraRow * 2.5)
+            ];
+            seatX = colXsExtra[col] !== undefined ? colXsExtra[col] : (14 + col * 14.4);
+            seatY = 79 + extraRow * 16;
+            seatScale = seat.isUser ? 1.05 : 0.96;
+          }
         }
 
         const wrapper = document.createElement('div');
         wrapper.id = seat.id;
         wrapper.style.left = `${seatX}%`;
         wrapper.style.top = `${seatY}%`;
-        wrapper.style.transform = `translate(-50%, 0) scale(${seatScale})`;
+        wrapper.style.transform = `translate(-50%, -50%) scale(${seatScale})`;
         wrapper.style.zIndex = Math.round(seatY * 10) + (seat.isUser ? 8 : 0);
         wrapper.className = 'absolute flex flex-col items-center cursor-pointer pointer-events-auto group';
 
         if (!seat.occupied) {
           wrapper.innerHTML = `
-            <div class="w-[52px] h-[38px] sm:w-[92px] sm:h-[64px] flex items-end justify-center transition-transform group-hover:scale-110">
-              ${createEmptyMatSVG(seat.seatNo)}
+            <div class="relative flex items-center justify-center transition-transform group-hover:scale-110">
+              <div class="w-[52px] h-[36px] sm:w-[72px] sm:h-[50px] flex items-center justify-center">
+                ${createEmptyMatSVG(seat.seatNo)}
+              </div>
             </div>
-            <div class="-mt-1 px-1.5 py-0.5 rounded-full bg-amber-950/80 border border-amber-300/40 text-[8px] sm:text-[10px] text-amber-200 group-hover:bg-amber-400 group-hover:text-stone-950 font-semibold transition whitespace-nowrap shadow max-w-[82px] truncate">
+            <div class="-mt-1 px-1.5 py-0.5 rounded-full bg-amber-950/85 border border-amber-300/40 text-[7.5px] sm:text-[9.5px] text-amber-200 group-hover:bg-amber-400 group-hover:text-stone-950 font-semibold transition whitespace-nowrap shadow max-w-[78px] truncate">
               + Trống #${seat.seatNo}
             </div>
           `;
@@ -4411,7 +4449,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
             : '';
 
           const userAuraHTML = seat.isUser
-            ? `<div class="user-lotus-aura absolute bottom-3 left-1/2 w-28 h-8 rounded-full border-2 pointer-events-none" style="background:${seatRealm.color}33; border-color:${seatRealm.ringStroke}; box-shadow: 0 0 18px ${seatRealm.color};"></div>`
+            ? `<div class="user-lotus-aura absolute top-[28px] sm:top-[38px] left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-6 sm:w-26 sm:h-8 rounded-full border-2 pointer-events-none" style="background:${seatRealm.color}33; border-color:${seatRealm.ringStroke}; box-shadow: 0 0 16px ${seatRealm.color}; z-index: 1;"></div>`
             : '';
 
           const isRemoteHuman = !!seat.remoteClientId;
@@ -4437,11 +4475,19 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
             ${spotlightHTML}
             ${userAuraHTML}
             <div id="bubble-${seat.id}" class="absolute -top-9 left-1/2 -translate-x-1/2 pointer-events-none z-40"></div>
-            <div id="figure-${seat.id}" class="w-[56px] h-[68px] sm:w-[84px] sm:h-[100px] chibi-idle transition-transform group-hover:scale-105" style="animation-delay: -${delay}s;">
-              ${createChibiSVG(seat.type, seat.id, seat.isUser, true, seatRealm.level)}
+            <div class="relative flex flex-col items-center">
+              <!-- Bồ đoàn hoa sen thêu vàng nâng đỡ nhân vật -->
+              <div class="w-[52px] h-[36px] sm:w-[72px] sm:h-[50px] absolute bottom-0 left-1/2 -translate-x-1/2 pointer-events-none" style="z-index: 2;">
+                ${createEmptyMatSVG(seat.seatNo)}
+              </div>
+              <!-- Nhân vật ngồi trang nghiêm trên bồ đoàn -->
+              <div id="figure-${seat.id}" class="w-[46px] h-[58px] sm:w-[64px] sm:h-[80px] chibi-idle transition-transform group-hover:scale-105 relative" style="animation-delay: -${delay}s; z-index: 3; margin-bottom: 2px;">
+                ${createChibiSVG(seat.type, seat.id, seat.isUser, false, seatRealm.level)}
+              </div>
             </div>
-            <div id="label-${seat.id}" class="-mt-1 px-1.5 py-0.5 rounded border shadow-md text-center max-w-[82px] sm:max-w-none ${badgeClasses}">
-              <span class="text-[8.5px] sm:text-[11px] whitespace-nowrap tracking-tight block leading-tight truncate">
+            <!-- Bảng tên định danh dưới bồ đoàn -->
+            <div id="label-${seat.id}" class="relative z-10 -mt-1 px-1.5 py-0.5 rounded border shadow-md text-center max-w-[78px] sm:max-w-none ${badgeClasses}">
+              <span class="text-[8px] sm:text-[10px] whitespace-nowrap tracking-tight block leading-tight truncate">
                 ${seat.name}
               </span>
               ${metaSubtitle}
