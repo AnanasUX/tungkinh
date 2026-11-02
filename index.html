@@ -1336,6 +1336,27 @@
         
         <!-- LEFT CONTROLS -->
         <div class="flex items-center gap-1 sm:gap-2 pointer-events-auto shrink-0">
+          <!-- DEVOTEE VIBE PROFILE CAPSULE (CLICK ĐỂ MỞ HỒ SƠ TU TẬP 3D) -->
+          <button onclick="openPractitionerProfileModal()" id="btn-header-vibe-capsule" title="Xem & Tùy biến Hồ Sơ Tu Tập 3D"
+            class="pointer-events-auto flex items-center gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-stone-900/90 hover:bg-stone-850 border border-amber-300/40 backdrop-blur-md shadow-lg transition active:scale-95 group text-left cursor-pointer">
+            <div class="relative w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-tr from-[#c85a6e] to-[#e68395] border border-amber-300/70 p-0.5 shrink-0 flex items-center justify-center shadow overflow-hidden">
+              <span id="vibe-capsule-avatar-initial" class="text-[10px] sm:text-xs font-bold text-white uppercase">T</span>
+              <img id="vibe-capsule-avatar-img" class="hidden w-full h-full object-cover rounded-full" alt="Avatar">
+            </div>
+            <div class="min-w-0 pr-0.5">
+              <div class="flex items-center gap-1">
+                <span id="vibe-capsule-name" class="font-bold text-[10px] sm:text-xs text-amber-100 group-hover:text-amber-300 transition truncate max-w-[65px] sm:max-w-[95px]">Kim Tiền</span>
+                <span id="vibe-capsule-level" class="w-3.5 h-3.5 rounded-full bg-amber-500/80 border border-amber-300/60 text-[8px] font-bold text-stone-950 flex items-center justify-center shrink-0">2</span>
+              </div>
+              <div id="vibe-capsule-sub" class="text-[7.5px] sm:text-[9px] text-amber-200/75 truncate hidden xs:block">
+                Hạt sen · bậc 2 · 1
+              </div>
+            </div>
+            <svg class="w-2.5 h-2.5 text-amber-300/70 shrink-0 ml-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
           <button id="btn-audio-toggle" onclick="toggleAudio()" title="Bật / Tắt âm thanh Chánh Điện"
             class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 backdrop-blur-md flex items-center justify-center text-amber-100 shadow-lg transition active:scale-90">
             <svg id="icon-muted" class="w-3.5 h-3.5 hidden text-amber-200/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1394,14 +1415,22 @@
 
         <!-- RIGHT CONTROLS -->
         <div class="flex items-center gap-1 sm:gap-2 pointer-events-auto shrink-0 justify-end">
-          <!-- Drawer Triggers (Cho màn hình < 1400px nơi sidebars là drawer) -->
-          <button onclick="toggleMobileDrawer('left')" title="Gửi Lời Chúc & Tặng Quà"
-            class="2xl:hidden w-7 h-7 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 backdrop-blur-md flex items-center justify-center text-amber-200 text-xs shadow-lg transition active:scale-90">
-            🎁
+          <!-- VIBE MERIT CAPSULE -->
+          <div id="vibe-merit-capsule" class="flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-stone-900/85 border border-amber-300/40 text-amber-200 text-[10px] sm:text-xs font-bold shadow-lg" title="Điểm Công Đức Tích Lũy">
+            <span class="text-pink-400">🪷</span>
+            <span id="vibe-header-merit-count">150</span>
+          </div>
+
+          <!-- SỚ / KINH VĂN VỚI NOTIFICATION BADGE -->
+          <button onclick="openPrayerSutraModal()" class="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 flex items-center justify-center text-amber-200 shadow-lg transition active:scale-90" title="Sớ Cầu Nguyện & Tụng Kinh">
+            <span class="text-xs">📜</span>
+            <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[8px] font-bold flex items-center justify-center border border-white/60">1</span>
           </button>
-          <button onclick="toggleMobileDrawer('right')" title="Bảng Vàng Công Đức"
-            class="2xl:hidden w-7 h-7 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 backdrop-blur-md flex items-center justify-center text-amber-200 text-xs shadow-lg transition active:scale-90">
-            📜
+
+          <!-- PHƯỚC LÀNH / TẶNG QUÀ VỚI NOTIFICATION BADGE -->
+          <button onclick="toggleMobileDrawer('left')" class="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 flex items-center justify-center text-amber-200 shadow-lg transition active:scale-90" title="Phước Lành & Tặng Quà Đạo Hữu">
+            <span class="text-xs">🎁</span>
+            <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[8px] font-bold flex items-center justify-center border border-white/60">1</span>
           </button>
 
           <button onclick="openSeatDirectoryModal()" title="Tra cứu sơ đồ 12 vị trí Bồ Đoàn"
@@ -2701,95 +2730,384 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       </div>
 
       <!-- ======================================================================
-           14. MODAL 9: HỒ SƠ CHI TIẾT HÀNH GIẢ 3D (PRACTITIONER PROFILE MODAL)
+           14. MODAL 9: HỒ SƠ TU TẬP 3D (ZEN AESTHETIC PRACTITIONER PROFILE)
            ====================================================================== -->
-      <div id="practitioner-profile-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
-        <div class="temple-panel w-full max-w-[540px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-6 border-2 border-amber-300/65 text-amber-50 relative shadow-2xl">
-          <div class="flex items-center justify-between border-b border-amber-300/25 pb-3">
-            <div>
-              <div class="text-[9px] tracking-[0.2em] text-amber-300 uppercase font-bold">✦ ĐỒNG TU ĐẠO TRÀNG · PHIÊN TRỰC TUYẾN ✦</div>
-              <h3 class="font-serif-title text-xl sm:text-2xl font-bold text-amber-100 title-glow flex items-center gap-2">
-                <span>🪷 Hồ Sơ Hành Giả Tu Học</span>
-              </h3>
-            </div>
-            <button onclick="closePractitionerProfileModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-200 text-sm transition">
+      <div id="practitioner-profile-modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
+        <div class="w-full max-w-[460px] max-h-[92dvh] overflow-y-auto merit-scroll rounded-[28px] p-4 sm:p-6 bg-[#FAF7EE] text-[#2D231E] border border-[#E5DEC9] shadow-[0_25px_60px_-15px_rgba(40,25,15,0.45)] relative">
+          
+          <!-- TOP TITLE & CLOSE -->
+          <div class="flex items-center justify-between pb-3 border-b border-[#EADFCB]/80">
+            <h3 class="font-serif-title text-xl sm:text-2xl font-bold text-[#2D231E] tracking-tight">
+              Hồ sơ tu tập
+            </h3>
+            <button type="button" onclick="closePractitionerProfileModal()"
+              class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#EFE8DD] hover:bg-[#E2D9CB] text-[#5C4D44] flex items-center justify-center text-sm font-bold transition active:scale-90" title="Đóng">
               ✕
             </button>
           </div>
 
-          <!-- Top Devotee Header Card -->
-          <div class="mt-4 p-3 rounded-xl bg-gradient-to-r from-amber-950/70 via-stone-900/80 to-amber-950/70 border border-amber-300/35 flex items-center gap-3.5">
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-amber-300/70 p-0.5 bg-black/60 shrink-0 flex items-center justify-center shadow-lg relative">
-              <span id="prof-modal-avatar" class="text-3xl">🧘</span>
-              <div class="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-full bg-emerald-600 border border-emerald-300 text-[8px] font-bold text-emerald-100 uppercase">Online</div>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <h4 id="prof-modal-name" class="font-serif-title text-lg sm:text-xl font-bold text-amber-100 truncate">Hành Giả</h4>
-                <span id="prof-modal-seat" class="px-2 py-0.5 rounded-full bg-amber-500/30 border border-amber-300/40 text-[9.5px] font-bold text-amber-200">Bồ Đoàn #1</span>
-              </div>
-              <p id="prof-modal-dharma" class="text-xs text-amber-300/90 font-medium">Pháp Danh: Tịnh Tâm</p>
-              <div id="prof-modal-ip" class="mt-1 text-[9px] font-semibold text-stone-300 flex items-center gap-1">
-                🔒 IP Thực Tế: 117.5.x.x • Phiên Đã Niêm Phong
-              </div>
-            </div>
-          </div>
-
-          <!-- Attributes Grid -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 my-3.5 text-xs">
-            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
-              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Tuổi & Bản Mệnh</span>
-              <span id="prof-modal-age" class="font-bold text-amber-100 text-[11px] sm:text-xs">26 tuổi • Can Chi</span>
-            </div>
-            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
-              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Quê Quán</span>
-              <span id="prof-modal-hometown" class="font-bold text-amber-100 text-[11px] sm:text-xs">Hà Nội</span>
-            </div>
-            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
-              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Cảnh Giới Tu Học</span>
-              <span id="prof-modal-realm-badge" class="font-bold text-amber-200 text-[11px] sm:text-xs inline-block">Tịnh Tâm Sơ Khởi</span>
-            </div>
-            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
-              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Công Đức Tích Lũy</span>
-              <span id="prof-modal-points" class="font-extrabold text-amber-300 text-[11px] sm:text-xs">45 Điểm</span>
-            </div>
-            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
-              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Tiếng Mõ Tu Tập</span>
-              <span id="prof-modal-mo" class="font-bold text-amber-100 text-[11px] sm:text-xs">36 tiếng mõ</span>
-            </div>
-            <div class="p-2.5 rounded-lg bg-black/45 border border-amber-300/20">
-              <span class="block text-[9.5px] text-amber-300/75 uppercase font-semibold">Tràng Chuỗi Niệm</span>
-              <span id="prof-modal-beads" class="font-bold text-amber-100 text-[11px] sm:text-xs">54/108 hạt</span>
-            </div>
-          </div>
-
-          <!-- Wish quote box -->
-          <div class="p-3 rounded-xl bg-amber-950/40 border border-amber-300/25 mb-4">
-            <span class="text-[9.5px] text-amber-300/80 uppercase font-semibold block mb-1">Tâm Nguyện Dâng Lên Tam Bảo:</span>
-            <p id="prof-modal-wish" class="text-xs text-amber-100/90 italic font-serif leading-relaxed">
-              "Nguyện cho mười phương pháp giới chúng sanh đều được an lạc, phiền não đoạn trừ, bồ đề tăng trưởng."
-            </p>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="flex items-center justify-between gap-2 pt-2 border-t border-amber-300/20 flex-wrap sm:flex-nowrap">
-            <button type="button" onclick="closePractitionerProfileModal()"
-              class="px-3 py-2 rounded-xl bg-stone-800/80 hover:bg-stone-700 border border-stone-600 text-stone-300 font-semibold text-xs transition">
-              Đóng
+          <!-- 4 PILL TABS -->
+          <div class="flex items-center gap-1.5 sm:gap-2 mt-3.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+            <button type="button" id="tab-btn-my-profile" onclick="switchProfileTab('my-profile')"
+              class="profile-tab-pill px-4 py-1.5 rounded-full font-bold transition shadow-sm bg-[#37281F] text-white whitespace-nowrap">
+              Của tôi
             </button>
-            <div class="flex items-center gap-2">
-              <button type="button" id="btn-swap-seat-with-devotee" onclick="swapSeatWithCurrentDevotee()"
-                class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 hover:brightness-110 text-white font-bold text-xs shadow-lg transition active:scale-95 flex items-center gap-1.5 border border-emerald-300/60">
-                <span>🔄 Đổi Bồ Đoàn</span>
-              </button>
-              <button type="button" onclick="rejoiceDevoteeMerit()"
-                class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-stone-950 font-bold text-xs shadow-lg transition active:scale-95 flex items-center gap-1.5">
-                <span>🌸 Tùy Hỷ (+2)</span>
+            <button type="button" id="tab-btn-titles" onclick="switchProfileTab('titles')"
+              class="profile-tab-pill px-4 py-1.5 rounded-full font-semibold transition bg-[#EFE8DD] text-[#5C4D44] hover:text-[#2D231E] whitespace-nowrap">
+              Danh hiệu
+            </button>
+            <button type="button" id="tab-btn-collection" onclick="switchProfileTab('collection')"
+              class="profile-tab-pill px-4 py-1.5 rounded-full font-semibold transition bg-[#EFE8DD] text-[#5C4D44] hover:text-[#2D231E] whitespace-nowrap">
+              Bộ sưu tập
+            </button>
+            <button type="button" id="tab-btn-account" onclick="switchProfileTab('account')"
+              class="profile-tab-pill px-4 py-1.5 rounded-full font-semibold transition bg-[#EFE8DD] text-[#5C4D44] hover:text-[#2D231E] whitespace-nowrap">
+              Tài khoản
+            </button>
+          </div>
+
+          <!-- ==========================================
+               TAB 1: CỦA TÔI (MAIN PROFILE & 3D FIGURINE)
+               ========================================== -->
+          <div id="profile-pane-my-profile" class="profile-tab-pane mt-3.5">
+            <!-- DEVOTEE INFO ROW -->
+            <div class="flex items-center gap-3 sm:gap-3.5">
+              <!-- AVATAR CIRCLE -->
+              <div class="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-tr from-[#c85a6e] to-[#e68395] border-2 border-[#D4AF37] p-0.5 shrink-0 flex items-center justify-center shadow-md relative overflow-hidden">
+                <span id="prof-modal-avatar-initial" class="text-2xl sm:text-3xl font-extrabold text-white">T</span>
+                <img id="prof-modal-avatar-img" class="hidden w-full h-full object-cover rounded-full" alt="Avatar">
+              </div>
+              <!-- DETAILS -->
+              <div class="min-w-0 flex-1">
+                <h4 id="prof-modal-name" class="font-serif-title text-xl sm:text-2xl font-bold text-[#2D231E] leading-tight truncate">Kim Tiền</h4>
+                <div id="prof-modal-subtitle" class="text-xs sm:text-[13px] text-[#7A6B61] flex items-center gap-1 mt-0.5 font-medium truncate">
+                  <span class="text-pink-600">🪷</span>
+                  <span id="prof-modal-realm-text">Tịnh Độ · Cấp 2 · Hạt sen · bậc 2</span>
+                </div>
+                <!-- UPLOAD AVATAR BUTTON -->
+                <button type="button" onclick="document.getElementById('profile-avatar-upload-input').click()"
+                  class="mt-2 px-3.5 py-1 rounded-full bg-[#E5B652] hover:bg-[#DDA83E] text-[#2E1F11] font-bold text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                  <span>Tải ảnh đại diện</span>
+                </button>
+                <input type="file" id="profile-avatar-upload-input" accept="image/*" class="hidden" onchange="handleProfileAvatarUpload(event)">
+              </div>
+            </div>
+
+            <!-- 3D CHARACTER PREVIEW STUDIO CARD -->
+            <div class="mt-3.5 relative w-full h-[290px] sm:h-[320px] rounded-2xl overflow-hidden shadow-inner flex items-center justify-center border border-[#3b271a]/30"
+              style="background: radial-gradient(circle at 50% 32%, #422d20 0%, #1c110a 100%);">
+              <canvas id="profile-figurine-3d-canvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+              <!-- Drag Hint -->
+              <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/45 backdrop-blur-sm text-[11px] font-medium text-[#D5C4B4] pointer-events-none flex items-center gap-1.5 tracking-wide">
+                <span>👆</span> Kéo để xoay nhân vật
+              </div>
+            </div>
+
+            <!-- POSES & SAVE ACTIONS -->
+            <div class="mt-3 flex items-center justify-between gap-2 flex-wrap">
+              <!-- Segmented Pose Switcher -->
+              <div class="flex items-center p-1 rounded-xl bg-[#EFE8DD] gap-1">
+                <button type="button" id="btn-pose-meditate" onclick="switchProfilePose('meditate')"
+                  class="px-4 py-1.5 rounded-lg text-xs font-bold transition shadow-sm bg-gradient-to-r from-[#E5B652] to-[#D49B30] text-[#2B1D0E]">
+                  Ngồi thiền
+                </button>
+                <button type="button" id="btn-pose-stand" onclick="switchProfilePose('stand')"
+                  class="px-4 py-1.5 rounded-lg text-xs font-semibold text-[#5C4D44] transition hover:text-[#2B1D0E]">
+                  Đứng
+                </button>
+              </div>
+
+              <!-- Save Photo Button -->
+              <button type="button" onclick="saveProfileFigurinePhoto()"
+                class="px-3.5 py-1.5 rounded-xl bg-[#EFE8DD] hover:bg-[#E5DDD2] text-[#3D3027] font-semibold text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95">
+                <span>📷</span> Lưu ảnh
               </button>
             </div>
+
+            <!-- EQUIPPED ITEMS GRID -->
+            <div class="mt-3.5 grid grid-cols-2 gap-2 text-left">
+              <!-- ÁO -->
+              <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9]">
+                <div class="w-9 h-9 rounded-lg bg-[#3a628a]/20 border border-[#3a628a]/40 flex items-center justify-center text-lg">👘</div>
+                <div class="min-w-0">
+                  <span class="block text-[10px] text-[#8C7D73] font-medium">Áo</span>
+                  <strong id="prof-equipped-robe" class="block text-xs font-bold text-[#2D231E] truncate">Áo tràng lam</strong>
+                </div>
+              </div>
+              <!-- TRÀNG HẠT -->
+              <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9]">
+                <div class="w-9 h-9 rounded-lg bg-[#6e3b19]/20 border border-[#6e3b19]/40 flex items-center justify-center text-lg">📿</div>
+                <div class="min-w-0">
+                  <span class="block text-[10px] text-[#8C7D73] font-medium">Tràng hạt</span>
+                  <strong id="prof-equipped-beads" class="block text-xs font-bold text-[#2D231E] truncate">Tràng hạt gỗ</strong>
+                </div>
+              </div>
+              <!-- BỒ ĐOÀN -->
+              <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9]">
+                <div class="w-9 h-9 rounded-lg bg-[#9c7a56]/20 border border-[#9c7a56]/40 flex items-center justify-center text-lg">🧘</div>
+                <div class="min-w-0">
+                  <span class="block text-[10px] text-[#8C7D73] font-medium">Bồ đoàn</span>
+                  <strong id="prof-equipped-cushion" class="block text-xs font-bold text-[#2D231E] truncate">Bồ đoàn xám</strong>
+                </div>
+              </div>
+              <!-- PHÁP MÔN -->
+              <div class="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9]">
+                <div class="w-9 h-9 rounded-lg bg-pink-100 border border-pink-300 flex items-center justify-center text-lg">🌸</div>
+                <div class="min-w-0">
+                  <span class="block text-[10px] text-[#8C7D73] font-medium">Pháp môn</span>
+                  <strong id="prof-equipped-method" class="block text-xs font-bold text-[#2D231E] truncate">Tịnh Độ Tông</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- REMOTE DEVOTEE ACTIONS (IF VIEWING ANOTHER DEVOTEE'S SEAT) -->
+            <div id="prof-remote-actions" class="hidden mt-3.5 pt-3 border-t border-[#E8DEC9] flex items-center justify-between gap-2">
+              <span id="prof-modal-seat-badge" class="text-xs font-bold text-[#7A6B61]">Bồ đoàn #1</span>
+              <div class="flex items-center gap-2">
+                <button type="button" id="btn-swap-seat-with-devotee" onclick="swapSeatWithCurrentDevotee()"
+                  class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition active:scale-95 flex items-center gap-1.5">
+                  <span>🔄</span> Đổi Bồ Đoàn
+                </button>
+                <button type="button" onclick="rejoiceDevoteeMerit()"
+                  class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-950 font-bold text-xs shadow transition active:scale-95 flex items-center gap-1.5">
+                  <span>🌸</span> Tùy Hỷ (+2)
+                </button>
+              </div>
+            </div>
           </div>
+
+          <!-- ==========================================
+               TAB 2: DANH HIỆU & CẢNH GIỚI TU HỌC
+               ========================================== -->
+          <div id="profile-pane-titles" class="profile-tab-pane hidden mt-3.5 space-y-2 text-xs">
+            <div class="p-3 rounded-2xl bg-[#F4EFE6] border border-[#E8DEC9] flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-xl">🪷</div>
+                <div>
+                  <h5 class="font-bold text-sm text-[#2D231E]">Hạt Sen Sơ Khởi (Cấp 1)</h5>
+                  <p class="text-[11px] text-[#7A6B61]">Khởi tâm quy hướng Phật Pháp · 0 - 29 Điểm</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">Đã đạt</span>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-[#F4EFE6] border-2 border-amber-400/80 flex items-center justify-between shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-pink-100 border border-pink-300 flex items-center justify-center text-xl">🌸</div>
+                <div>
+                  <h5 class="font-bold text-sm text-[#2D231E]">Tịnh Thức Bát Nhã (Cấp 2)</h5>
+                  <p class="text-[11px] text-[#7A6B61]">Tâm an thanh thản · 30 - 99 Điểm</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-amber-500 text-stone-950 font-bold text-[10px] animate-pulse">Đang tu tập</span>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-[#F4EFE6] border border-[#E8DEC9] flex items-center justify-between opacity-80">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-yellow-100 border border-yellow-300 flex items-center justify-center text-xl">☀️</div>
+                <div>
+                  <h5 class="font-bold text-sm text-[#2D231E]">An Nhiên Tự Tại (Cấp 3)</h5>
+                  <p class="text-[11px] text-[#7A6B61]">Ý niệm thanh tịnh · 100 - 249 Điểm</p>
+                </div>
+              </div>
+              <span class="text-[11px] text-[#8C7D73] font-semibold">100 Điểm</span>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-[#F4EFE6] border border-[#E8DEC9] flex items-center justify-between opacity-80">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-xl">🌟</div>
+                <div>
+                  <h5 class="font-bold text-sm text-[#2D231E]">Giác Ngộ Bồ Đề (Cấp 4)</h5>
+                  <p class="text-[11px] text-[#7A6B61]">Trí tuệ hiển lộ · 250 - 499 Điểm</p>
+                </div>
+              </div>
+              <span class="text-[11px] text-[#8C7D73] font-semibold">250 Điểm</span>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-[#F4EFE6] border border-[#E8DEC9] flex items-center justify-between opacity-80">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-purple-100 border border-purple-300 flex items-center justify-center text-xl">👑</div>
+                <div>
+                  <h5 class="font-bold text-sm text-[#2D231E]">Viên Mãn Bồ Đề (Cấp 5)</h5>
+                  <p class="text-[11px] text-[#7A6B61]">Viên dung vô ngại · 500+ Điểm</p>
+                </div>
+              </div>
+              <span class="text-[11px] text-[#8C7D73] font-semibold">500 Điểm</span>
+            </div>
+          </div>
+
+          <!-- ==========================================
+               TAB 3: BỘ SƯU TẬP (CLOTHING, BEADS, CUSHION)
+               ========================================== -->
+          <div id="profile-pane-collection" class="profile-tab-pane hidden mt-3.5 space-y-3 text-xs">
+            <!-- Y Phục -->
+            <div>
+              <h5 class="font-bold text-[#5C4D44] mb-1.5 uppercase text-[10px] tracking-wider">👘 Y Phục Tu Tập</h5>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="equipItem('equippedRobe', 'robe_blue', 'Áo tràng lam')"
+                  class="equip-btn p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9] hover:border-amber-400 text-left flex items-center gap-2 transition active:scale-95">
+                  <span class="w-6 h-6 rounded-md bg-[#3a628a] shrink-0 border border-black/20"></span>
+                  <div>
+                    <strong class="block text-xs text-[#2D231E]">Áo tràng lam</strong>
+                    <span class="text-[10px] text-[#7A6B61]">Thanh tịnh</span>
+                  </div>
+                </button>
+                <button type="button" onclick="equipItem('equippedRobe', 'robe_brown', 'Áo nâu sòng')"
+                  class="equip-btn p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9] hover:border-amber-400 text-left flex items-center gap-2 transition active:scale-95">
+                  <span class="w-6 h-6 rounded-md bg-[#6e4125] shrink-0 border border-black/20"></span>
+                  <div>
+                    <strong class="block text-xs text-[#2D231E]">Áo nâu sòng</strong>
+                    <span class="text-[10px] text-[#7A6B61]">Giản dị</span>
+                  </div>
+                </button>
+                <button type="button" onclick="equipItem('equippedRobe', 'robe_saffron', 'Y Cà sa vàng')"
+                  class="equip-btn p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9] hover:border-amber-400 text-left flex items-center gap-2 transition active:scale-95">
+                  <span class="w-6 h-6 rounded-md bg-[#d97706] shrink-0 border border-black/20"></span>
+                  <div>
+                    <strong class="block text-xs text-[#2D231E]">Y Cà sa vàng</strong>
+                    <span class="text-[10px] text-[#7A6B61]">Giải thoát</span>
+                  </div>
+                </button>
+                <button type="button" onclick="equipItem('equippedRobe', 'robe_white', 'Áo tràng trắng')"
+                  class="equip-btn p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9] hover:border-amber-400 text-left flex items-center gap-2 transition active:scale-95">
+                  <span class="w-6 h-6 rounded-md bg-[#e2e8f0] shrink-0 border border-black/20"></span>
+                  <div>
+                    <strong class="block text-xs text-[#2D231E]">Áo tràng trắng</strong>
+                    <span class="text-[10px] text-[#7A6B61]">Bạch y cư sĩ</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Tràng Hạt -->
+            <div>
+              <h5 class="font-bold text-[#5C4D44] mb-1.5 uppercase text-[10px] tracking-wider">📿 Tràng Hạt Niệm Phật</h5>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="equipItem('equippedBeads', 'beads_wood', 'Tràng hạt gỗ')"
+                  class="equip-btn p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9] hover:border-amber-400 text-left flex items-center gap-2 transition active:scale-95">
+                  <span class="text-base">🟤</span>
+                  <div>
+                    <strong class="block text-xs text-[#2D231E]">Tràng hạt gỗ</strong>
+                    <span class="text-[10px] text-[#7A6B61]">Gỗ tự nhiên</span>
+                  </div>
+                </button>
+                <button type="button" onclick="equipItem('equippedBeads', 'beads_bodhi', 'Tràng Bồ Đề 108 hạt')"
+                  class="equip-btn p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9] hover:border-amber-400 text-left flex items-center gap-2 transition active:scale-95">
+                  <span class="text-base">🟡</span>
+                  <div>
+                    <strong class="block text-xs text-[#2D231E]">Tràng Bồ Đề</strong>
+                    <span class="text-[10px] text-[#7A6B61]">108 hạt Bồ Đề</span>
+                  </div>
+                </button>
+                <button type="button" onclick="equipItem('equippedBeads', 'beads_crystal', 'Chuỗi lưu ly ngọc')"
+                  class="equip-btn p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9] hover:border-amber-400 text-left flex items-center gap-2 transition active:scale-95">
+                  <span class="text-base">💎</span>
+                  <div>
+                    <strong class="block text-xs text-[#2D231E]">Chuỗi lưu ly</strong>
+                    <span class="text-[10px] text-[#7A6B61]">Thanh khiết</span>
+                  </div>
+                </button>
+                <button type="button" onclick="equipItem('equippedBeads', 'beads_agarwood', 'Tràng trầm hương')"
+                  class="equip-btn p-2.5 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9] hover:border-amber-400 text-left flex items-center gap-2 transition active:scale-95">
+                  <span class="text-base">🪵</span>
+                  <div>
+                    <strong class="block text-xs text-[#2D231E]">Tràng trầm</strong>
+                    <span class="text-[10px] text-[#7A6B61]">Hương ngát</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Bồ Đoàn -->
+            <div>
+              <h5 class="font-bold text-[#5C4D44] mb-1.5 uppercase text-[10px] tracking-wider">🧘 Bồ Đoàn Tọa Thiền</h5>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="equipItem('equippedCushion', 'cushion_gray', 'Bồ đoàn xám')"
+                  class="equip-btn p-2 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9] hover:border-amber-400 text-center transition active:scale-95">
+                  <span class="text-lg block">🟤</span>
+                  <strong class="block text-[11px] text-[#2D231E] mt-0.5">Bồ đoàn xám</strong>
+                </button>
+                <button type="button" onclick="equipItem('equippedCushion', 'cushion_lotus', 'Đài sen ngọc')"
+                  class="equip-btn p-2 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9] hover:border-amber-400 text-center transition active:scale-95">
+                  <span class="text-lg block">🌸</span>
+                  <strong class="block text-[11px] text-[#2D231E] mt-0.5">Đài sen hồng</strong>
+                </button>
+                <button type="button" onclick="equipItem('equippedCushion', 'cushion_gold', 'Tòa sen vàng')"
+                  class="equip-btn p-2 rounded-xl bg-[#F4EFE6] border border-[#E8DEC9] hover:border-amber-400 text-center transition active:scale-95">
+                  <span class="text-lg block">👑</span>
+                  <strong class="block text-[11px] text-[#2D231E] mt-0.5">Tòa sen vàng</strong>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==========================================
+               TAB 4: TÀI KHOẢN & SỚ THÔNG TIN
+               ========================================== -->
+          <div id="profile-pane-account" class="profile-tab-pane hidden mt-3.5 space-y-2.5 text-xs">
+            <div class="p-3.5 rounded-2xl bg-[#F4EFE6] border border-[#E8DEC9] space-y-2.5">
+              <div>
+                <label class="block text-[11px] font-bold text-[#5C4D44] mb-1">Họ và tên đạo hữu:</label>
+                <input type="text" id="prof-acc-name-input" value="Kim Tiền"
+                  class="w-full px-3 py-1.5 rounded-xl bg-white border border-[#D5C7B4] text-[#2D231E] font-bold focus:outline-none focus:border-amber-500">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-[#5C4D44] mb-1">Pháp danh:</label>
+                <input type="text" id="prof-acc-dharma-input" value="Tịnh Tâm"
+                  class="w-full px-3 py-1.5 rounded-xl bg-white border border-[#D5C7B4] text-[#2D231E] font-medium focus:outline-none focus:border-amber-500">
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-[11px]">
+                <div class="p-2 rounded-lg bg-white/70 border border-[#E8DEC9]">
+                  <span class="block text-[#8C7D73]">Bản Mệnh:</span>
+                  <strong id="prof-acc-canchi">Bính Tý • Thủy</strong>
+                </div>
+                <div class="p-2 rounded-lg bg-white/70 border border-[#E8DEC9]">
+                  <span class="block text-[#8C7D73]">Quê Quán:</span>
+                  <strong id="prof-acc-hometown">Chùa An Nhiên</strong>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-1.5 text-center text-[10.5px]">
+                <div class="p-2 rounded-lg bg-white/70 border border-[#E8DEC9]">
+                  <span class="block text-[#8C7D73]">Công Đức</span>
+                  <strong id="prof-acc-points" class="text-amber-700 text-xs">150 Điểm</strong>
+                </div>
+                <div class="p-2 rounded-lg bg-white/70 border border-[#E8DEC9]">
+                  <span class="block text-[#8C7D73]">Tiếng Mõ</span>
+                  <strong id="prof-acc-mo" class="text-[#2D231E]">48 Tiếng</strong>
+                </div>
+                <div class="p-2 rounded-lg bg-white/70 border border-[#E8DEC9]">
+                  <span class="block text-[#8C7D73]">Chuỗi Niệm</span>
+                  <strong id="prof-acc-beads" class="text-[#2D231E]">108 Hạt</strong>
+                </div>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-[#5C4D44] mb-1">Tâm nguyện dâng Tam Bảo:</label>
+                <textarea id="prof-acc-wish-input" rows="2"
+                  class="w-full px-3 py-1.5 rounded-xl bg-white border border-[#D5C7B4] text-[#2D231E] text-xs focus:outline-none focus:border-amber-500">Cầu bình an, sức khỏe dồi dào & gia đình sum vầy</textarea>
+              </div>
+              <div class="pt-1 text-right">
+                <button type="button" onclick="saveProfileAccountChanges()"
+                  class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-950 font-bold text-xs shadow transition active:scale-95">
+                  💾 Lưu Thông Tin
+                </button>
+              </div>
+            </div>
+
+            <!-- Sealed Session Notice -->
+            <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10.5px] flex items-center gap-2">
+              <span>🔒</span>
+              <span id="prof-acc-ip-sealed">IP Thực Tế: 117.5.x.x • Phiên Niêm Phong An Toàn</span>
+            </div>
+          </div>
+
         </div>
       </div>
+
+          
 
     </main>
   </div>
@@ -2818,6 +3136,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
   <script src="js/certificate.js"></script>
   <script src="js/mindful-breathing.js"></script>
   <script src="js/temple-3d.js"></script>
+  <script src="js/profile-figurine-3d.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-sanctuary.js"></script>
   <script src="js/realtime-sanctuary.js"></script>
@@ -2949,6 +3268,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     let currentDetectedIP = '';
 
     const SAMPLE_NAMES = [
+      { name: 'Kim Tiền', dharma: 'Tịnh Tâm', gender: 'female' },
       { name: 'Trần Văn Nam', dharma: 'Minh Tâm', gender: 'monk' },
       { name: 'Lê Diệu Hoa', dharma: 'Diệu Hoa', gender: 'female' },
       { name: 'Nguyễn Phúc Thiện', dharma: 'Phúc Thiện', gender: 'monk' },
@@ -2986,7 +3306,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       meritScore: 0,
       realmLevel: 1,
       realmName: 'Sơ Tâm',
-      isWalking: false
+      isWalking: false,
+      equippedRobe: localStorage.getItem('chua_an_nhien_user_equippedRobe') || 'robe_blue',
+      equippedBeads: localStorage.getItem('chua_an_nhien_user_equippedBeads') || 'beads_wood',
+      equippedCushion: localStorage.getItem('chua_an_nhien_user_equippedCushion') || 'cushion_gray',
+      customAvatarUrl: localStorage.getItem('chua_an_nhien_custom_avatar') || '',
+      pose: 'meditate'
     };
 
     function hashCode(str) {
@@ -6167,64 +6492,143 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     }
 
     /**************************************************************************
-     * 7G. HỒ SƠ CHI TIẾT HÀNH GIẢ 3D & TÙY HỶ CÔNG ĐỨC
+     * 7G. HỒ SƠ TU TẬP 3D (ZEN AESTHETIC PRACTITIONER PROFILE & CUSTOMIZATION)
      **************************************************************************/
-    function openPractitionerProfileModal(seatData) {
-      if (!seatData) return;
+    function openPractitionerProfileModal(seatData = null) {
       const modal = document.getElementById('practitioner-profile-modal');
       if (!modal) return;
 
+      if (!seatData) {
+        const userSeatNo = currentUserProfile.assignedSeatNo || 1;
+        const userSeat = (window.sanctuarySeats && window.sanctuarySeats.find(s => s.seatNo === userSeatNo)) || {
+          seatNo: userSeatNo,
+          isUser: true,
+          name: currentUserProfile.fullName,
+          dharma: currentUserProfile.dharmaName
+        };
+        seatData = userSeat;
+      }
+
+      window.currentViewingSeatData = seatData;
       const isMe = seatData.isUser || (seatData.seatNo === currentUserProfile.assignedSeatNo);
       const name = isMe ? currentUserProfile.fullName : (seatData.name || 'Hành Giả Đồng Tu');
       const dharma = isMe ? currentUserProfile.dharmaName : (seatData.dharma || 'Tịnh Tâm');
       const age = isMe ? currentUserProfile.age : (seatData.age || 26);
       const birthYear = (new Date().getFullYear()) - age;
-      const canChiInfo = (typeof computeCanChiAndElement === 'function') ? computeCanChiAndElement(birthYear) : { canChi: 'Mậu Dần', elementObj: { label: 'Thổ' } };
+      const canChiInfo = (typeof computeCanChiAndElement === 'function') 
+        ? computeCanChiAndElement(birthYear) 
+        : { canChi: 'Bính Tý', elementObj: { label: 'Thủy' } };
       const hometown = isMe ? currentUserProfile.hometown : (seatData.hometown || 'Chùa An Nhiên');
       const ip = isMe ? (currentUserProfile.clientIp || '117.5.x.x') : (seatData.ip || '113.161.x.x');
-      const points = isMe ? currentUserProfile.meritScore : (seatData.points || (25 + seatData.seatNo * 7));
+      const points = isMe ? currentUserProfile.meritScore : (seatData.points || 150);
       const realm = getRealmByPoints(points);
       const moCount = isMe ? currentUserProfile.woodenFishCount : (seatData.moCount || (points * 2));
-      const beads = isMe ? currentUserProfile.malaBeads : ((points * 3) % 108 || 18);
+      const beads = isMe ? currentUserProfile.malaBeads : ((points * 3) % 108 || 108);
       const wish = isMe 
-        ? (currentUserProfile.userWish || 'Nguyện cầu bình an, tai qua nạn khỏi, tâm an trí sáng') 
-        : (seatData.wish || 'Nguyện cho mười phương pháp giới chúng sanh đều được an lạc, phiền não đoạn trừ.');
+        ? (currentUserProfile.wish || 'Cầu bình an, sức khỏe dồi dào & gia đình sum vầy') 
+        : (seatData.wish || 'Nguyện cho mười phương pháp giới chúng sanh đều được an lạc.');
 
-      const avatarEl = document.getElementById('prof-modal-avatar');
-      if (avatarEl) {
-        avatarEl.textContent = (seatData.type === 'female') ? '🧕' : '🧘';
+      // 1. Cập nhật Avatar (Chữ cái hoặc Ảnh tùy chọn)
+      const initialEl = document.getElementById('prof-modal-avatar-initial');
+      const imgEl = document.getElementById('prof-modal-avatar-img');
+      const words = (name || 'Kim Tiền').trim().split(/\s+/);
+      const initialLetter = words[words.length - 1].charAt(0).toUpperCase();
+
+      if (isMe && currentUserProfile.customAvatarUrl && imgEl && initialEl) {
+        imgEl.src = currentUserProfile.customAvatarUrl;
+        imgEl.classList.remove('hidden');
+        initialEl.classList.add('hidden');
+      } else if (initialEl && imgEl) {
+        initialEl.textContent = initialLetter;
+        initialEl.classList.remove('hidden');
+        imgEl.classList.add('hidden');
       }
 
-      document.getElementById('prof-modal-name').textContent = name;
-      document.getElementById('prof-modal-seat').textContent = `Bồ Đoàn #${seatData.seatNo} ${isMe ? '(Của Bạn)' : ''}`;
-      document.getElementById('prof-modal-dharma').textContent = `Pháp Danh: ${dharma}`;
-      document.getElementById('prof-modal-ip').innerHTML = `🔒 IP Thực Tế: <span class="text-amber-300 font-mono">${ip}</span> • Phiên Đã Niêm Phong`;
-      document.getElementById('prof-modal-age').textContent = `${age} tuổi • ${canChiInfo.canChi} (${canChiInfo.elementObj.label})`;
-      document.getElementById('prof-modal-hometown').textContent = hometown;
+      // 2. Tên & Subtitle (🪷 Tịnh Độ · Cấp 2 · Hạt sen · bậc 2)
+      const nameEl = document.getElementById('prof-modal-name');
+      if (nameEl) nameEl.textContent = name;
       
-      const realmEl = document.getElementById('prof-modal-realm-badge');
-      if (realmEl) {
-        realmEl.textContent = `Cấp ${realm.level}: ${realm.name}`;
-        realmEl.style.color = realm.color;
+      const realmTextEl = document.getElementById('prof-modal-realm-text');
+      if (realmTextEl) {
+        realmTextEl.textContent = `Tịnh Độ · Cấp ${realm.level} · Hạt sen · bậc ${realm.level}`;
       }
 
-      document.getElementById('prof-modal-points').textContent = `${points} Điểm Công Đức`;
-      document.getElementById('prof-modal-mo').textContent = `${moCount} tiếng mõ`;
-      document.getElementById('prof-modal-beads').textContent = `${beads}/108 hạt chuỗi`;
-      document.getElementById('prof-modal-wish').textContent = `"${wish}"`;
+      // 3. Cập nhật Tab 1: Equipped Items
+      const robeNames = {
+        robe_blue: 'Áo tràng lam',
+        robe_brown: 'Áo nâu sòng',
+        robe_saffron: 'Y Cà sa vàng',
+        robe_white: 'Áo tràng trắng'
+      };
+      const beadNames = {
+        beads_wood: 'Tràng hạt gỗ',
+        beads_bodhi: 'Tràng Bồ Đề 108 hạt',
+        beads_crystal: 'Chuỗi lưu ly ngọc',
+        beads_agarwood: 'Tràng trầm hương'
+      };
+      const cushionNames = {
+        cushion_gray: 'Bồ đoàn xám',
+        cushion_lotus: 'Đài sen ngọc',
+        cushion_gold: 'Tòa sen vàng'
+      };
 
-      window.currentViewingSeatData = seatData;
-      const swapBtn = document.getElementById('btn-swap-seat-with-devotee');
-      if (swapBtn) {
-        if (isMe || !seatData.occupied) {
-          swapBtn.classList.add('hidden');
+      const robeEl = document.getElementById('prof-equipped-robe');
+      if (robeEl) robeEl.textContent = robeNames[currentUserProfile.equippedRobe] || 'Áo tràng lam';
+      const beadEl = document.getElementById('prof-equipped-beads');
+      if (beadEl) beadEl.textContent = beadNames[currentUserProfile.equippedBeads] || 'Tràng hạt gỗ';
+      const cushionEl = document.getElementById('prof-equipped-cushion');
+      if (cushionEl) cushionEl.textContent = cushionNames[currentUserProfile.equippedCushion] || 'Bồ đoàn xám';
+
+      // 4. Remote Devotee Actions
+      const remoteActions = document.getElementById('prof-remote-actions');
+      const seatBadge = document.getElementById('prof-modal-seat-badge');
+      if (seatBadge) seatBadge.textContent = `Bồ đoàn #${seatData.seatNo} ${isMe ? '(Của Bạn)' : ''}`;
+      if (remoteActions) {
+        if (!isMe && seatData.occupied) {
+          remoteActions.classList.remove('hidden');
         } else {
-          swapBtn.classList.remove('hidden');
+          remoteActions.classList.add('hidden');
         }
       }
 
+      // 5. Cập nhật Tab 4: Tài Khoản
+      const accName = document.getElementById('prof-acc-name-input');
+      if (accName) accName.value = name;
+      const accDharma = document.getElementById('prof-acc-dharma-input');
+      if (accDharma) accDharma.value = dharma;
+      const accCanChi = document.getElementById('prof-acc-canchi');
+      if (accCanChi) accCanChi.textContent = `${canChiInfo.canChi} • ${canChiInfo.elementObj.label || 'Thủy'}`;
+      const accHometown = document.getElementById('prof-acc-hometown');
+      if (accHometown) accHometown.textContent = hometown;
+      const accPoints = document.getElementById('prof-acc-points');
+      if (accPoints) accPoints.textContent = `${points} Điểm`;
+      const accMo = document.getElementById('prof-acc-mo');
+      if (accMo) accMo.textContent = `${moCount} Tiếng`;
+      const accBeads = document.getElementById('prof-acc-beads');
+      if (accBeads) accBeads.textContent = `${beads} Hạt`;
+      const accWish = document.getElementById('prof-acc-wish-input');
+      if (accWish) accWish.value = wish;
+      const accIp = document.getElementById('prof-acc-ip-sealed');
+      if (accIp) accIp.textContent = `IP Thực Tế: ${ip} • Phiên Niêm Phong An Toàn`;
+
+      // 6. Mở Modal & Kích hoạt 3D Figurine Canvas
       modal.classList.remove('hidden');
       modal.classList.add('flex');
+      switchProfileTab('my-profile');
+
+      setTimeout(() => {
+        if (window.ProfileFigurineViewer3D) {
+          if (!window.ProfileFigurineViewer3D.isInitialized) {
+            window.ProfileFigurineViewer3D.init('profile-figurine-3d-canvas');
+          }
+          window.ProfileFigurineViewer3D.setRobe(currentUserProfile.equippedRobe || 'robe_blue');
+          window.ProfileFigurineViewer3D.setBeads(currentUserProfile.equippedBeads || 'beads_wood');
+          window.ProfileFigurineViewer3D.setCushion(currentUserProfile.equippedCushion || 'cushion_gray');
+          window.ProfileFigurineViewer3D.setPose(currentUserProfile.pose || 'meditate');
+          window.ProfileFigurineViewer3D.resize();
+        }
+      }, 60);
+
       if (window.AudioEngine) AudioEngine.playGiftChime();
     }
 
@@ -6236,26 +6640,168 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       }
     }
 
-    function rejoiceDevoteeMerit() {
-      const name = document.getElementById('prof-modal-name').textContent || 'Đồng Tu';
-      triggerGoldenLotusRain(22);
-      if (window.AudioEngine) {
-        if (typeof AudioEngine.playBellChime === 'function') AudioEngine.playBellChime();
-        else AudioEngine.playGiftChime();
-      }
-      addMeritPoints(currentUserProfile.fullName, 2, 'lotus', `Tùy hỷ công đức với ${name}`, true);
-      showLiveGiftBanner('Tùy Hỷ Công Đức', `Tán thán công đức của ${name} (+2 Điểm Công Đức cho bạn)`, 'lotus');
+    function switchProfileTab(tabKey) {
+      const tabs = ['my-profile', 'titles', 'collection', 'account'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const pane = document.getElementById(`profile-pane-${t}`);
+        if (btn) {
+          if (t === tabKey) {
+            btn.className = 'profile-tab-pill px-4 py-1.5 rounded-full font-bold transition shadow-sm bg-[#37281F] text-white whitespace-nowrap';
+          } else {
+            btn.className = 'profile-tab-pill px-4 py-1.5 rounded-full font-semibold transition bg-[#EFE8DD] text-[#5C4D44] hover:text-[#2D231E] whitespace-nowrap';
+          }
+        }
+        if (pane) {
+          if (t === tabKey) pane.classList.remove('hidden');
+          else pane.classList.add('hidden');
+        }
+      });
 
-      if (window.RealtimeSanctuary) {
-        window.RealtimeSanctuary.broadcastRejoice(name, currentUserProfile.fullName);
+      if (tabKey === 'my-profile' && window.ProfileFigurineViewer3D) {
+        setTimeout(() => window.ProfileFigurineViewer3D.resize(), 30);
       }
-
-      if (window.DailyQuestEngine) {
-        window.DailyQuestEngine.onAction('rejoice', 1);
-      }
-
-      closePractitionerProfileModal();
     }
+
+    function switchProfilePose(pose) {
+      currentUserProfile.pose = pose;
+      const btnMed = document.getElementById('btn-pose-meditate');
+      const btnStand = document.getElementById('btn-pose-stand');
+      if (btnMed && btnStand) {
+        if (pose === 'meditate') {
+          btnMed.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition shadow-sm bg-gradient-to-r from-[#E5B652] to-[#D49B30] text-[#2B1D0E]';
+          btnStand.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold text-[#5C4D44] transition hover:text-[#2B1D0E]';
+        } else {
+          btnStand.className = 'px-4 py-1.5 rounded-lg text-xs font-bold transition shadow-sm bg-gradient-to-r from-[#E5B652] to-[#D49B30] text-[#2B1D0E]';
+          btnMed.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold text-[#5C4D44] transition hover:text-[#2B1D0E]';
+        }
+      }
+      if (window.ProfileFigurineViewer3D) {
+        window.ProfileFigurineViewer3D.setPose(pose);
+      }
+    }
+
+    function equipItem(category, itemKey, itemName) {
+      currentUserProfile[category] = itemKey;
+      try {
+        localStorage.setItem('chua_an_nhien_user_' + category, itemKey);
+      } catch (e) {}
+
+      if (category === 'equippedRobe') {
+        const el = document.getElementById('prof-equipped-robe');
+        if (el) el.textContent = itemName;
+        if (window.ProfileFigurineViewer3D) window.ProfileFigurineViewer3D.setRobe(itemKey);
+      } else if (category === 'equippedBeads') {
+        const el = document.getElementById('prof-equipped-beads');
+        if (el) el.textContent = itemName;
+        if (window.ProfileFigurineViewer3D) window.ProfileFigurineViewer3D.setBeads(itemKey);
+      } else if (category === 'equippedCushion') {
+        const el = document.getElementById('prof-equipped-cushion');
+        if (el) el.textContent = itemName;
+        if (window.ProfileFigurineViewer3D) window.ProfileFigurineViewer3D.setCushion(itemKey);
+      }
+
+      if (window.AudioEngine) AudioEngine.playWoodenFish(1);
+      if (window.showLiveGiftBanner) {
+        window.showLiveGiftBanner('Đổi Trang Phục', `Đã trang bị: ${itemName}`, 'lotus');
+      }
+    }
+
+    function handleProfileAvatarUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        currentUserProfile.customAvatarUrl = dataUrl;
+        try {
+          localStorage.setItem('chua_an_nhien_custom_avatar', dataUrl);
+        } catch (err) {}
+        updateVibeHeaderUI();
+        const initialEl = document.getElementById('prof-modal-avatar-initial');
+        const imgEl = document.getElementById('prof-modal-avatar-img');
+        if (imgEl && initialEl) {
+          imgEl.src = dataUrl;
+          imgEl.classList.remove('hidden');
+          initialEl.classList.add('hidden');
+        }
+        if (window.showLiveGiftBanner) {
+          window.showLiveGiftBanner('Ảnh Đại Diện', 'Đã cập nhật ảnh đại diện thành công!', 'lotus');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveProfileFigurinePhoto() {
+      if (window.ProfileFigurineViewer3D) {
+        const success = window.ProfileFigurineViewer3D.capturePhoto();
+        if (success && window.showLiveGiftBanner) {
+          window.showLiveGiftBanner('Lưu Ảnh 3D', 'Đã tải ảnh nhân vật tượng thiền 3D về thiết bị!', 'lotus');
+        }
+      }
+    }
+
+    function saveProfileAccountChanges() {
+      const nameInput = document.getElementById('prof-acc-name-input');
+      const dharmaInput = document.getElementById('prof-acc-dharma-input');
+      const wishInput = document.getElementById('prof-acc-wish-input');
+
+      if (nameInput && nameInput.value.trim()) {
+        currentUserProfile.fullName = nameInput.value.trim();
+      }
+      if (dharmaInput && dharmaInput.value.trim()) {
+        currentUserProfile.dharmaName = dharmaInput.value.trim();
+      }
+      if (wishInput && wishInput.value.trim()) {
+        currentUserProfile.wish = wishInput.value.trim();
+      }
+
+      try {
+        localStorage.setItem('chua_an_nhien_user_fullname', currentUserProfile.fullName);
+        localStorage.setItem('chua_an_nhien_user_dharma', currentUserProfile.dharmaName);
+        localStorage.setItem('chua_an_nhien_user_wish', currentUserProfile.wish);
+      } catch (e) {}
+
+      updateVibeHeaderUI();
+      renderSanctuaryFloor();
+
+      if (window.showLiveGiftBanner) {
+        window.showLiveGiftBanner('Cập Nhật Thành Công', `Hoan hỷ chào đạo hữu ${currentUserProfile.fullName}!`, 'lotus');
+      }
+      switchProfileTab('my-profile');
+    }
+
+    function updateVibeHeaderUI() {
+      const nameEl = document.getElementById('vibe-capsule-name');
+      const levelEl = document.getElementById('vibe-capsule-level');
+      const subEl = document.getElementById('vibe-capsule-sub');
+      const meritEl = document.getElementById('vibe-header-merit-count');
+      const initialEl = document.getElementById('vibe-capsule-avatar-initial');
+      const imgEl = document.getElementById('vibe-capsule-avatar-img');
+
+      const name = currentUserProfile.fullName || 'Kim Tiền';
+      const points = currentUserProfile.meritScore || 150;
+      const realm = getRealmByPoints(points);
+
+      if (nameEl) nameEl.textContent = name;
+      if (levelEl) levelEl.textContent = realm.level || 2;
+      if (subEl) subEl.textContent = `Hạt sen · bậc ${realm.level || 2} · 1`;
+      if (meritEl) meritEl.textContent = points;
+
+      const words = name.trim().split(/\s+/);
+      const initialLetter = words[words.length - 1].charAt(0).toUpperCase();
+
+      if (currentUserProfile.customAvatarUrl && imgEl && initialEl) {
+        imgEl.src = currentUserProfile.customAvatarUrl;
+        imgEl.classList.remove('hidden');
+        initialEl.classList.add('hidden');
+      } else if (initialEl && imgEl) {
+        initialEl.textContent = initialLetter;
+        initialEl.classList.remove('hidden');
+        imgEl.classList.add('hidden');
+      }
+    }
+    window.updateVibeHeaderUI = updateVibeHeaderUI;
 
     window.showSeatDetailBadge = openPractitionerProfileModal;
     window.assignSanctuarySeat = function(seatNo) {
