@@ -39,17 +39,23 @@
   style.textContent = `
     #room-chat-modal {
       color-scheme: dark;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
       position: fixed;
       inset: 0;
       z-index: 130;
-      background: rgba(4, 2, 1, 0.82);
+      background: rgba(4, 2, 1, 0.85);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       padding: clamp(6px, 2vw, 16px);
       box-sizing: border-box;
+    }
+    #room-chat-modal:not(.hidden) {
+      display: flex !important;
+    }
+    #room-chat-modal.hidden {
+      display: none !important;
     }
 
     /* Outer Shell: Sacred Sandalwood & Imperial Gold Glassmorphism */
