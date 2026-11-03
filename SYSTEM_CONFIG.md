@@ -45,7 +45,7 @@ node server.js
 
 ## 3. CẤU HÌNH GIAO DIỆN & QUY TẮC ĐA MÀN HÌNH BẮT BUỘC (RESPONSIVE & ORIENTATION)
 
-### 3.1. Quy Định Xoay Ngang Toàn Màn Hình (Orientation Guard)
+### 3.1. Quy Định Xoay Ngang Toàn Màn Hình (Orientation Guard & Auto Fullscreen)
 > **YÊU CẦU CỐT LÕI**: Toàn bộ không gian Chánh Điện (Bàn thờ Phật, lư hương, 12 bồ đoàn và thanh công cụ) được kiến trúc theo chuẩn màn hình ngang (Landscape Full-Bleed).
 
 1. **Thiết bị Mobile & Tablet (Điện thoại thông minh, iPad, máy tính bảng cảm ứng)**:
@@ -53,21 +53,31 @@ node server.js
      - Biểu tượng Hoa Sen Vàng Hào Quang xoay trang nghiêm.
      - Hình họa điện thoại tự xoay ngang kèm hiệu ứng nhịp thở tâm linh.
      - Nút hành động: `VÀO CHÁNH ĐIỆN (XOAY NGANG)`.
-     - Khi bấm nút hoặc người dùng xoay ngang máy, hệ thống tự động gọi Fullscreen (`requestFullscreenUniversal`) và khóa xoay ngang (`screen.orientation.lock('landscape')`), đồng thời ẩn ngay lớp màn hình chuyển hướng.
+     - Chạm vào **BẤT KỲ ĐÂU** trên màn hình chuyển hướng hoặc nút hành động, hệ thống tự động gọi Fullscreen (`requestFullscreenUniversal`), khóa xoay ngang (`screen.orientation.lock('landscape')`), mở khóa âm thanh (`unlockSanctuaryAudio()`) và ghi nhớ cấu hình (`localStorage.setItem('chua_an_nhien_locked_landscape', 'true')`) cho các lần vào sau.
+     - Trên mọi tương tác chạm (Touch, Click) trên Mobile & Tablet, hệ thống tự động tái kích hoạt trạng thái Toàn màn hình & Khóa xoay ngang nếu bị gián đoạn.
 2. **Thiết bị PC & Laptop (Màn hình Desktop $\ge 1024\text{px}$, chuột bàn phím `pointer: fine`)**:
    - Hệ thống **BỎ QUA HOÀN TOÀN** lớp chuyển hướng (`display: none !important`), đưa người dùng vào thẳng Chánh Điện ngay lập tức.
 
-### 3.2. Không Bao Giờ Cắt Giao Diện (Zero Cut-Off Invariant)
+### 3.2. Không Bao Giờ Cắt Giao Diện & Tối Ưu Cảm Ứng Mobile (Mobile Touch Optimization)
 - **Tỉ lệ Chánh Điện (`#temple-stage`)**: Phải sử dụng `width: 100% !important; height: 100% !important; max-width: 100% !important; aspect-ratio: auto !important;`. Tuyệt đối **không** dùng `max-width: calc(100vh * 16/9)` vì sẽ gây ra viền đen (pillarboxing) và bóp nghẹt không gian trên các smartphone màn hình dài (19.5:9, 20:9).
-- **Thanh Đảo Thiền 14 Nút (`#bottom-dock-scroll`)**:
-   - Trên toàn bộ màn hình ngang (PC, Laptop, Tablet, Mobile Landscape), dock luôn bố trí theo **Lưới cân đối 2 hàng $\times$ 7 cột** căn giữa, `max-width: 980px`.
-   - **Hàng 1**: *Việc Lành (Nhiệm Vụ) · Gõ Mõ · Lễ Phật · Dâng Hương · Xin Xăm · Đồng Tụng · Kinh Điển*.
-   - **Hàng 2**: *Hoa Đăng · Thỉnh Chuông · Thiền Thở · Lời Phật · Phóng Sanh · Sớ Cầu An · Bằng Công Đức*.
-   - Mọi nút bấm phải có `min-width: 0`, `overflow: hidden`, chữ có `text-overflow: ellipsis`, icon cố định `flex-shrink: 0`. Tuyệt đối không để rớt nút hoặc làm tràn thanh cuộn ngang trang.
+- **Thanh Đảo Thiền Hành Động (`#bottom-dock-scroll`)**:
+   - **Trên Mobile Ngang (Điện thoại màn hình nhỏ $\le 560\text{px}$ chiều cao hoặc $\le 950\text{px}$ chiều rộng)**:
+     - Chuyển sang thanh trượt cảm ứng siêu mượt (`overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; display: flex`).
+     - Chiều cao nút bấm: $36\text{px}$, chữ $11.5\text{px}$ đậm, bo tròn $9999\text{px}$, `min-width: max-content`, đệm ngón tay chuẩn công thái học di động.
+     - Tuyệt đối **không ép 14 nút vào lưới 2x7 chỉ cao 21px** trên điện thoại vì ngón tay người dùng không thể chạm chính xác.
+     - Các nút cốt lõi đặt đầu thanh: *Việc Lành · Gõ Mõ · Lễ Phật · Dâng Hương · Đồng Tụng · 🎙️ Micro* giúp ngón tay cái chạm bấm tức thì, vuốt ngang êm ái để chọn thêm các pháp môn khác.
+   - **Trên Màn Hình Lớn (Tablet, Laptop, PC $\ge 1024\text{px}$)**:
+     - Duy trì bố cục lưới cân đối hoặc thanh công cụ chuẩn Chánh Điện.
 - **Tọa Độ Bồ Đoàn (`renderSanctuaryFloor`)**:
-   - Hàng bồ đoàn trên (Row 0): `seatY = 56%`.
-   - Hàng bồ đoàn dưới (Row 1): `seatY = 71%`.
-   - Khoảng trống từ chân bồ đoàn hàng dưới đến đỉnh thanh công cụ luôn đạt tối thiểu $40\text{px}$, không bao giờ để thanh đáy đè lên người ngồi hoặc bảng tên bồ đoàn.
+   - Hàng bồ đoàn trên (Row 0): `seatY = 55% - 56.5%`.
+   - Hàng bồ đoàn dưới (Row 1): `seatY = 70% - 71.5%`.
+   - Khoảng trống từ chân bồ đoàn hàng dưới đến đỉnh thanh công cụ luôn đạt tối thiểu $30\text{px} - 40\text{px}$, không bao giờ để thanh đáy đè lên người ngồi hoặc bảng tên bồ đoàn.
+
+### 3.3. Đàm Thoại Giọng Nói Thời Gian Thực (Realtime Voice / Mic Engine)
+- Hệ thống truyền dẫn âm thanh giọng nói 2 chiều (WebRTC Mesh + Web Audio API Opus Chunk Broadcast):
+  1. **WebSocket Stream Tức Thời**: Mọi thiết bị truy cập qua mạng nội bộ hoặc Internet kết nối thẳng vào luồng WebSocket của Node server (`ws://.../ws`).
+  2. **Giải Mã Web Audio API Trực Tiếp**: Toàn bộ luồng âm thanh và gói tin âm thanh được giải mã và phát qua `AudioEngine.ctx` (`decodeAudioData` + `BufferSource`), giải quyết 100% lỗi Autoplay Policy bị chặn trên iOS Safari và Android Chrome.
+  3. **Nút Bật Mic Nhanh Trên Thanh Đáy (`#btn-dock-mic`)**: Hành giả có thể trực tiếp chạm bật/tắt Micro đàm thoại ngay tại Chánh Điện mà không cần phải mở bảng chat.
 
 ---
 

@@ -1169,7 +1169,7 @@
   <!-- ==========================================================================
        DEVICE ORIENTATION GUARD: BẮT BUỘC XOAY NGANG TRÊN MOBILE & TABLET (RIÊNG PC KHÔNG CẦN)
        ========================================================================== -->
-  <div id="orientation-guard-overlay" class="fixed inset-0 z-[99999] bg-[#0c0602] flex flex-col items-center justify-center p-4 sm:p-6 text-center select-none" style="display: none;">
+  <div id="orientation-guard-overlay" onclick="handleEnterLandscapeFullscreen()" ontouchend="handleEnterLandscapeFullscreen()" class="fixed inset-0 z-[99999] bg-[#0c0602] flex flex-col items-center justify-center p-4 sm:p-6 text-center select-none cursor-pointer" style="display: none;">
     <!-- Sacred Lotus Aura Glow Background -->
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-600/30 via-[#1a0c04]/85 to-[#0c0602] pointer-events-none"></div>
     <div class="absolute w-80 h-80 rounded-full bg-amber-500/15 blur-3xl pointer-events-none animate-pulse"></div>

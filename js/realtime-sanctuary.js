@@ -34,6 +34,7 @@
   let currentBrokerIndex = 0;
   let pahoClient = null;
   let ntfySocket = null;
+  let nodeWs = null;
   let ntfySSE = null;
   let ntfyReconnectTimer = null;
   let isConnected = false;

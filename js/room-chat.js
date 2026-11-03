@@ -907,6 +907,7 @@
       audioContainer.appendChild(audioEl);
     }
     audioEl.srcObject = stream;
+    audioEl.volume = 1.0;
     audioEl.play().catch(() => {
       const resume = () => {
         audioEl.play().catch(() => {});
@@ -916,6 +917,18 @@
       window.addEventListener('click', resume, { once: true });
       window.addEventListener('touchstart', resume, { once: true });
     });
+
+    // Also route stream into Web Audio API destination for guaranteed playback on iOS/Android
+    try {
+      const audioCtx = window.AudioEngine?.ctx || state.audioContext || (window.AudioContext && new (window.AudioContext || window.webkitAudioContext)());
+      if (audioCtx) {
+        if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        const source = audioCtx.createMediaStreamSource(stream);
+        source.connect(audioCtx.destination);
+      }
+    } catch (e) {
+      console.warn('[RoomVoice] WebAudio routing fallback:', e);
+    }
 
     // Update UI that this peer is active and speaking
     const member = state.members.get(peerId);
@@ -954,6 +967,7 @@
       if (event.candidate) {
         publish({
           type: 'ROOM_VOICE_CANDIDATE',
+          senderId: myId(),
           targetId: peerId,
           candidate: event.candidate
         });
@@ -982,6 +996,7 @@
       await pc.setLocalDescription(offer);
       publish({
         type: 'ROOM_VOICE_OFFER',
+        senderId: myId(),
         targetId: peerId,
         sdp: offer
       });
@@ -990,9 +1005,10 @@
     }
   }
 
-  // Fallback: Play audio slice from base64 (MediaRecorder chunk fallback)
-  function playAudioChunk(peerId, base64Data, mimeType) {
-    // If WebRTC is already streaming from this peer, ignore chunk to prevent echo
+  // Fallback: Play audio slice from base64 (MediaRecorder chunk fallback) with Web Audio API
+  async function playAudioChunk(peerId, base64Data, mimeType) {
+    if (!base64Data || peerId === myId()) return;
+    // If WebRTC is already actively streaming audio from this peer, skip chunk to prevent echo
     if (state.remoteAudioStreams.has(peerId)) return;
 
     try {
@@ -1002,6 +1018,40 @@
         byteNums[i] = byteChars.charCodeAt(i);
       }
       const byteArray = new Uint8Array(byteNums);
+
+      // 1. Try decoding with master Web Audio API context (AudioEngine.ctx or state.audioContext)
+      const audioCtx = window.AudioEngine?.ctx || state.audioContext || (window.AudioContext && new (window.AudioContext || window.webkitAudioContext)());
+      if (audioCtx) {
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+        try {
+          const audioBuffer = await audioCtx.decodeAudioData(byteArray.buffer.slice(0));
+          const source = audioCtx.createBufferSource();
+          source.buffer = audioBuffer;
+          const gainNode = audioCtx.createGain();
+          gainNode.gain.value = 1.0;
+          source.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          source.start(0);
+
+          const member = state.members.get(peerId);
+          if (member) {
+            member.speaking = true;
+            renderMembers();
+            clearTimeout(member._speakTimer);
+            member._speakTimer = setTimeout(() => {
+              member.speaking = false;
+              renderMembers();
+            }, 1000);
+          }
+          return;
+        } catch (decErr) {
+          // If decodeAudioData fails, fallback to HTML5 Audio element below
+        }
+      }
+
+      // 2. Fallback to HTML5 Audio element
       const blob = new Blob([byteArray], { type: mimeType || 'audio/webm' });
       const blobUrl = URL.createObjectURL(blob);
       const audio = new Audio(blobUrl);
@@ -1138,6 +1188,7 @@
             await pc.setLocalDescription(answer);
             publish({
               type: 'ROOM_VOICE_ANSWER',
+              senderId: myId(),
               targetId: payload.senderId,
               sdp: answer
             });
@@ -1246,6 +1297,24 @@
       setText('room-mic-label', state.muted ? 'Bật mic đàm thoại' : 'Đang bật mic · Chạm tắt');
       meter?.classList.toggle('is-active', !state.muted);
 
+      // Sync Dock Mic Button
+      const dockMic = document.getElementById('btn-dock-mic');
+      const dockMicIcon = document.getElementById('dock-mic-icon');
+      const dockMicLabel = document.getElementById('dock-mic-label');
+      if (dockMic) {
+        if (!state.muted) {
+          dockMic.classList.remove('bg-amber-950/85', 'text-amber-100');
+          dockMic.classList.add('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600', 'text-white', 'shadow-[0_0_15px_rgba(16,185,129,0.7)]', 'border-emerald-300');
+          if (dockMicIcon) dockMicIcon.textContent = '🟢';
+          if (dockMicLabel) dockMicLabel.innerHTML = 'Mic: <span class="text-emerald-200 font-black">Bật</span>';
+        } else {
+          dockMic.classList.remove('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600', 'text-white', 'shadow-[0_0_15px_rgba(16,185,129,0.7)]', 'border-emerald-300');
+          dockMic.classList.add('bg-amber-950/85', 'text-amber-100');
+          if (dockMicIcon) dockMicIcon.textContent = '🎙️';
+          if (dockMicLabel) dockMicLabel.innerHTML = 'Micro';
+        }
+      }
+
       if (!state.muted) {
         setupAudioVisualizer();
         startMediaRecorderFallback();
@@ -1320,6 +1389,8 @@
     if (entered) { setRoom(entered); open(); }
   };
   window.toggleRoomMic = toggleMic;
+  window.toggleSanctuaryMic = toggleMic;
+  window.isSanctuaryMicLive = () => !state.muted;
   window.sendRoomChat = send;
   window.sendQuickDharmaBlessing = function (text) {
     sendText(text);
