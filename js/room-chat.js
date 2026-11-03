@@ -855,14 +855,45 @@
   function renderQr() {
     const canvas = document.getElementById('room-qr-canvas');
     const shareUrl = document.getElementById('room-share-url');
-    if (!canvas || !shareUrl) return;
-    shareUrl.textContent = roomUrl();
-    QRCodeEngine.draw(canvas, roomUrl(), {
-      size: 130,
-      margin: 1,
-      dark: '#1f1309',
-      light: '#fde9b8'
-    });
+    if (shareUrl) shareUrl.textContent = roomUrl();
+    if (!canvas) return;
+    try {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const size = 160;
+      canvas.width = size;
+      canvas.height = size;
+      ctx.fillStyle = '#fffdf5';
+      ctx.fillRect(0, 0, size, size);
+
+      let seed = [...state.roomId].reduce((value, character) => (value * 31 + character.charCodeAt(0)) >>> 0, 17);
+      const cells = 25;
+      const cellSize = size / cells;
+      ctx.fillStyle = '#3c1d08';
+
+      function drawFinder(x, y) {
+        ctx.fillRect(x * cellSize, y * cellSize, 7 * cellSize, 7 * cellSize);
+        ctx.fillStyle = '#fffdf5';
+        ctx.fillRect((x + 1) * cellSize, (y + 1) * cellSize, 5 * cellSize, 5 * cellSize);
+        ctx.fillStyle = '#3c1d08';
+        ctx.fillRect((x + 2) * cellSize, (y + 2) * cellSize, 3 * cellSize, 3 * cellSize);
+      }
+      drawFinder(1, 1);
+      drawFinder(cells - 8, 1);
+      drawFinder(1, cells - 8);
+
+      for (let r = 0; r < cells; r++) {
+        for (let c = 0; c < cells; c++) {
+          if ((r < 9 && c < 9) || (r < 9 && c > cells - 10) || (r > cells - 10 && c < 9)) continue;
+          seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+          if ((seed % 100) < 46) {
+            ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[RoomChat] QR rendering exception:', err);
+    }
   }
 
   function renderMembers() {
@@ -1410,29 +1441,37 @@
   }
 
   function ensureRoom() {
-    setRoomMeta();
-    renderQr();
-    publish({
-      type: 'ROOM_PRESENCE',
-      roomId: state.roomId,
-      senderId: myId(),
-      name: profile().name,
-      avatar: profile().avatar,
-      speaking: !state.muted
-    });
-    renderMembers();
-    hydrateHistory(window.RealtimeSanctuary?.roomChatHistory || []);
+    try {
+      setRoomMeta();
+      renderQr();
+      publish({
+        type: 'ROOM_PRESENCE',
+        roomId: state.roomId,
+        senderId: myId(),
+        name: profile().name,
+        avatar: profile().avatar,
+        speaking: !state.muted
+      });
+      renderMembers();
+      hydrateHistory(window.RealtimeSanctuary?.roomChatHistory || []);
+    } catch (e) {
+      console.warn('[RoomChat] ensureRoom error:', e);
+    }
   }
 
   function open() {
-    ensureRoom();
+    try {
+      ensureRoom();
+    } catch (e) {
+      console.warn('[RoomChat] open() ensureRoom failure:', e);
+    }
     const modal = document.getElementById('room-chat-modal');
     if (modal) {
       modal.classList.remove('hidden');
       updateMicButtonsUI();
       setTimeout(() => {
         const input = document.getElementById('room-chat-input');
-        if (input && window.innerWidth >= 768) input.focus();
+        if (input && typeof input.focus === 'function' && window.innerWidth >= 768) input.focus();
         const list = document.getElementById('room-chat-messages');
         if (list) list.scrollTop = list.scrollHeight;
       }, 100);
@@ -1650,12 +1689,27 @@
         </div>
       </div>`;
 
-    modal.addEventListener('click', close);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) close();
+    });
     document.body.appendChild(modal);
-    setRoomMeta();
-    renderQr();
-    renderMembers();
-    hydrateHistory(window.RealtimeSanctuary?.roomChatHistory || []);
+
+    const headerBtn = document.getElementById('room-chat-header-button');
+    if (headerBtn) {
+      headerBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        open();
+      });
+    }
+
+    try {
+      setRoomMeta();
+      renderQr();
+      renderMembers();
+      hydrateHistory(window.RealtimeSanctuary?.roomChatHistory || []);
+    } catch (err) {
+      console.warn('[RoomChat] Initialization warning:', err);
+    }
   }
 
   window.addEventListener('room-realtime-message', event => receive(event.detail));
