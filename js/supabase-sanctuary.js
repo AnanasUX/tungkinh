@@ -302,9 +302,25 @@
             window.RealtimeSanctuary.applyRemoteChantState(payload);
           }
         })
+        .on('broadcast', { event: 'COMMUNAL_CHANT_START' }, ({ payload }) => {
+          if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.handleIncomingMessage === 'function') {
+            window.RealtimeSanctuary.handleIncomingMessage({
+              type: 'COMMUNAL_CHANT_START',
+              ...payload
+            });
+          }
+        })
         .on('broadcast', { event: 'COMMUNAL_CHANT_VERSE' }, ({ payload }) => {
           if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.onCommunalVerseAdvanced === 'function') {
             window.RealtimeSanctuary.onCommunalVerseAdvanced(payload.verseIndex, payload.verseText, false);
+          }
+        })
+        .on('broadcast', { event: 'COMMUNAL_CHANT_STOP' }, ({ payload }) => {
+          if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.handleIncomingMessage === 'function') {
+            window.RealtimeSanctuary.handleIncomingMessage({
+              type: 'COMMUNAL_CHANT_STOP',
+              ...payload
+            });
           }
         })
         .on('broadcast', { event: 'GIFT_BLESSING' }, ({ payload }) => {
@@ -313,16 +329,18 @@
           }
         })
         .on('broadcast', { event: 'SKY_LANTERN' }, ({ payload }) => {
+          const senderName = payload.sender || payload.senderName || 'Hành Giả';
           if (payload && window.spawnFloatingSkyLantern) {
-            window.spawnFloatingSkyLantern(payload.sender || 'Đồng Tu', payload.wish || '', false);
+            window.spawnFloatingSkyLantern(senderName, payload.wish || '', false);
           }
           if (payload && window.showLiveGiftBanner) {
-            window.showLiveGiftBanner('Đèn Hoa Đăng Cầu An', `${payload.sender || 'Đồng tu'} vừa thả đèn hoa đăng: "${payload.wish || ''}"`, 'lantern');
+            window.showLiveGiftBanner('Đèn Hoa Đăng Cầu An', `${senderName} vừa thả đèn hoa đăng: "${payload.wish || ''}"`, 'lantern');
           }
         })
         .on('broadcast', { event: 'PRAYER_SUTRA' }, ({ payload }) => {
+          const senderName = payload.sender || payload.senderName || 'Hành Giả';
           if (payload && window.showLiveGiftBanner) {
-            window.showLiveGiftBanner('Dâng Sớ Cầu An', `Đồng tu ${payload.sender || 'Đồng tu'} vừa thành tâm dâng sớ: "${payload.wish || ''}"`, 'lotus');
+            window.showLiveGiftBanner('Dâng Sớ Cầu An', `Đạo hữu ${senderName} vừa thành tâm dâng sớ: "${payload.wish || ''}"`, 'lotus');
           }
         })
         .on('broadcast', { event: 'CLAIM_SEAT' }, ({ payload }) => {
@@ -493,10 +511,11 @@
       }
       const myClientId = this.getClientId();
 
+      const defaultName = (typeof window.pickUniqueSampleDevotee === 'function') ? window.pickUniqueSampleDevotee().name : 'Phật Tử';
       const payload = {
         clientId: myClientId,
         seatNo: mySeatNo,
-        fullName: profile.fullName || (profile.registered ? 'Đồng Tu' : 'Đồng Tu Mới'),
+        fullName: profile.fullName || defaultName,
         dharmaName: profile.dharmaName || 'Tịnh Tâm',
         avatarType: profile.avatarType || 'monk',
         age: profile.age || 28,
@@ -685,7 +704,7 @@
         seat.occupied = true;
         seat.isDummy = false;
         seat.remoteClientId = dev.clientId;
-        seat.name = dev.fullName || 'Đồng Tu Mới';
+        seat.name = dev.fullName || 'Hành Giả';
         seat.dharma = dev.dharmaName || 'Tịnh Tâm';
         seat.age = dev.age || 25;
         seat.hometown = dev.hometown || 'Việt Nam';
@@ -775,7 +794,7 @@
         seat.occupied = true;
         seat.isDummy = false;
         seat.remoteClientId = dbRow.client_id;
-        seat.name = dbRow.full_name || 'Đồng Tu';
+        seat.name = dbRow.full_name || 'Hành Giả';
         seat.dharma = dbRow.dharma_name || 'Tịnh Tâm';
         seat.type = dbRow.avatar_type || 'monk';
         seat.hometown = dbRow.hometown || '';
@@ -795,9 +814,10 @@
       if (!finalSeatNo) return; // Không ghi nếu chưa có ghế xác định
 
       const myClientId = this.getClientId();
+      const defaultName = (typeof window.pickUniqueSampleDevotee === 'function') ? window.pickUniqueSampleDevotee().name : 'Phật Tử';
       const payload = {
         client_id: myClientId,
-        full_name: profile.fullName || (profile.registered ? 'Đồng Tu' : 'Đồng Tu Mới'),
+        full_name: profile.fullName || defaultName,
         dharma_name: profile.dharmaName || 'Tịnh Tâm',
         avatar_type: profile.avatarType || 'monk',
         seat_no: finalSeatNo,
@@ -836,7 +856,7 @@
           event: eventName,
           payload: Object.assign({}, payload, {
             senderId: this.getClientId(),
-            senderName: (window.currentUserProfile && window.currentUserProfile.fullName) || 'Đồng Tu',
+            senderName: (window.currentUserProfile && window.currentUserProfile.fullName) || 'Hành Giả',
             timestamp: Date.now()
           })
         });

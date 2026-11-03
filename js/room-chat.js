@@ -814,8 +814,13 @@
 
   function profile() {
     const current = window.currentUserProfile || {};
+    const fullName = current.fullName || 'Phật Tử';
+    const location = current.hometown || current.realGpsLocation || 'Việt Nam';
     return {
-      name: current.dharmaName || current.fullName || 'Đồng Tu',
+      fullName: fullName,
+      name: fullName,
+      dharmaName: current.dharmaName || '',
+      location: location,
       avatar: current.avatarType || 'monk'
     };
   }
@@ -849,7 +854,7 @@
     setText('room-member-count', String(state.members.size + 1));
     setText('room-chat-title', publicRoom ? 'Đạo Tràng Chung' : 'Phòng Tu Tập Riêng');
     const tabMembers = document.getElementById('room-tab-members');
-    if (tabMembers) tabMembers.textContent = `👥 Đồng Tu (${state.members.size + 1})`;
+    if (tabMembers) tabMembers.textContent = `👥 Người Online (${state.members.size + 1})`;
   }
 
   function renderQr() {
@@ -901,12 +906,21 @@
     if (!list) return;
     list.innerHTML = '';
 
+    const myProf = profile();
     // Local self member
     const selfRow = document.createElement('div');
     selfRow.className = `room-member${!state.muted ? ' is-speaking' : ''}`;
     selfRow.innerHTML = `
-      <div class="room-member-avatar">${profile().name.slice(0, 1).toUpperCase()}</div>
-      <div class="room-member-name">${profile().name} <span class="text-amber-300 font-normal">(Bạn)</span></div>
+      <div class="room-member-avatar">${myProf.name.slice(0, 1).toUpperCase()}</div>
+      <div class="room-member-name" style="flex:1; min-width:0;">
+        <div style="font-weight:700; color:#fff9e6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          ${myProf.name} <span style="color:#fcd34d; font-weight:normal; font-size:0.85em;">(Bạn)</span>
+        </div>
+        <div style="font-size:0.68rem; color:#fde68a; opacity:0.85; display:flex; align-items:center; gap:3px;">
+          <span>📍 ${myProf.location}</span>
+          ${window.currentUserProfile && window.currentUserProfile.realGpsLocation ? '<span style="color:#34d399; font-weight:bold;">(GPS)</span>' : ''}
+        </div>
+      </div>
       <div class="room-member-state">${!state.muted ? '🟢 Đang nói' : 'Tịnh niệm'}</div>
     `;
     list.appendChild(selfRow);
@@ -915,9 +929,18 @@
     state.members.forEach(member => {
       const row = document.createElement('div');
       row.className = `room-member${member.speaking ? ' is-speaking' : ''}`;
+      const devName = member.fullName || member.name || 'Phật Tử';
+      const devLoc = member.location || member.hometown || 'Việt Nam';
       row.innerHTML = `
-        <div class="room-member-avatar">${(member.name || 'Đ').slice(0, 1).toUpperCase()}</div>
-        <div class="room-member-name">${member.name || 'Đồng Tu'}</div>
+        <div class="room-member-avatar">${devName.slice(0, 1).toUpperCase()}</div>
+        <div class="room-member-name" style="flex:1; min-width:0;">
+          <div style="font-weight:700; color:#fff9e6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            ${devName}
+          </div>
+          <div style="font-size:0.68rem; color:#fde68a; opacity:0.85; display:flex; align-items:center; gap:3px;">
+            <span>📍 ${devLoc}</span>
+          </div>
+        </div>
         <div class="room-member-state">${member.speaking ? '🟢 Đang nói' : 'Tịnh niệm'}</div>
       `;
       list.appendChild(row);
@@ -953,8 +976,15 @@
       messages.forEach(message => {
         const row = document.createElement('div');
         row.className = `room-chat-message${message.self ? ' is-self' : ''}`;
-        row.innerHTML = '<div class="room-chat-meta"><strong></strong><time></time></div><div class="room-chat-bubble"></div>';
-        row.querySelector('strong').textContent = message.name || 'Đồng Tu';
+        row.innerHTML = '<div class="room-chat-meta"><strong class="room-msg-sender"></strong><span class="room-msg-loc"></span><time></time></div><div class="room-chat-bubble"></div>';
+        const senderName = message.fullName || message.name || 'Phật Tử';
+        const senderLoc = message.location || message.hometown || '';
+        row.querySelector('.room-msg-sender').textContent = senderName;
+        const locEl = row.querySelector('.room-msg-loc');
+        if (locEl && senderLoc) {
+          locEl.textContent = `📍 ${senderLoc}`;
+          locEl.style.cssText = 'font-size:0.62rem; color:#fde68a; opacity:0.8; margin-left:4px;';
+        }
         row.querySelector('time').textContent = new Date(message.time || message.timestamp || Date.now()).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
         row.querySelector('.room-chat-bubble').textContent = message.text || '';
         list.appendChild(row);
@@ -1275,9 +1305,13 @@
       case 'ROOM_VOICE_ANNOUNCE':
         if (payload.senderId) {
           const isSpeaking = Boolean(payload.speaking);
+          const devName = payload.fullName || payload.name || 'Phật Tử';
+          const devLoc = payload.location || payload.hometown || 'Việt Nam';
           state.members.set(payload.senderId, {
             id: payload.senderId,
-            name: payload.name || 'Đồng Tu',
+            name: devName,
+            fullName: devName,
+            location: devLoc,
             speaking: isSpeaking,
             lastSeen: Date.now()
           });
@@ -1453,12 +1487,15 @@
     try {
       setRoomMeta();
       renderQr();
+      const myProf = profile();
       publish({
         type: 'ROOM_PRESENCE',
         roomId: state.roomId,
         senderId: myId(),
-        name: profile().name,
-        avatar: profile().avatar,
+        name: myProf.name,
+        fullName: myProf.fullName,
+        location: myProf.location,
+        avatar: myProf.avatar,
         speaking: !state.muted
       });
       renderMembers();
@@ -1497,13 +1534,16 @@
     const text = (customText || input?.value || '').trim().slice(0, 500);
     if (!text) return;
 
+    const myProf = profile();
     const message = {
       type: 'ROOM_CHAT',
       roomId: state.roomId,
       senderId: myId(),
       messageId: `${myId()}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       channel: state.channel === 'dm' ? 'dm' : 'lobby',
-      name: profile().name,
+      name: myProf.name,
+      fullName: myProf.fullName,
+      location: myProf.location,
       text,
       time: Date.now(),
       self: true
@@ -1628,7 +1668,7 @@
           <div class="room-channel-tabs" role="tablist" aria-label="Luồng đàm luận">
             <button type="button" class="room-channel-tab is-active" data-channel="lobby" onclick="switchRoomChannel('lobby')" role="tab">🌐 Đạo Tràng Toàn Cầu</button>
             <button type="button" class="room-channel-tab" data-channel="dm" onclick="switchRoomChannel('dm')" role="tab">🔒 Nhắn Tin Riêng</button>
-            <button type="button" id="room-tab-members" class="room-channel-tab" data-channel="members" onclick="switchRoomChannel('members')" role="tab">👥 Đồng Tu (1)</button>
+            <button type="button" id="room-tab-members" class="room-channel-tab" data-channel="members" onclick="switchRoomChannel('members')" role="tab">👥 Người Online (1)</button>
           </div>
           <div id="room-sync-status" class="room-sync-status">
             <span class="room-sync-dot"></span>
@@ -1668,8 +1708,8 @@
 
           <!-- Sidebar Column: Members & Room Management -->
           <aside class="room-chat-sidebar" aria-label="Thông tin phòng">
-            <span class="room-side-title">Đồng Tu Đang Huân Tu</span>
-            <p class="room-side-caption">Các đạo hữu cùng phòng nghe giọng nói trực tiếp và trạng thái tịnh tâm.</p>
+            <span class="room-side-title">Đạo Hữu Đang Online</span>
+            <p class="room-side-caption">Danh sách đạo hữu thực tế kèm vị trí địa lý kết nối trong Chánh Điện.</p>
             
             <div id="room-members-list"></div>
 

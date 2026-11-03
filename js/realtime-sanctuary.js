@@ -784,7 +784,7 @@
       const banner = document.getElementById('communal-chant-banner');
       if (!banner) return;
 
-      if (!this.sharedChanting.isActive || !this.sharedChanting.isParticipant) {
+      if (!this.sharedChanting.isActive) {
         banner.classList.add('hidden');
         return;
       }
@@ -800,17 +800,18 @@
       if (titleEl) titleEl.textContent = this.sharedChanting.scriptureTitle;
       if (leaderEl) {
         const isMe = this.sharedChanting.leaderId === clientId;
-        leaderEl.textContent = isMe ? 'Chủ lễ: BẠN' : `Chủ lễ: ${this.sharedChanting.leaderName}`;
+        leaderEl.textContent = isMe ? 'Chủ lễ: BẠN' : `Chủ lễ: ${this.sharedChanting.leaderName || 'Hành Giả'}`;
       }
       if (progEl) {
         progEl.textContent = `Câu ${this.sharedChanting.verseIndex + 1} / ${this.sharedChanting.totalVerses}`;
       }
       if (partEl) {
         const total = this.getOnlineCount();
-        partEl.textContent = `🟢 ${total} đồng tu đang hòa giọng`;
+        partEl.textContent = `🟢 ${total} người đang cùng tụng`;
       }
       if (verseEl) {
-        verseEl.textContent = `"${this.sharedChanting.verseText}"`;
+        const text = this.sharedChanting.verseText || '';
+        verseEl.innerHTML = `<span class="communal-verse-ticker">"${text}"</span>`;
       }
     },
 
@@ -904,15 +905,14 @@
 
         case 'COMMUNAL_CHANT_VERSE':
           this.sharedChanting.isActive = true;
+          this.sharedChanting.isParticipant = true;
           this.sharedChanting.leaderId = msg.leaderId;
           this.sharedChanting.scriptureId = msg.scriptureId;
           this.sharedChanting.verseIndex = msg.verseIndex;
           this.sharedChanting.verseText = msg.verseText;
           this.sharedChanting.totalVerses = msg.totalVerses;
 
-          if (this.sharedChanting.isParticipant) {
-            this.onCommunalVerseAdvanced(msg.verseIndex, msg.verseText, false);
-          }
+          this.onCommunalVerseAdvanced(msg.verseIndex, msg.verseText, false);
           break;
 
         case 'COMMUNAL_CHANT_FINISH':

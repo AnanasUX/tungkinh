@@ -514,78 +514,50 @@
     }
 
     /* --------------------------------------------------------------------------
-       TIER 1. PC / DESKTOP WIDESCREEN (>= 1400px): THANH CÔNG CỤ ĐẢO NỔI 1 HÀNG DUY NHẤT
+       PC & LAPTOP (>= 1024px): THANH CÔNG CỤ ĐẢO NỔI 1 HÀNG DUY NHẤT (KHÔNG CHIA 2 HÀNG)
        -------------------------------------------------------------------------- */
-    @media screen and (min-width: 1400px) {
+    @media screen and (min-width: 1024px) {
       footer {
         padding: 4px 16px !important;
         padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
       }
       #bottom-dock-scroll {
-        display: grid !important;
-        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
-        gap: 4px 6px !important;
-        width: 100% !important;
-        max-width: 980px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 6px !important;
+        width: auto !important;
+        max-width: 98vw !important;
         margin: 0 auto !important;
         padding: 6px 14px !important;
-        background: linear-gradient(180deg, rgba(35, 18, 8, 0.92) 0%, rgba(15, 7, 2, 0.98) 100%) !important;
-        backdrop-filter: blur(14px) !important;
-        -webkit-backdrop-filter: blur(14px) !important;
+        background: linear-gradient(180deg, rgba(35, 18, 8, 0.94) 0%, rgba(15, 7, 2, 0.98) 100%) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
         border: 1.5px solid rgba(245, 190, 70, 0.5) !important;
-        border-radius: 20px !important;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(245, 180, 60, 0.2) !important;
-        justify-items: stretch !important;
+        border-radius: 9999px !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(245, 180, 60, 0.25) !important;
+        overflow-x: auto !important;
+        scrollbar-width: none !important;
+      }
+      #bottom-dock-scroll::-webkit-scrollbar {
+        display: none !important;
       }
       #bottom-dock-scroll > button {
-        height: 33px !important;
+        height: 35px !important;
         font-size: 11px !important;
-        padding: 3px 6px !important;
+        padding: 3px 10px !important;
         white-space: nowrap !important;
         border-radius: 9999px !important;
-        width: 100% !important;
-        min-width: 0 !important;
+        flex-shrink: 0 !important;
+        width: auto !important;
+        min-width: max-content !important;
         justify-content: center !important;
       }
       #bottom-dock-scroll > button svg {
-        width: 13px !important;
-        height: 13px !important;
-      }
-    }
-
-    /* --------------------------------------------------------------------------
-       TIER 2. LAPTOP & SMALL PC (1024px - 1399px): 2 HÀNG x 7 CỘT CÂN ĐỐI CĂN GIỮA
-       -------------------------------------------------------------------------- */
-    @media screen and (min-width: 1024px) and (max-width: 1399px) {
-      #bottom-dock-scroll {
-        display: grid !important;
-        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
-        gap: 4px 6px !important;
-        width: 100% !important;
-        max-width: 980px !important;
-        margin: 0 auto !important;
-        padding: 6px 12px !important;
-        background: rgba(18, 9, 4, 0.84) !important;
-        backdrop-filter: blur(14px) !important;
-        -webkit-backdrop-filter: blur(14px) !important;
-        border: 1px solid rgba(245, 190, 70, 0.35) !important;
-        border-radius: 18px !important;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.8) !important;
-        justify-items: stretch !important;
-      }
-      #bottom-dock-scroll > button {
-        width: 100% !important;
-        min-width: 0 !important;
-        height: 32px !important;
-        font-size: 11px !important;
-        padding: 3px 6px !important;
-        justify-content: center !important;
-        text-align: center !important;
-        border-radius: 9999px !important;
-      }
-      #bottom-dock-scroll > button svg {
-        width: 13px !important;
-        height: 13px !important;
+        width: 14px !important;
+        height: 14px !important;
       }
     }
 
@@ -687,6 +659,28 @@
         line-height: 1.15 !important;
         max-width: 280px !important;
       }
+
+    /* Sacred Communal Chant Running Verse Marquee (Chữ chạy mượt mà trang nghiêm) */
+    .communal-verse-stream-wrap {
+      overflow: hidden !important;
+      white-space: nowrap !important;
+      position: relative !important;
+      width: 100% !important;
+    }
+    .communal-verse-ticker {
+      display: inline-block !important;
+      white-space: nowrap !important;
+      padding-left: 60% !important;
+      animation: communalVerseFlow 14s linear infinite !important;
+      will-change: transform;
+    }
+    .communal-verse-ticker:hover {
+      animation-play-state: paused !important;
+    }
+    @keyframes communalVerseFlow {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-100%); }
+    }
 
       /* Floating Toast Notification trên Mobile: Luôn ở z-[300], nổi bật, không bị che */
       #live-gift-banner {
@@ -1640,7 +1634,7 @@
           <button onclick="openServerConfigModal()" id="btn-realtime-server-badge" title="Xem Trạng Thái Máy Chủ & Luồng Lưu Trữ Chung (Supabase & Port 443 Sync)"
             class="temple-panel hover:border-amber-300/80 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] cursor-pointer transition active:scale-95 shadow">
             <span id="hud-realtime-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Đang kết nối Máy Chủ & Supabase Realtime"></span>
-            <span class="text-amber-100 font-medium"><strong id="hud-online-count" class="text-amber-300 font-bold">1</strong>/<span id="hud-total-seats">12</span> đồng tu</span>
+            <span class="text-amber-100 font-medium"><strong id="hud-online-count" class="text-amber-300 font-bold">1</strong>/<span id="hud-total-seats">12</span> người online</span>
             <span class="text-[8.5px] text-emerald-300 hidden md:inline ml-0.5 font-mono">⚡ Supabase</span>
           </button>
         </div>
@@ -1996,9 +1990,9 @@
       </section>
 
       <!-- Real-time Shared Room Chanting HUD Banner (Đồng Bộ Khóa Lễ Tụng Kinh Thời Gian Thực) -->
-      <div id="communal-chant-banner" class="hidden absolute left-1/2 -translate-x-1/2 top-[7.5%] sm:top-[7%] z-45 w-[96%] max-w-[760px] pointer-events-auto transition-all duration-300">
-        <div class="px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl bg-gradient-to-r from-stone-950/95 via-amber-950/95 to-stone-950/95 border-2 border-emerald-400/80 shadow-[0_0_30px_rgba(16,185,129,0.35)] backdrop-blur-md flex flex-col gap-1 text-amber-100">
-          <!-- Top Row: Status, Scripture Name, Leader, Progress, Close -->
+      <div id="communal-chant-banner" onclick="openSharedChantingModal()" class="hidden absolute left-1/2 -translate-x-1/2 top-[7.5%] sm:top-[7%] z-45 w-[96%] max-w-[760px] pointer-events-auto transition-all duration-300 cursor-pointer" title="Nhấp để phóng to trở lại Phòng Đồng Tụng Chung">
+        <div class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-gradient-to-r from-stone-950/95 via-amber-950/95 to-stone-950/95 border-2 border-emerald-400/80 shadow-[0_0_30px_rgba(16,185,129,0.35)] backdrop-blur-md flex flex-col gap-1 text-amber-100 hover:border-emerald-300 transition">
+          <!-- Top Row: Status, Scripture Name, Leader, Progress, Expand, Stop -->
           <div class="flex items-center justify-between border-b border-amber-300/30 pb-1 text-[10px] sm:text-xs">
             <div class="flex items-center gap-1.5 flex-wrap">
               <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/90 border border-emerald-400 text-emerald-300 font-extrabold text-[9px] sm:text-[10px]">
@@ -2009,31 +2003,34 @@
               <span class="text-amber-200/60 hidden sm:inline">•</span>
               <span id="communal-chant-leader" class="text-amber-200/80 hidden sm:inline">Chủ lễ: Minh Tâm</span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
               <span id="communal-chant-progress" class="font-mono text-emerald-300 font-bold bg-black/60 px-2 py-0.5 rounded border border-emerald-500/40 text-[9.5px]">
                 Câu 1 / 84
               </span>
               <span id="communal-chant-participants" class="font-semibold text-amber-300 text-[9.5px] hidden sm:inline">
-                🟢 2 đang cùng tụng
+                🟢 1 người cùng tụng
               </span>
-              <button onclick="leaveOrStopCommunalChant()" title="Rời hoặc dừng khóa lễ đồng tụng" class="w-5 h-5 rounded-full bg-white/10 hover:bg-rose-500 hover:text-white flex items-center justify-center text-amber-200/80 text-[11px] transition">
-                ✕
+              <button type="button" onclick="event.stopPropagation(); openSharedChantingModal();" title="Mở rộng cửa sổ Khóa Lễ Đồng Tụng" class="px-2 py-0.5 rounded-full bg-amber-500/25 hover:bg-amber-500/40 border border-amber-300/60 text-[9px] sm:text-[10px] text-amber-200 font-bold transition flex items-center gap-1 cursor-pointer">
+                <span>🗖 Phóng to</span>
+              </button>
+              <button type="button" onclick="event.stopPropagation(); leaveOrStopCommunalChant();" title="Rời hoặc dừng khóa lễ đồng tụng" class="px-2 py-0.5 rounded-full bg-rose-600/90 hover:bg-rose-500 border border-rose-300 text-[9.5px] text-white font-extrabold transition shadow-sm active:scale-95 cursor-pointer">
+                <span>✕ Huỷ</span>
               </button>
             </div>
           </div>
-          <!-- Bottom Row: Glowing Active Sacred Verse & Quick Actions -->
+          <!-- Bottom Row: Flowing Running Verse Ticker (Chữ đang chạy tới) -->
           <div class="flex items-center justify-between gap-2 pt-0.5">
-            <div class="flex-1 text-center sm:text-left overflow-hidden">
-              <div id="communal-active-verse" class="font-scripture text-xs sm:text-sm md:text-base font-bold text-amber-100 tracking-wide truncate drop-shadow-[0_0_8px_rgba(253,224,71,0.6)]">
-                "Thiên thủ thiên nhãn vô ngại đại bi tâm đà la ni"
+            <div class="flex-1 overflow-hidden relative communal-verse-stream-wrap">
+              <div id="communal-active-verse" class="font-scripture text-xs sm:text-sm md:text-base font-bold text-amber-100 tracking-wide drop-shadow-[0_0_8px_rgba(253,224,71,0.6)]">
+                <span class="communal-verse-ticker">"Nam mô Đại Bi Hội Thượng Phật Bồ Tát (3 lần, 1 lạy)"</span>
               </div>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
-              <button onclick="openScriptureModal()" class="px-2 py-0.5 rounded-md bg-amber-500/20 hover:bg-amber-500/35 border border-amber-300/40 text-[9px] sm:text-[10.5px] text-amber-200 font-semibold flex items-center gap-1 transition">
-                <span>📖 Xem Bản Kinh</span>
+              <button type="button" onclick="event.stopPropagation(); openScriptureModal();" class="px-2 py-0.5 rounded-md bg-amber-500/20 hover:bg-amber-500/35 border border-amber-300/40 text-[9px] sm:text-[10.5px] text-amber-200 font-semibold flex items-center gap-1 transition">
+                <span>📖 Kinh Bản</span>
               </button>
-              <button onclick="ringTempleBellAction()" class="px-2 py-0.5 rounded-md bg-amber-950/80 hover:bg-amber-900 border border-amber-300/40 text-[9px] sm:text-[10.5px] text-amber-200 font-semibold flex items-center gap-1 transition">
-                <span>🔔 Thỉnh Chuông</span>
+              <button type="button" onclick="event.stopPropagation(); ringTempleBellAction();" class="px-2 py-0.5 rounded-md bg-amber-950/80 hover:bg-amber-900 border border-amber-300/40 text-[9px] sm:text-[10.5px] text-amber-200 font-semibold flex items-center gap-1 transition">
+                <span>🔔 Chuông</span>
               </button>
             </div>
           </div>
@@ -2243,141 +2240,170 @@
             </div>
           </div>
 
-          <form id="entry-registration-form" onsubmit="handleEnterTempleSubmit(event)" class="mt-1.5 space-y-1.5 text-xs">
+          <form id="entry-registration-form" onsubmit="handleEnterTempleSubmit(event)" class="mt-2 space-y-2 text-xs">
             
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-              <div>
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px] flex items-center justify-between">
-                  <span>1. Họ và tên đạo hữu <span class="text-red-400">*</span></span>
-                  <button type="button" onclick="rollSuggestedFullName()" class="text-[9px] text-amber-300 hover:underline">🎲 Gợi ý</button>
-                </label>
-                <input id="reg-fullname" type="text" required maxlength="28" value="" placeholder="Trần Văn Nam"
-                  class="w-full px-2.5 py-1 sm:py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 placeholder-amber-200/40 focus:outline-none focus:border-amber-300 text-[11px] sm:text-xs font-semibold transition" />
-              </div>
-
-              <div>
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px] flex items-center justify-between">
-                  <span>2. Pháp danh</span>
-                  <button type="button" id="btn-reg-roll-dharma" onclick="rollSuggestedDharmaName()" class="text-[9px] text-emerald-300 hover:underline">🎲 Đổi</button>
-                </label>
-                <input id="reg-dharma-name" type="text" maxlength="20" value="" placeholder="Minh Tâm"
-                  class="w-full px-2.5 py-1 sm:py-1.5 rounded-lg bg-black/60 border border-emerald-400/45 text-emerald-200 placeholder-amber-200/40 focus:outline-none focus:border-emerald-300 text-[11px] sm:text-xs font-bold transition" />
-              </div>
-
-              <div>
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
-                  3. Quê quán <span class="text-red-400">*</span>
-                </label>
-                <input id="reg-hometown" list="vn-provinces-list" type="text" required maxlength="30" value="Hà Nội" placeholder="Tỉnh/Thành..."
-                  class="w-full px-2.5 py-1 sm:py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 placeholder-amber-200/35 focus:outline-none focus:border-amber-300 text-[11px] sm:text-xs font-semibold transition" />
-                <datalist id="vn-provinces-list">
-                  <option value="Hà Nội"></option>
-                  <option value="TP. Hồ Chí Minh"></option>
-                  <option value="Đà Nẵng"></option>
-                  <option value="Thừa Thiên Huế"></option>
-                  <option value="Hải Phòng"></option>
-                  <option value="Cần Thơ"></option>
-                  <option value="Quảng Ninh"></option>
-                  <option value="Nghệ An"></option>
-                  <option value="Thanh Hóa"></option>
-                  <option value="Nam Định"></option>
-                  <option value="Bắc Ninh"></option>
-                  <option value="Lâm Đồng"></option>
-                </datalist>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-12 gap-1.5 items-center">
-              <div class="sm:col-span-7">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
-                  4. Ngày · Tháng · Năm sinh
-                </label>
-                <div class="grid grid-cols-3 gap-1">
-                  <input id="reg-day" type="text" inputmode="numeric" autocomplete="off" required placeholder="Ngày" value="31"
-                    class="w-full px-2 py-1 rounded-lg bg-black/60 border border-amber-300/45 text-center text-amber-50 font-bold text-[11px] sm:text-xs focus:outline-none focus:border-amber-300 transition" />
-                  <input id="reg-month" type="text" inputmode="numeric" autocomplete="off" required placeholder="Tháng" value="10"
-                    class="w-full px-2 py-1 rounded-lg bg-black/60 border border-amber-300/45 text-center text-amber-50 font-bold text-[11px] sm:text-xs focus:outline-none focus:border-amber-300 transition" />
-                  <input id="reg-year" type="text" inputmode="numeric" autocomplete="off" required placeholder="Năm" value="1996"
-                    class="w-full px-2 py-1 rounded-lg bg-black/60 border border-amber-300/45 text-center text-amber-50 font-bold text-[11px] sm:text-xs focus:outline-none focus:border-amber-300 transition" />
-                </div>
-              </div>
-
-              <div class="sm:col-span-5">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
-                  5. Tuổi & Bản Mệnh
-                </label>
-                <div class="flex items-center gap-1.5">
-                  <div class="relative w-16 shrink-0">
-                    <input id="reg-age" type="number" min="1" max="120" required value="30"
-                      class="w-full px-2 py-1 rounded-lg bg-black/60 border border-amber-300/45 text-amber-300 font-extrabold text-[11px] sm:text-xs focus:outline-none focus:border-amber-300 transition" />
-                    <span class="absolute right-1 top-1/2 -translate-y-1/2 text-amber-200/70 text-[8.5px] pointer-events-none">t</span>
-                  </div>
-                  <div id="destiny-element-badge" class="flex-1 px-2 py-0.5 rounded-lg bg-amber-500/15 border border-amber-300/40 text-[9.5px] leading-tight truncate">
-                    <span id="destiny-canchi" class="font-bold text-amber-200">Bính Tý</span> · 
-                    <span id="destiny-element" class="text-emerald-300 font-semibold">Mệnh Thủy</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-12 gap-1.5">
-              <div class="sm:col-span-7">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
-                  6. Chọn hình tướng Chibi:
-                </label>
-                <div class="grid grid-cols-3 gap-1">
-                  <label class="cursor-pointer">
-                    <input type="radio" name="regAvatarType" value="monk" checked class="peer hidden" />
-                    <div class="p-1 sm:p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1 transition active:scale-95">
-                      <span class="text-sm">🧘</span>
-                      <div class="leading-none truncate">
-                        <div class="font-bold text-[9.5px] text-amber-100 truncate">Chú Tiểu</div>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label class="cursor-pointer">
-                    <input type="radio" name="regAvatarType" value="female" class="peer hidden" />
-                    <div class="p-1 sm:p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1 transition active:scale-95">
-                      <span class="text-sm">🧕</span>
-                      <div class="leading-none truncate">
-                        <div class="font-bold text-[9.5px] text-amber-100 truncate">Phật Tử</div>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label class="cursor-pointer">
-                    <input type="radio" name="regAvatarType" value="layman" class="peer hidden" />
-                    <div class="p-1 sm:p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1 transition active:scale-95">
-                      <span class="text-sm">🟤</span>
-                      <div class="leading-none truncate">
-                        <div class="font-bold text-[9.5px] text-amber-100 truncate">Cư Sĩ</div>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <div class="sm:col-span-5">
-                <label class="block text-amber-200 font-semibold mb-0.5 text-[10px] flex items-center justify-between">
-                  <span>7. Vị Trí Bồ Đoàn:</span>
-                  <span id="reg-selected-seat-badge" class="text-[9.5px] font-bold text-amber-300">#2</span>
-                </label>
-                <div class="bg-black/60 p-1.5 rounded-lg border border-amber-300/40">
-                  <div class="grid grid-cols-6 gap-0.5" id="reg-seats-selector-grid">
-                    <!-- Populated dynamically via renderRegSeatsSelector() -->
-                  </div>
-                </div>
-              </div>
-            </div>
-
+            <!-- 1. Họ và tên đạo hữu (Bắt buộc) -->
             <div>
-              <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
-                8. Tâm nguyện khi bước vào Chánh Điện:
+              <label class="block text-amber-200 font-bold mb-1 text-[11px] flex items-center justify-between">
+                <span>1. Họ và tên đạo hữu <span class="text-red-400">*</span></span>
+                <button type="button" onclick="rollSuggestedFullName()" class="text-[9.5px] text-amber-300 hover:text-amber-100 underline">🎲 Gợi ý tên</button>
               </label>
-              <input id="reg-wish" type="text" maxlength="55" value="Cầu bình an, sức khỏe dồi dào & gia đình sum vầy"
-                class="w-full px-2.5 py-1 sm:py-1.5 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 focus:outline-none focus:border-amber-300 text-[11px] sm:text-xs transition" />
+              <input id="reg-fullname" type="text" required maxlength="28" value="" placeholder="Ví dụ: Trần Văn Nam"
+                class="w-full px-3 py-1.5 sm:py-2 rounded-xl bg-black/65 border border-amber-300/60 text-amber-50 placeholder-amber-200/40 focus:outline-none focus:border-amber-300 text-xs sm:text-sm font-bold transition shadow-inner" />
             </div>
+
+            <!-- 2. Ngày Tháng Năm Sinh & Tuổi (Bắt buộc) -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+              <div class="sm:col-span-8">
+                <label class="block text-amber-200 font-semibold mb-1 text-[10.5px]">
+                  2. Ngày · Tháng · Năm sinh <span class="text-red-400">*</span>
+                </label>
+                <div class="grid grid-cols-3 gap-1.5">
+                  <input id="reg-day" type="text" inputmode="numeric" autocomplete="off" required placeholder="Ngày" value="31"
+                    class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-amber-300/50 text-center text-amber-50 font-bold text-xs sm:text-sm focus:outline-none focus:border-amber-300 transition" />
+                  <input id="reg-month" type="text" inputmode="numeric" autocomplete="off" required placeholder="Tháng" value="10"
+                    class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-amber-300/50 text-center text-amber-50 font-bold text-xs sm:text-sm focus:outline-none focus:border-amber-300 transition" />
+                  <input id="reg-year" type="text" inputmode="numeric" autocomplete="off" required placeholder="Năm" value="1996"
+                    class="w-full px-2 py-1.5 rounded-lg bg-black/60 border border-amber-300/50 text-center text-amber-50 font-bold text-xs sm:text-sm focus:outline-none focus:border-amber-300 transition" />
+                </div>
+              </div>
+
+              <div class="sm:col-span-4">
+                <label class="block text-amber-200 font-semibold mb-1 text-[10.5px]">
+                  Tuổi hiện tại
+                </label>
+                <div class="relative w-full">
+                  <input id="reg-age" type="number" min="1" max="120" required value="30"
+                    class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-amber-300/50 text-amber-300 font-extrabold text-xs sm:text-sm focus:outline-none focus:border-amber-300 transition" />
+                  <span class="absolute right-2 top-1/2 -translate-y-1/2 text-amber-200/70 text-[9px] pointer-events-none">tuổi</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Địa chỉ / Vị trí thực tế (GPS Tự Động Định Vị) -->
+            <div>
+              <label class="block text-amber-200 font-semibold mb-1 text-[10.5px] flex items-center justify-between">
+                <span>3. Địa chỉ / Vị trí thực tế (GPS) <span class="text-red-400">*</span></span>
+                <button type="button" onclick="detectUserRealLocation()" class="text-[9.5px] text-emerald-300 hover:text-emerald-100 flex items-center gap-1 font-semibold underline cursor-pointer">
+                  <span>📍 Lấy lại GPS</span>
+                </button>
+              </label>
+              <div class="relative">
+                <input id="reg-hometown" list="vn-provinces-list" type="text" required maxlength="35" value="Thái Bình" placeholder="Đang xác thực GPS..."
+                  class="w-full pl-8 pr-3 py-1.5 rounded-xl bg-black/65 border border-amber-300/50 text-amber-100 text-xs sm:text-sm font-semibold focus:outline-none focus:border-amber-300 transition" />
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm pointer-events-none">📍</span>
+              </div>
+              <div id="reg-gps-badge" class="mt-1 text-[9.5px] text-emerald-300/90 flex items-center gap-1">
+                <span>✓ Vị trí thực tế được nhận diện theo GPS thiết bị của bạn.</span>
+              </div>
+              <datalist id="vn-provinces-list">
+                <option value="Thái Bình"></option>
+                <option value="Hà Nội"></option>
+                <option value="TP. Hồ Chí Minh"></option>
+                <option value="Đà Nẵng"></option>
+                <option value="Hải Phòng"></option>
+                <option value="Nam Định"></option>
+                <option value="Nghệ An"></option>
+                <option value="Thanh Hóa"></option>
+                <option value="Quảng Ninh"></option>
+                <option value="Bắc Ninh"></option>
+                <option value="Cần Thơ"></option>
+                <option value="Huế"></option>
+              </datalist>
+            </div>
+
+            <!-- TÙY CHỌN NÂNG CAO (THU GỌN THEO YÊU CẦU ĐỂ TỐI ƯU UX) -->
+            <details class="group mt-2 border border-amber-400/25 rounded-xl bg-black/40 overflow-hidden text-xs">
+              <summary class="cursor-pointer px-3 py-2 text-[10.5px] font-bold text-amber-300 hover:text-amber-100 flex items-center justify-between select-none bg-amber-500/10">
+                <span class="flex items-center gap-1.5">
+                  <span>⚙️</span>
+                  <span>Tùy chọn nâng cao (Pháp danh, Hình tướng Chibi, Bồ đoàn, Bản mệnh)</span>
+                </span>
+                <span class="group-open:rotate-180 transition-transform text-amber-400 text-xs">▼</span>
+              </summary>
+              
+              <div class="p-2.5 space-y-2 border-t border-amber-300/20">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-amber-200 font-semibold mb-0.5 text-[10px] flex items-center justify-between">
+                      <span>Pháp danh</span>
+                      <button type="button" id="btn-reg-roll-dharma" onclick="rollSuggestedDharmaName()" class="text-[9px] text-emerald-300 hover:underline">🎲 Đổi</button>
+                    </label>
+                    <input id="reg-dharma-name" type="text" maxlength="20" value="" placeholder="Minh Tâm"
+                      class="w-full px-2.5 py-1 rounded-lg bg-black/60 border border-emerald-400/45 text-emerald-200 placeholder-amber-200/40 focus:outline-none focus:border-emerald-300 text-[11px] font-bold transition" />
+                  </div>
+
+                  <div>
+                    <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
+                      Bản Mệnh
+                    </label>
+                    <div id="destiny-element-badge" class="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-300/40 text-[10px] leading-tight truncate">
+                      <span id="destiny-canchi" class="font-bold text-amber-200">Bính Tý</span> · 
+                      <span id="destiny-element" class="text-emerald-300 font-semibold">Mệnh Thủy</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                  <div class="sm:col-span-7">
+                    <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
+                      Chọn hình tướng Chibi:
+                    </label>
+                    <div class="grid grid-cols-3 gap-1">
+                      <label class="cursor-pointer">
+                        <input type="radio" name="regAvatarType" value="monk" checked class="peer hidden" />
+                        <div class="p-1 sm:p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1 transition active:scale-95">
+                          <span class="text-sm">🧘</span>
+                          <div class="leading-none truncate">
+                            <div class="font-bold text-[9.5px] text-amber-100 truncate">Chú Tiểu</div>
+                          </div>
+                        </div>
+                      </label>
+
+                      <label class="cursor-pointer">
+                        <input type="radio" name="regAvatarType" value="female" class="peer hidden" />
+                        <div class="p-1 sm:p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1 transition active:scale-95">
+                          <span class="text-sm">🧕</span>
+                          <div class="leading-none truncate">
+                            <div class="font-bold text-[9.5px] text-amber-100 truncate">Phật Tử</div>
+                          </div>
+                        </div>
+                      </label>
+
+                      <label class="cursor-pointer">
+                        <input type="radio" name="regAvatarType" value="layman" class="peer hidden" />
+                        <div class="p-1 sm:p-1.5 rounded-lg border border-amber-300/30 bg-black/45 peer-checked:border-amber-400 peer-checked:bg-amber-500/25 flex items-center gap-1 transition active:scale-95">
+                          <span class="text-sm">🟤</span>
+                          <div class="leading-none truncate">
+                            <div class="font-bold text-[9.5px] text-amber-100 truncate">Cư Sĩ</div>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="sm:col-span-5">
+                    <label class="block text-amber-200 font-semibold mb-0.5 text-[10px] flex items-center justify-between">
+                      <span>Vị Trí Bồ Đoàn:</span>
+                      <span id="reg-selected-seat-badge" class="text-[9.5px] font-bold text-amber-300">#2</span>
+                    </label>
+                    <div class="bg-black/60 p-1 rounded-lg border border-amber-300/40">
+                      <div class="grid grid-cols-6 gap-0.5" id="reg-seats-selector-grid">
+                        <!-- Populated dynamically via renderRegSeatsSelector() -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-amber-200 font-semibold mb-0.5 text-[10px]">
+                    Tâm nguyện khi bước vào Chánh Điện:
+                  </label>
+                  <input id="reg-wish" type="text" maxlength="55" value="Cầu bình an, sức khỏe dồi dào & gia đình sum vầy"
+                    class="w-full px-2.5 py-1 rounded-lg bg-black/60 border border-amber-300/45 text-amber-50 focus:outline-none focus:border-amber-300 text-[11px] transition" />
+                </div>
+              </div>
+            </details>
 
             <div class="pt-1 flex items-center justify-center gap-2">
               <button type="button" id="btn-cancel-edit" onclick="closeRegistrationModal()"
@@ -2660,7 +2686,7 @@
               </div>
             </div>
             <div class="p-2.5 rounded-xl bg-black/60 border border-amber-300/30 text-center">
-              <div class="text-[9.5px] text-amber-200/70 uppercase">Đồng Tu Online</div>
+              <div class="text-[9.5px] text-amber-200/70 uppercase">Người Online</div>
               <div id="srv-online-count" class="text-xs sm:text-sm font-bold text-amber-200 mt-0.5">1 đạo hữu</div>
             </div>
             <div class="p-2.5 rounded-xl bg-black/60 border border-amber-300/30 text-center">
@@ -3631,6 +3657,100 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       }
     }
 
+    async function detectUserRealLocation() {
+      const locVal = document.getElementById('detected-location-val');
+      if (locVal) locVal.textContent = '• 📍 Đang xác thực vị trí thực tế...';
+
+      return new Promise((resolve) => {
+        let isResolved = false;
+
+        const finish = (loc, isGps = false) => {
+          if (isResolved) return;
+          isResolved = true;
+          currentUserProfile.realGpsLocation = loc;
+          currentUserProfile.hometown = loc;
+          updateLocationDisplayUI(loc, isGps);
+          saveRealUserSession();
+          if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.broadcastHelloSync === 'function') {
+            window.RealtimeSanctuary.broadcastHelloSync();
+          }
+          if (window.SupabaseSanctuary && typeof window.SupabaseSanctuary.trackCurrentUserPresence === 'function') {
+            window.SupabaseSanctuary.trackCurrentUserPresence();
+          }
+          resolve(loc);
+        };
+
+        // 1. Thử lấy GPS tọa độ trực tiếp của máy (Độ chính xác cao nhất)
+        if ('geolocation' in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              try {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=vi`);
+                if (res.ok) {
+                  const data = await res.json();
+                  const addr = data.address || {};
+                  let province = addr.city || addr.state || addr.province || addr.county || addr.town || addr.quarter || '';
+                  if (province) {
+                    province = province.replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, '').trim();
+                    finish(province, true);
+                    return;
+                  }
+                }
+              } catch (e) {
+                console.warn('[GPS Geolocation Nominatim Error]', e);
+              }
+              fallbackIpGeo();
+            },
+            (err) => {
+              console.warn('[GPS Geolocation unavailable or denied]', err);
+              fallbackIpGeo();
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+          );
+        } else {
+          fallbackIpGeo();
+        }
+
+        async function fallbackIpGeo() {
+          try {
+            const res = await fetch('https://ipapi.co/json/');
+            if (res.ok) {
+              const data = await res.json();
+              let region = (data.region || data.city || '').replace(/^(Tỉnh|Thành phố|TP\.)\s+/i, '').trim();
+              if (region) {
+                finish(region, false);
+                return;
+              }
+            }
+          } catch (e) {}
+          const def = currentUserProfile.hometown || 'Thái Bình';
+          finish(def, false);
+        }
+      });
+    }
+    window.detectUserRealLocation = detectUserRealLocation;
+
+    function updateLocationDisplayUI(loc, isGps = false) {
+      const locVal = document.getElementById('detected-location-val');
+      const hometownInput = document.getElementById('reg-hometown');
+      const gpsBadge = document.getElementById('reg-gps-badge');
+      if (locVal) {
+        locVal.textContent = `• 📍 ${loc} (${isGps ? 'GPS thực tế' : 'IP'})`;
+      }
+      if (hometownInput) {
+        hometownInput.value = loc;
+        hometownInput.placeholder = loc;
+      }
+      if (gpsBadge) {
+        gpsBadge.innerHTML = isGps 
+          ? `<span class="text-emerald-400 font-bold">✓ Đã xác thực GPS: ${loc}</span>` 
+          : `<span class="text-amber-300">📍 Vị trí: ${loc}</span>`;
+      }
+    }
+    window.updateLocationDisplayUI = updateLocationDisplayUI;
+
     function applyProfileLockState(isLocked) {
       currentUserProfile.isLocked = isLocked;
       const modalTitle = document.getElementById('reg-modal-title');
@@ -4209,7 +4329,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     function setupAutoFullscreenAndOrientation() {
       checkMobileOrientationBanner();
 
-      const onFirstInteraction = () => {};
+      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
+      const onFirstInteraction = () => {
+        if (isMobile) {
+          requestAppFullscreen(true);
+          lockLandscapeUniversal();
+        }
+      };
 
       window.addEventListener('click', onFirstInteraction, { passive: true, once: true });
       window.addEventListener('touchend', onFirstInteraction, { passive: true, once: true });
@@ -4431,6 +4557,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       if (currentUserProfile.isWalking) return;
 
       requestAppFullscreen(true);
+      lockLandscapeUniversal();
 
       if (!AudioEngine.enabled) {
         AudioEngine.enabled = true;
@@ -4443,22 +4570,27 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       recalculateAgeAndPreview(false);
       currentUserProfile.registered = true;
       const enteredFullName = document.getElementById('reg-fullname').value.trim();
-      const enteredDharmaName = document.getElementById('reg-dharma-name').value.trim();
-      currentUserProfile.fullName = enteredFullName || currentUserProfile.fullName || 'Đồng Tu Mới';
+      const enteredDharmaName = document.getElementById('reg-dharma-name') ? document.getElementById('reg-dharma-name').value.trim() : '';
+      const fallbackName = (typeof pickUniqueSampleDevotee === 'function') ? pickUniqueSampleDevotee().name : 'Phật Tử';
+      currentUserProfile.fullName = enteredFullName || currentUserProfile.fullName || fallbackName;
       currentUserProfile.dharmaName = enteredDharmaName || currentUserProfile.dharmaName || 'Minh Tâm';
-      currentUserProfile.hometown = document.getElementById('reg-hometown').value.trim() || 'Chùa An Nhiên';
+      
+      const enteredHometown = document.getElementById('reg-hometown').value.trim();
+      currentUserProfile.hometown = currentUserProfile.realGpsLocation || enteredHometown || 'Thái Bình';
       currentUserProfile.day = document.getElementById('reg-day').value.padStart(2, '0');
       currentUserProfile.month = document.getElementById('reg-month').value.padStart(2, '0');
       currentUserProfile.year = document.getElementById('reg-year').value || '1996';
       currentUserProfile.age = parseInt(document.getElementById('reg-age').value, 10) || 30;
       currentUserProfile.avatarType = document.querySelector('input[name="regAvatarType"]:checked')?.value || 'monk';
-      currentUserProfile.wish = document.getElementById('reg-wish').value.trim() || 'Cầu bình an mỗi ngày';
+      const wishInput = document.getElementById('reg-wish');
+      currentUserProfile.wish = wishInput ? wishInput.value.trim() : 'Cầu bình an mỗi ngày';
 
       // Attach detected real IP and lock profile
       currentUserProfile.clientIp = currentDetectedIP || '117.5.146.242';
       currentUserProfile.isLocked = true;
       currentUserProfile.lockedAt = new Date().toISOString();
 
+      localStorage.setItem('chua_an_nhien_registered_gate_done', 'true');
       saveRealUserSession();
       applyProfileLockState(true);
       closeRegistrationModal();
@@ -6144,12 +6276,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
                 ${chState.scriptureTitle}
               </h4>
               <p class="text-[11px] text-amber-200/80">
-                ${isLeader ? '🌟 Bạn đang là Chủ Lễ khởi xướng' : `Chủ lễ: <strong>${chState.leaderName || 'Đồng Tu'}</strong>`} • Đang tụng: Câu <strong>${chState.verseIndex + 1} / ${chState.totalVerses}</strong>
+                ${isLeader ? '🌟 Bạn đang là Chủ Lễ khởi xướng' : `Chủ lễ: <strong>${chState.leaderName || 'Hành Giả'}</strong>`} • Đang tụng: Câu <strong>${chState.verseIndex + 1} / ${chState.totalVerses}</strong>
               </p>
             </div>
             <div class="text-right">
               <span class="px-2.5 py-1 rounded-lg bg-black/60 border border-emerald-400/40 text-emerald-300 font-mono text-xs font-bold block">
-                🟢 ${window.RealtimeSanctuary.getOnlineCount()} Đồng Tu Online
+                🟢 ${window.RealtimeSanctuary.getOnlineCount()} Người Online
               </span>
             </div>
           </div>
@@ -6299,7 +6431,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           : '<span class="w-2 h-2 rounded-full bg-amber-400"></span><span>Đang Kết Nối Lại...</span>';
       }
       if (onlineEl) {
-        onlineEl.textContent = `${status.onlineCount || 1} đồng tu`;
+        onlineEl.textContent = `${status.onlineCount || 1} người online`;
       }
       if (latencyEl) {
         latencyEl.textContent = status.syncLatency ? `~${status.syncLatency} ms` : '~55 ms';
@@ -7952,7 +8084,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         renderSanctuaryFloor();
       }
 
-      // 5. Vào thẳng Chánh Điện thanh tịnh (Không tự động bật popup làm phiền người dùng)
+      // 5. Kiểm tra nếu chưa đăng ký sớ ghi danh thì tự động mở sớ tinh gọn
+      if (!localStorage.getItem('chua_an_nhien_registered_gate_done')) {
+        openRegistrationModal();
+      }
+
+      // 5B. Tự động nhận diện tọa độ GPS thực tế của thiết bị
+      try { detectUserRealLocation(); } catch (e) { console.warn(e); }
 
       startIdleFellowBowing();
       animateAtmosphere();
