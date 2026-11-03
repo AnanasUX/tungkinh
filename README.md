@@ -2,6 +2,8 @@
 
 > Không gian tâm linh thanh tịnh, trang nghiêm dành cho Phật tử và hành giả tu tập trực tuyến: Gõ Mõ, Thỉnh Đại Hồng Chung, Tụng Kinh Tự Động, Dâng Hương, Đảnh Lễ và Tích Lũy Công Đức.
 
+> 📖 **Hồ sơ cấu hình hệ thống & Hướng dẫn Agent**: Xem chi tiết tại [SYSTEM_CONFIG.md](file:///d:/Python/tungkinh/SYSTEM_CONFIG.md) để nắm toàn bộ quy chuẩn kiến trúc, quy tắc xoay ngang, layout đa thiết bị và lệnh chạy hệ thống.
+
 ---
 
 ## 🏛️ TỔNG QUAN HỆ THỐNG & KIẾN TRÚC

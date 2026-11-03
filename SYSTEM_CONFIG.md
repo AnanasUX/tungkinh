@@ -1,0 +1,169 @@
+# 🏛️ HỆ THỐNG TU TẬP CHÙA AN NHIÊN — SYSTEM CONFIGURATION & AGENT RUNBOOK
+> **Tài liệu cấu hình chuẩn hóa hệ thống (Standard Configuration & Runtime Execution Manual)**.  
+> *Bất kỳ tác nhân AI (AI Agent), lập trình viên hoặc tiến trình tự động nào khi tiếp nhận mã nguồn dự án BẮT BUỘC phải đọc kỹ và tuân thủ tuyệt đối các quy chuẩn kỹ thuật trong tệp này trước khi tiến hành thực thi hoặc chỉnh sửa.*
+
+---
+
+## 1. TỔNG QUAN HỆ THỐNG & TRIẾT LÝ VẬN HÀNH
+
+- **Tên dự án**: Chùa An Nhiên — Không Gian Tu Tập & Lễ Phật Trực Tuyến.
+- **Mục tiêu**: Cung cấp không gian tâm linh thanh tịnh, trang nghiêm cho Phật tử và hành giả tu tập trực tuyến: Gõ Mõ Tịnh Tâm, Thỉnh Đại Hồng Chung, Tụng Kinh Tự Động, Dâng Hương, Đảnh Lễ, Xin Quẻ Xăm, Thả Hoa Đăng, Phóng Sanh, Đồng Tụng và Chat Đạo Tràng thời gian thực.
+- **Nền tảng công nghệ**:
+  - **Frontend**: Vanilla Web Standards (HTML5 Semantic, CSS3 Modern Flexbox/Grid/Tailwind Classes, Vanilla JavaScript ES6+, Web Audio API Synthesizer, Canvas 2D Particles, Three.js r128 WebGL).
+  - **Backend Server**: Node.js (`http`, `fs`, `path`, SSE Stream, WebSocket `ws`).
+  - **Realtime Mesh**: Kiến trúc kết hợp đa tầng:
+    1. *Dedicated Local Node Server* (`server.js` trên `localhost:3000`).
+    2. *Supabase Realtime Cloud Sync* (qua `@supabase/supabase-js` v2).
+    3. *Universal Fallback Mesh* (BroadcastChannel + LocalStorage Events đa tab).
+
+---
+
+## 2. CẤU HÌNH MÁY CHỦ & MÔI TRƯỜNG THỰC THI (SERVER CONFIG)
+
+### 2.1. Cổng Dịch Vụ & Biến Môi Trường
+- **Port mặc định**: `3000` (hoặc cấu hình qua biến `PORT`).
+- **Địa chỉ truy cập**:
+  - Web UI: `http://localhost:3000`
+  - REST State API: `GET http://localhost:3000/api/sanctuary/state`
+  - REST Event API: `POST http://localhost:3000/api/sanctuary/event`
+  - SSE Stream: `GET http://localhost:3000/api/sanctuary/events`
+  - WebSocket Server: `ws://localhost:3000`
+- **File Database cục bộ**: `data/sanctuary_db.json` (tự động tạo và lưu trữ liên tục trạng thái 12 bồ đoàn, danh sách đạo hữu, tiến trình tụng niệm và lịch sử chat).
+
+### 2.2. Lệnh Khởi Động & Thực Thi
+```bash
+# Cài đặt thư viện phụ thuộc
+npm install
+
+# Khởi động máy chủ chính
+npm start
+# Hoặc:
+node server.js
+```
+
+---
+
+## 3. CẤU HÌNH GIAO DIỆN & QUY TẮC ĐA MÀN HÌNH BẮT BUỘC (RESPONSIVE & ORIENTATION)
+
+### 3.1. Quy Định Xoay Ngang Toàn Màn Hình (Orientation Guard)
+> **YÊU CẦU CỐT LÕI**: Toàn bộ không gian Chánh Điện (Bàn thờ Phật, lư hương, 12 bồ đoàn và thanh công cụ) được kiến trúc theo chuẩn màn hình ngang (Landscape Full-Bleed).
+
+1. **Thiết bị Mobile & Tablet (Điện thoại thông minh, iPad, máy tính bảng cảm ứng)**:
+   - Khi người dùng truy cập ở chế độ dọc (`orientation: portrait`), hệ thống **BẮT BUỘC** hiển thị màn hình chuyển hướng **Orientation Guard** (`#orientation-guard-overlay`):
+     - Biểu tượng Hoa Sen Vàng Hào Quang xoay trang nghiêm.
+     - Hình họa điện thoại tự xoay ngang kèm hiệu ứng nhịp thở tâm linh.
+     - Nút hành động: `VÀO CHÁNH ĐIỆN (XOAY NGANG)`.
+     - Khi bấm nút hoặc người dùng xoay ngang máy, hệ thống tự động gọi Fullscreen (`requestFullscreenUniversal`) và khóa xoay ngang (`screen.orientation.lock('landscape')`), đồng thời ẩn ngay lớp màn hình chuyển hướng.
+2. **Thiết bị PC & Laptop (Màn hình Desktop $\ge 1024\text{px}$, chuột bàn phím `pointer: fine`)**:
+   - Hệ thống **BỎ QUA HOÀN TOÀN** lớp chuyển hướng (`display: none !important`), đưa người dùng vào thẳng Chánh Điện ngay lập tức.
+
+### 3.2. Không Bao Giờ Cắt Giao Diện (Zero Cut-Off Invariant)
+- **Tỉ lệ Chánh Điện (`#temple-stage`)**: Phải sử dụng `width: 100% !important; height: 100% !important; max-width: 100% !important; aspect-ratio: auto !important;`. Tuyệt đối **không** dùng `max-width: calc(100vh * 16/9)` vì sẽ gây ra viền đen (pillarboxing) và bóp nghẹt không gian trên các smartphone màn hình dài (19.5:9, 20:9).
+- **Thanh Đảo Thiền 14 Nút (`#bottom-dock-scroll`)**:
+   - Trên toàn bộ màn hình ngang (PC, Laptop, Tablet, Mobile Landscape), dock luôn bố trí theo **Lưới cân đối 2 hàng $\times$ 7 cột** căn giữa, `max-width: 980px`.
+   - **Hàng 1**: *Việc Lành (Nhiệm Vụ) · Gõ Mõ · Lễ Phật · Dâng Hương · Xin Xăm · Đồng Tụng · Kinh Điển*.
+   - **Hàng 2**: *Hoa Đăng · Thỉnh Chuông · Thiền Thở · Lời Phật · Phóng Sanh · Sớ Cầu An · Bằng Công Đức*.
+   - Mọi nút bấm phải có `min-width: 0`, `overflow: hidden`, chữ có `text-overflow: ellipsis`, icon cố định `flex-shrink: 0`. Tuyệt đối không để rớt nút hoặc làm tràn thanh cuộn ngang trang.
+- **Tọa Độ Bồ Đoàn (`renderSanctuaryFloor`)**:
+   - Hàng bồ đoàn trên (Row 0): `seatY = 56%`.
+   - Hàng bồ đoàn dưới (Row 1): `seatY = 71%`.
+   - Khoảng trống từ chân bồ đoàn hàng dưới đến đỉnh thanh công cụ luôn đạt tối thiểu $40\text{px}$, không bao giờ để thanh đáy đè lên người ngồi hoặc bảng tên bồ đoàn.
+
+---
+
+## 4. CẤU HÌNH DỮ LIỆU & GIAO THỨC CHAT THỜI GIAN THỰC
+
+### 4.1. Room Chat Protocol ([js/room-chat.js](file:///d:/Python/tungkinh/js/room-chat.js))
+- Nút kích hoạt trên Header: `#room-chat-header-button` (icon bong bóng thoại viền xanh cyan ngọc bích).
+- Panel chat: `#room-chat-panel` hỗ trợ chat công cộng toàn đạo tràng (`lobby`) và tin nhắn đạo hữu (`dm`).
+- Sự kiện phát sóng:
+  ```json
+  {
+    "type": "ROOM_CHAT",
+    "roomId": "global-sanctuary",
+    "channel": "lobby",
+    "senderId": "user-uuid",
+    "name": "Thích Tâm An",
+    "text": "Nam Mô A Di Đà Phật 🙏",
+    "timestamp": 1730600000000
+  }
+  ```
+- **Lưu trữ bền vững**: Máy chủ lưu 300 tin nhắn gần nhất trong `sanctuaryDB.chatHistory`. Khi client kết nối, nhận ngay 120 tin nhắn gần nhất để hiển thị liền mạch.
+
+### 4.2. Bồ Đoàn & Trạng Thái Đồng Bộ ([js/realtime-sanctuary.js](file:///d:/Python/tungkinh/js/realtime-sanctuary.js))
+- Tổng số bồ đoàn Chánh điện mặc định: 12 vị trí (Đánh số từ `#1` đến `#12`).
+- Mỗi vị trí lưu: `seatNo`, `occupied`, `isUser`, `name`, `dharmaName`, `points`, `avatar`, `remoteClientId`, `lastActive`.
+- Trạng thái hành giả:
+  - Khi chưa đăng ký: Tự động mở popup sớ ghi danh `#registration-gate-modal` sau 100ms khi vào hệ thống.
+  - Khi bấm dâng hương (`performWalkAndOfferIncense`): Nhân vật đứng dậy đi từ bồ đoàn lên trước bàn thờ Phật, dâng 3 nén tâm hương tỏa khói trầm, nhận +20 công đức, sau đó trở về bồ đoàn. Hành động này được phát sóng thời gian thực cho toàn bộ đạo tràng cùng chiêm bái.
+
+---
+
+## 5. HỆ THỐNG ÂM THANH & ĐỒ HỌA 3D
+
+### 5.1. Web Audio Synthesizer ([js/audio.js](file:///d:/Python/tungkinh/js/audio.js))
+- Hoàn toàn tổng hợp âm thanh bằng thuật toán vật lý sóng âm qua Web Audio API (không phụ thuộc file mp3 ngoài có thể bị lỗi 404):
+  - **Tiếng Mõ Tịnh Tâm**: Mô phỏng cộng hưởng gỗ tần số trung trầm $420\text{Hz} - 800\text{Hz}$ kèm bộ lọc suy giảm theo thời gian thực.
+  - **Đại Hồng Chung**: 7 tầng họa âm kim loại kết hợp điều chế tần số (FM Synthesis), ngân vang sâu lắng $12 - 18$ giây.
+  - **Nhạc Thiền Nền**: Tự động lặp vô tận, âm lượng mặc định 30%, có nút bật/tắt và thanh trượt điều chỉnh âm lượng trên Header.
+- Tuân thủ chính sách trình duyệt: Tự động resume `AudioContext` ngay trên cử chỉ chạm đầu tiên của người dùng (`pointerdown` / `click`).
+
+### 5.2. Chánh Điện 3D WebGL ([js/temple-3d.js](file:///d:/Python/tungkinh/js/temple-3d.js))
+- Chuyển đổi linh hoạt giữa 2.5D Cổ Điển và 3D Toàn Cảnh bằng nút `#btn-toggle-3d`.
+- Giới hạn khoảng cách camera: `minDistance: 8`, `maxDistance: 34`.
+- Tự động tối ưu khử răng cưa và điều chỉnh theo DPR màn hình (`window.devicePixelRatio`).
+
+---
+
+## 6. DANH MỤC CÁC TỆP TIN NÒNG CỐT CỦA DỰ ÁN
+
+| Đường Dẫn Tệp | Vai Trò & Chức Năng Chính |
+|---|---|
+| [index.html](file:///d:/Python/tungkinh/index.html) | Điểm vào chính của ứng dụng: Chánh Điện SVG, 14 nút công cụ, 11 modal nghiệp vụ, Orientation Guard và toàn bộ kịch bản điều khiển giao diện. |
+| [server.js](file:///d:/Python/tungkinh/server.js) | Máy chủ backend Node.js: Cung cấp API tĩnh, REST API lưu trữ bồ đoàn, WebSocket / SSE Stream và đồng bộ chat. |
+| [js/room-chat.js](file:///d:/Python/tungkinh/js/room-chat.js) | Giao diện và logic phòng chat đạo tràng dùng chung thời gian thực. |
+| [js/realtime-sanctuary.js](file:///d:/Python/tungkinh/js/realtime-sanctuary.js) | Lớp giao tiếp thời gian thực kết hợp: Node Server, Supabase Realtime và Local Broadcast Mesh. |
+| [js/supabase-sanctuary.js](file:///d:/Python/tungkinh/js/supabase-sanctuary.js) | Lớp kết nối lưu trữ đám mây Supabase PostgreSQL và Realtime Channels. |
+| [js/daily-quests.js](file:///d:/Python/tungkinh/js/daily-quests.js) | Động cơ nhiệm vụ tu học, việc tốt mỗi ngày và tích lũy công đức hoa sen `🪷`. |
+| [js/profile-figurine-3d.js](file:///d:/Python/tungkinh/js/profile-figurine-3d.js) | Mô hình 3D tượng tiểu đồng/hành giả đại diện (Avatar 3D Figurine) trong modal Hồ Sơ Tu Tập. |
+| [js/temple-3d.js](file:///d:/Python/tungkinh/js/temple-3d.js) | Động cơ Chánh Điện 3D Three.js: Tôn tượng Phật Thích Ca, lư hương, cột đình, chuông mõ 3D. |
+| [js/audio.js](file:///d:/Python/tungkinh/js/audio.js) | Động cơ âm thanh tổng hợp Web Audio API (Mõ, Chuông, Nhạc thiền). |
+| [js/canvas-effects.js](file:///d:/Python/tungkinh/js/canvas-effects.js) | Động cơ vật lý Canvas: Khói trầm hương, hoa đăng, bồ câu phóng sanh, bụi vàng kim quang. |
+| [data/sanctuary_db.json](file:///d:/Python/tungkinh/data/sanctuary_db.json) | Cơ sở dữ liệu JSON tự động lưu trữ trạng thái bồ đoàn và tin nhắn chat. |
+
+---
+
+## 7. QUY TRÌNH KIỂM THỬ TRƯỚC KHI BÀN GIAO (VERIFICATION RUNBOOK)
+
+Mỗi khi có bất kỳ thay đổi nào trong mã nguồn, Agent bắt buộc phải thực hiện kiểm thử theo các bước sau:
+
+1. **Kiểm tra cú pháp JavaScript & Node.js**:
+   ```bash
+   node -e "new Function(require('fs').readFileSync('js/room-chat.js', 'utf8')); console.log('OK');"
+   node -e "new Function(require('fs').readFileSync('js/realtime-sanctuary.js', 'utf8')); console.log('OK');"
+   ```
+2. **Kiểm tra máy chủ khởi động thành công**:
+   - Chạy thử `node server.js` kiểm tra server lắng nghe cổng 3000 không văng lỗi.
+3. **Kiểm thử Responsive Headless Chrome trên 6 độ phân giải tham chiếu**:
+   - *Mobile Portrait (390x844)*: `orientation-guard-overlay` hiển thị yêu cầu xoay ngang.
+   - *Mobile Landscape (844x390)*: Chánh Điện tràn viền $100\%$, 0 nút bị cắt, bồ đoàn không đè thanh đáy.
+   - *Tablet Portrait (768x1024)*: `orientation-guard-overlay` hiển thị yêu cầu xoay ngang.
+   - *Tablet Landscape (1024x768)*: Chánh Điện hiển thị trọn vẹn, không có thanh cuộn ngang trang.
+   - *Desktop PC (1920x1080 & 1440x900)*: Vào thẳng Chánh Điện, 14 nút hiển thị cân đối $2 \times 7$.
+
+---
+
+## 8. ĐIỀU KIỆN BẤT BIẾN KHI CHỈNH SỬA MÃ NGUỒN (INVARIANT CONSTRAINTS)
+
+1. **Bảo tồn tính năng nghiệp vụ**: Tuyệt đối **không** được xóa, ẩn (`display: none`) các nút chức năng cốt lõi (14 nút công cụ ở đáy, nút chat, nút âm thanh, popup đăng ký) trừ khi cung cấp giao diện truy cập thay thế rõ ràng.
+2. **Bảo toàn cơ chế xoay màn hình**:
+   - Mobile và Tablet bắt buộc phải xoay ngang khi vào Chánh Điện.
+   - Riêng PC thì không cần xoay.
+3. **Tuân thủ chuẩn bảo mật trình duyệt**:
+   - Các API như `requestFullscreen()` và `AudioContext.resume()` chỉ được gọi khi có cử chỉ tương tác người dùng (`user gesture`). Không gọi tự động gây lỗi NotAllowedError trên console.
+4. **Giữ nguyên định dạng liên kết và tài liệu**:
+   - Bảo tồn tất cả chú thích hiện có trong mã nguồn.
+   - Các liên kết tệp tin trong tài liệu phải sử dụng chuẩn Markdown có thể click được.
+
+---
+*Tài liệu này là căn cứ tối cao điều khiển mọi hành vi bảo trì và phát triển tính năng mới cho Chùa An Nhiên.*
