@@ -354,25 +354,9 @@
       backdrop-filter: blur(10px);
     }
 
-    /* Hiển thị khi màn hình ở chế độ Dọc (Portrait) */
-    @media screen and (orientation: portrait) {
-      #orientation-guard-overlay {
-        display: flex !important;
-      }
-    }
-
-    /* Riêng PC (Màn hình Desktop/Laptop >= 1024px và có chuột fine) KHÔNG CẦN XOAY */
-    @media screen and (min-width: 1024px) and (hover: hover) and (pointer: fine) {
-      #orientation-guard-overlay {
-        display: none !important;
-      }
-    }
-
-    /* Khi màn hình đã xoay ngang (Landscape) thì ẩn hoàn toàn */
-    @media screen and (orientation: landscape) {
-      #orientation-guard-overlay {
-        display: none !important;
-      }
+    /* Khôi phục Chánh Điện: Luôn hiển thị Chánh Điện trực tiếp, không chặn cửa bằng overlay */
+    #orientation-guard-overlay {
+      display: none !important;
     }
 
 #temple-stage {
@@ -4157,22 +4141,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
     function checkDeviceOrientationGuard() {
       const overlay = document.getElementById('orientation-guard-overlay');
-      if (!overlay) return;
-
-      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-      const isPortrait = window.innerHeight > window.innerWidth;
-      const isPC = window.innerWidth >= 1024 && !isTouch;
-
-      // Riêng PC thì không cần thiết và tự động ẩn
-      if (isPC) {
-        overlay.style.display = 'none';
-        return;
-      }
-
-      // Trên Mobile & Tablet, nếu màn hình đang Dọc thì yêu cầu xoay ngang
-      if (isPortrait) {
-        overlay.style.display = 'flex';
-      } else {
+      if (overlay) {
         overlay.style.display = 'none';
       }
     }
@@ -4224,15 +4193,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     function setupAutoFullscreenAndOrientation() {
       checkMobileOrientationBanner();
 
-      const onFirstInteraction = () => {
-        const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
-        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
-        if (isMobile && !isFs) {
-          requestAppFullscreen(true).catch(() => {});
-        }
-        window.removeEventListener('click', onFirstInteraction);
-        window.removeEventListener('touchend', onFirstInteraction);
-      };
+      const onFirstInteraction = () => {};
 
       window.addEventListener('click', onFirstInteraction, { passive: true, once: true });
       window.addEventListener('touchend', onFirstInteraction, { passive: true, once: true });
@@ -7975,10 +7936,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         renderSanctuaryFloor();
       }
 
-      // 5. Hiển thị popup nhập thông tin người dùng ngay khi vào hệ thống
-      setTimeout(() => {
-        openRegistrationModal(false);
-      }, 100);
+      // 5. Vào thẳng Chánh Điện thanh tịnh (Không tự động bật popup làm phiền người dùng)
 
       startIdleFellowBowing();
       animateAtmosphere();

@@ -45,18 +45,16 @@ node server.js
 
 ## 3. CẤU HÌNH GIAO DIỆN & QUY TẮC ĐA MÀN HÌNH BẮT BUỘC (RESPONSIVE & ORIENTATION)
 
-### 3.1. Quy Định Xoay Ngang Toàn Màn Hình (Orientation Guard & Auto Fullscreen)
-> **YÊU CẦU CỐT LÕI**: Toàn bộ không gian Chánh Điện (Bàn thờ Phật, lư hương, 12 bồ đoàn và thanh công cụ) được kiến trúc theo chuẩn màn hình ngang (Landscape Full-Bleed).
+### 3.1. Trực Tiếp Vào Chánh Điện (Direct Sanctuary Access & Zero Interruption)
+> **NGUYÊN TẮC CỐT LÕI**: Người dùng khi vào chùa phải được **bước thẳng vào Chánh Điện thanh tịnh ngay lập tức**: Thấy ngay bàn thờ Tam Bảo, tượng Phật, lư hương, hoa sen, ánh nến, 12 bồ đoàn và thanh công cụ.
 
-1. **Thiết bị Mobile & Tablet (Điện thoại thông minh, iPad, máy tính bảng cảm ứng)**:
-   - Khi người dùng truy cập ở chế độ dọc (`orientation: portrait`), hệ thống **BẮT BUỘC** hiển thị màn hình chuyển hướng **Orientation Guard** (`#orientation-guard-overlay`):
-     - Biểu tượng Hoa Sen Vàng Hào Quang xoay trang nghiêm.
-     - Hình họa điện thoại tự xoay ngang kèm hiệu ứng nhịp thở tâm linh.
-     - Nút hành động: `VÀO CHÁNH ĐIỆN (XOAY NGANG)`.
-     - Chạm vào **BẤT KỲ ĐÂU** trên màn hình chuyển hướng hoặc nút hành động, hệ thống tự động gọi Fullscreen (`requestFullscreenUniversal`), khóa xoay ngang (`screen.orientation.lock('landscape')`), mở khóa âm thanh (`unlockSanctuaryAudio()`) và ghi nhớ cấu hình (`localStorage.setItem('chua_an_nhien_locked_landscape', 'true')`) cho các lần vào sau.
-     - Trên mọi tương tác chạm (Touch, Click) trên Mobile & Tablet, hệ thống tự động tái kích hoạt trạng thái Toàn màn hình & Khóa xoay ngang nếu bị gián đoạn.
-2. **Thiết bị PC & Laptop (Màn hình Desktop $\ge 1024\text{px}$, chuột bàn phím `pointer: fine`)**:
-   - Hệ thống **BỎ QUA HOÀN TOÀN** lớp chuyển hướng (`display: none !important`), đưa người dùng vào thẳng Chánh Điện ngay lập tức.
+1. **Vào Thẳng Không Bị Chặn Cửa**:
+   - Lớp màn hình chuyển hướng `#orientation-guard-overlay` được ẩn hoàn toàn (`display: none !important`), tuyệt đối **không chặn cửa hay hiển thị thông báo "bảo xoay ngang màn hình"** gây phiền toái cho người dùng.
+   - Không tự động ép bật popup `#registration-gate-modal` (Sớ Ghi Danh) khi vừa tải trang. Hệ thống tự động nạp phiên hoặc gán danh xưng Đạo Hữu an lành để người dùng có thể lễ Phật, gõ mõ, tụng kinh ngay. Khi người dùng muốn xem/sửa hồ sơ, họ có thể chủ động bấm biểu tượng `📜` trên Header.
+2. **Hỗ Trợ Toàn Diện Cả Chế Độ Dọc (Portrait) & Ngang (Landscape)**:
+   - **Chế độ Ngang (Landscape)**: 12 bồ đoàn hiển thị 2 hàng $\times$ 6 cột cân xứng, tầm nhìn Chánh Điện khoáng đạt.
+   - **Chế độ Dọc (Portrait)**: 12 bồ đoàn tự động sắp xếp 3 hàng $\times$ 4 cột (`seatY = 58 + row * 12`), bảo toàn $100\%$ tính năng chiêm bái trên mọi thiết bị di động mà không cần phải xoay máy.
+   - Nút Toàn Màn Hình (`⛶`) trên Header sẵn sàng phục vụ khi người dùng chủ động muốn mở rộng không gian.
 
 ### 3.2. Không Bao Giờ Cắt Giao Diện & Tối Ưu Cảm Ứng Mobile (Mobile Touch Optimization)
 - **Tỉ lệ Chánh Điện (`#temple-stage`)**: Phải sử dụng `width: 100% !important; height: 100% !important; max-width: 100% !important; aspect-ratio: auto !important;`. Tuyệt đối **không** dùng `max-width: calc(100vh * 16/9)` vì sẽ gây ra viền đen (pillarboxing) và bóp nghẹt không gian trên các smartphone màn hình dài (19.5:9, 20:9).
