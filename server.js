@@ -131,9 +131,11 @@ function broadcastEvent(eventData) {
   }
 
   // Keep last 40 events
-  sanctuaryDB.recentEvents.push(eventData);
-  if (sanctuaryDB.recentEvents.length > 40) {
-    sanctuaryDB.recentEvents.shift();
+  if (!eventData.type || !eventData.type.startsWith('ROOM_VOICE_')) {
+    sanctuaryDB.recentEvents.push(eventData);
+    if (sanctuaryDB.recentEvents.length > 40) {
+      sanctuaryDB.recentEvents.shift();
+    }
   }
 
   // 1. Send to all WebSocket clients

@@ -5,6 +5,16 @@
   const queryRoom = new URLSearchParams(location.search).get('room');
   const style = document.createElement('style');
 
+  // STUN servers for WebRTC P2P Voice
+  const RTC_CONFIG = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:global.stun.twilio.com:3478' }
+    ]
+  };
+
   style.textContent = `
     #room-chat-modal {
       color-scheme: dark;
@@ -336,7 +346,7 @@
       font-family: 'Lora', Georgia, serif;
     }
 
-    /* Dharma Quick Blessing Bar (Thanh Lời Chúc Mẫu Nhanh) */
+    /* Dharma Quick Blessing Bar */
     .room-dharma-pills {
       display: flex;
       align-items: center;
@@ -486,13 +496,24 @@
       flex: 0 0 auto;
       width: 28px;
       height: 28px;
-      border: 1px solid rgba(245, 190, 80, 0.4);
+      border: 1.5px solid rgba(245, 190, 80, 0.4);
       border-radius: 50%;
       background: radial-gradient(circle, #5c3008 0%, #291303 100%);
       color: #fde68a;
       font-weight: 700;
       font-size: 0.75rem;
+      transition: all 0.3s ease;
     }
+    .room-member.is-speaking .room-member-avatar {
+      border-color: #34d399;
+      box-shadow: 0 0 12px rgba(52, 211, 153, 0.7);
+      animation: pulseAvatar 1s infinite alternate;
+    }
+    @keyframes pulseAvatar {
+      from { transform: scale(1); }
+      to { transform: scale(1.12); }
+    }
+
     .room-member-name {
       flex: 1;
       min-width: 0;
@@ -505,6 +526,34 @@
     .room-member-state {
       color: #10b981;
       font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .room-member.is-speaking .room-member-state {
+      color: #34d399;
+      font-weight: 800;
+      text-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+    }
+
+    /* Live Voice Volume Waveform */
+    .room-voice-meter {
+      display: none;
+      align-items: center;
+      gap: 3px;
+      height: 14px;
+      margin-top: 6px;
+      justify-content: center;
+    }
+    .room-voice-meter.is-active {
+      display: flex;
+    }
+    .room-voice-bar {
+      width: 3px;
+      height: 6px;
+      background: #34d399;
+      border-radius: 2px;
+      transition: height 0.08s ease;
     }
 
     .room-mic-button,
@@ -536,7 +585,7 @@
       border-color: #f87171;
       background: #991b1b;
       color: #ffffff;
-      box-shadow: 0 0 14px rgba(239, 68, 68, 0.5);
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.6);
     }
 
     .room-join-label {
@@ -656,29 +705,54 @@
   `;
   document.head.appendChild(style);
 
+  // Hidden Audio Element Container for remote incoming voices
+  let audioContainer = document.getElementById('room-remote-voices-container');
+  if (!audioContainer) {
+    audioContainer = document.createElement('div');
+    audioContainer.id = 'room-remote-voices-container';
+    audioContainer.style.display = 'none';
+    document.body.appendChild(audioContainer);
+  }
+
   const state = {
     roomId: (queryRoom || PUBLIC_ROOM_ID).trim().toUpperCase(),
     channel: 'lobby',
     messages: [],
     messageIds: new Set(),
-    members: new Map(),
+    members: new Map(), // senderId => { id, name, speaking, lastSeen }
     stream: null,
-    muted: true
+    muted: true,
+    recorder: null,
+    peerConnections: new Map(), // peerId => RTCPeerConnection
+    remoteAudioStreams: new Map(), // peerId => MediaStream
+    analyser: null,
+    audioContext: null
   };
 
   function profile() {
     const current = window.currentUserProfile || {};
-    return { name: current.dharmaName || current.fullName || 'Đồng Tu', avatar: current.avatarType || 'monk' };
+    return {
+      name: current.dharmaName || current.fullName || 'Đồng Tu',
+      avatar: current.avatarType || 'monk'
+    };
   }
 
-  function isPublicRoom() { return state.roomId === PUBLIC_ROOM_ID; }
+  function myId() {
+    return window.RealtimeSanctuary?.clientId || 'guest-' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function isPublicRoom() {
+    return state.roomId === PUBLIC_ROOM_ID;
+  }
 
   function makeRoomId() {
     return `AN-${Math.random().toString(36).slice(2, 6).toUpperCase()}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
   }
 
   function roomUrl() {
-    return isPublicRoom() ? `${location.origin}${location.pathname}` : `${location.origin}${location.pathname}?room=${encodeURIComponent(state.roomId)}`;
+    return isPublicRoom()
+      ? `${location.origin}${location.pathname}`
+      : `${location.origin}${location.pathname}?room=${encodeURIComponent(state.roomId)}`;
   }
 
   function setText(id, value) {
@@ -710,7 +784,6 @@
     const cellSize = size / cells;
     ctx.fillStyle = '#3c1d08';
 
-    // Position detection corner markers
     function drawFinder(x, y) {
       ctx.fillRect(x * cellSize, y * cellSize, 7 * cellSize, 7 * cellSize);
       ctx.fillStyle = '#fffdf5';
@@ -738,17 +811,22 @@
     if (!list) return;
     list.innerHTML = '';
     const myProfile = profile();
-    const selfItem = { id: window.RealtimeSanctuary?.clientId || 'me', name: `${myProfile.name} (Bạn)`, speaking: !state.muted };
+    const selfItem = {
+      id: myId(),
+      name: `${myProfile.name} (Bạn)`,
+      speaking: !state.muted
+    };
     const members = [selfItem, ...state.members.values()];
 
     members.forEach(member => {
       const row = document.createElement('div');
-      row.className = 'room-member';
+      row.className = `room-member${member.speaking ? ' is-speaking' : ''}`;
+      row.dataset.peerId = member.id;
       const initial = (member.name || 'Đ')[0].toUpperCase();
       row.innerHTML = `
         <span class="room-member-avatar">${initial}</span>
         <span class="room-member-name"></span>
-        <span class="room-member-state">${member.speaking ? '🎙 Đang bật' : '🪷 Tịnh tâm'}</span>
+        <span class="room-member-state">${member.speaking ? '🎙 Đang nói' : '🪷 Tịnh tâm'}</span>
       `;
       row.querySelector('.room-member-name').textContent = member.name;
       list.appendChild(row);
@@ -803,29 +881,303 @@
       if (item && item.type === 'ROOM_CHAT') {
         const itemRoom = (item.roomId || PUBLIC_ROOM_ID).trim().toUpperCase();
         if (itemRoom === state.roomId) {
-          addMessage({ ...item, self: item.senderId === window.RealtimeSanctuary?.clientId });
+          addMessage({ ...item, self: item.senderId === myId() });
         }
       }
     });
     renderMessages();
   }
 
-  function receive(payload) {
+  /* ==========================================================================
+     WEBRTC VOICE ENGINE & AUDIO CHUNK RESILIENT FALLBACK
+     ========================================================================== */
+
+  // Play remote audio stream safely with browser autoplay policy handling
+  function playRemoteAudioStream(peerId, stream) {
+    if (!stream) return;
+    state.remoteAudioStreams.set(peerId, stream);
+
+    let audioEl = document.getElementById(`remote-audio-${peerId}`);
+    if (!audioEl) {
+      audioEl = document.createElement('audio');
+      audioEl.id = `remote-audio-${peerId}`;
+      audioEl.autoplay = true;
+      audioEl.playsInline = true;
+      audioEl.style.display = 'none';
+      audioContainer.appendChild(audioEl);
+    }
+    audioEl.srcObject = stream;
+    audioEl.play().catch(() => {
+      const resume = () => {
+        audioEl.play().catch(() => {});
+        window.removeEventListener('click', resume);
+        window.removeEventListener('touchstart', resume);
+      };
+      window.addEventListener('click', resume, { once: true });
+      window.addEventListener('touchstart', resume, { once: true });
+    });
+
+    // Update UI that this peer is active and speaking
+    const member = state.members.get(peerId);
+    if (member) {
+      member.speaking = true;
+      renderMembers();
+    }
+  }
+
+  // Create or retrieve PeerConnection for a specific peer
+  function getOrCreatePeerConnection(peerId) {
+    if (state.peerConnections.has(peerId)) {
+      return state.peerConnections.get(peerId);
+    }
+
+    const pc = new RTCPeerConnection(RTC_CONFIG);
+    state.peerConnections.set(peerId, pc);
+
+    // If local microphone stream is already active, attach audio tracks
+    if (state.stream) {
+      state.stream.getAudioTracks().forEach(track => {
+        pc.addTrack(track, state.stream);
+      });
+    }
+
+    // Handle receiving remote audio
+    pc.ontrack = (event) => {
+      console.log(`[RoomVoice] Received incoming audio track from peer: ${peerId}`);
+      if (event.streams && event.streams[0]) {
+        playRemoteAudioStream(peerId, event.streams[0]);
+      }
+    };
+
+    // Handle ICE candidates
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        publish({
+          type: 'ROOM_VOICE_CANDIDATE',
+          targetId: peerId,
+          candidate: event.candidate
+        });
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      console.log(`[RoomVoice] Peer ${peerId} connection state: ${pc.connectionState}`);
+      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        state.peerConnections.delete(peerId);
+        state.remoteAudioStreams.delete(peerId);
+        const el = document.getElementById(`remote-audio-${peerId}`);
+        if (el) el.remove();
+      }
+    };
+
+    return pc;
+  }
+
+  // Initiate WebRTC Call to a remote peer
+  async function callPeer(peerId) {
+    if (peerId === myId()) return;
+    try {
+      const pc = getOrCreatePeerConnection(peerId);
+      const offer = await pc.createOffer({ offerToReceiveAudio: true });
+      await pc.setLocalDescription(offer);
+      publish({
+        type: 'ROOM_VOICE_OFFER',
+        targetId: peerId,
+        sdp: offer
+      });
+    } catch (err) {
+      console.warn(`[RoomVoice] Failed to create offer for ${peerId}:`, err);
+    }
+  }
+
+  // Fallback: Play audio slice from base64 (MediaRecorder chunk fallback)
+  function playAudioChunk(peerId, base64Data, mimeType) {
+    // If WebRTC is already streaming from this peer, ignore chunk to prevent echo
+    if (state.remoteAudioStreams.has(peerId)) return;
+
+    try {
+      const byteChars = atob(base64Data);
+      const byteNums = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) {
+        byteNums[i] = byteChars.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNums);
+      const blob = new Blob([byteArray], { type: mimeType || 'audio/webm' });
+      const blobUrl = URL.createObjectURL(blob);
+      const audio = new Audio(blobUrl);
+      audio.volume = 1.0;
+      audio.play().then(() => {
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 3500);
+      }).catch(() => {});
+    } catch (e) {
+      console.warn('[RoomVoice] Error playing audio chunk:', e);
+    }
+  }
+
+  // Setup Visual Mic Waveform Meter
+  function setupAudioVisualizer() {
+    if (!state.stream) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!state.audioContext) state.audioContext = new AudioCtx();
+      if (state.audioContext.state === 'suspended') state.audioContext.resume();
+
+      const source = state.audioContext.createMediaStreamSource(state.stream);
+      state.analyser = state.audioContext.createAnalyser();
+      state.analyser.fftSize = 64;
+      source.connect(state.analyser);
+
+      const bufferLength = state.analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      const meter = document.getElementById('room-voice-meter');
+
+      function updateMeter() {
+        if (!state.muted && state.analyser && meter) {
+          state.analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
+          const average = sum / bufferLength;
+
+          const bars = meter.querySelectorAll('.room-voice-bar');
+          bars.forEach((bar, idx) => {
+            const h = Math.min(16, Math.max(4, (average / 12) * (idx + 1) * 0.7));
+            bar.style.height = `${h}px`;
+          });
+          requestAnimationFrame(updateMeter);
+        } else if (meter) {
+          meter.querySelectorAll('.room-voice-bar').forEach(b => b.style.height = '4px');
+        }
+      }
+      updateMeter();
+    } catch (e) {}
+  }
+
+  // Setup MediaRecorder Chunk Broadcast Fallback
+  function startMediaRecorderFallback() {
+    if (!state.stream || typeof MediaRecorder === 'undefined') return;
+    try {
+      const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm');
+
+      state.recorder = new MediaRecorder(state.stream, { mimeType: mime, audioBitsPerSecond: 28000 });
+      state.recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0 && !state.muted) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = (reader.result || '').split(',')[1];
+            if (base64) {
+              publish({
+                type: 'ROOM_VOICE_CHUNK',
+                roomId: state.roomId,
+                senderId: myId(),
+                name: profile().name,
+                mimeType: mime,
+                data: base64
+              });
+            }
+          };
+          reader.readAsDataURL(event.data);
+        }
+      };
+      state.recorder.start(600); // Send 600ms chunks
+    } catch (err) {
+      console.warn('[RoomVoice] MediaRecorder fallback unavailable:', err);
+    }
+  }
+
+  function stopMediaRecorderFallback() {
+    if (state.recorder && state.recorder.state !== 'inactive') {
+      try {
+        state.recorder.stop();
+      } catch (_) {}
+    }
+    state.recorder = null;
+  }
+
+  /* ==========================================================================
+     RECEIVE & DISPATCH REALTIME MESSAGES
+     ========================================================================== */
+
+  async function receive(payload) {
     if (!payload || !payload.type) return;
     const messageRoom = (payload.roomId || PUBLIC_ROOM_ID).trim().toUpperCase();
     if (messageRoom !== state.roomId) return;
+    if (payload.senderId === myId()) return;
 
-    if (payload.type === 'ROOM_CHAT') {
-      addMessage({ ...payload, self: payload.senderId === window.RealtimeSanctuary?.clientId });
-      renderMessages();
-    } else if (payload.type === 'ROOM_PRESENCE' && payload.senderId) {
-      state.members.set(payload.senderId, {
-        id: payload.senderId,
-        name: payload.name || 'Đồng Tu',
-        speaking: Boolean(payload.speaking),
-        lastSeen: Date.now()
-      });
-      renderMembers();
+    switch (payload.type) {
+      case 'ROOM_CHAT':
+        addMessage({ ...payload, self: false });
+        renderMessages();
+        break;
+
+      case 'ROOM_PRESENCE':
+        if (payload.senderId) {
+          const isSpeaking = Boolean(payload.speaking);
+          state.members.set(payload.senderId, {
+            id: payload.senderId,
+            name: payload.name || 'Đồng Tu',
+            speaking: isSpeaking,
+            lastSeen: Date.now()
+          });
+          renderMembers();
+
+          // If a new member joins and our mic is active, send WebRTC offer to them!
+          if (!state.muted && isSpeaking) {
+            callPeer(payload.senderId);
+          }
+        }
+        break;
+
+      case 'ROOM_VOICE_OFFER':
+        if (payload.targetId === myId() || payload.targetId === 'all') {
+          try {
+            const pc = getOrCreatePeerConnection(payload.senderId);
+            await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            publish({
+              type: 'ROOM_VOICE_ANSWER',
+              targetId: payload.senderId,
+              sdp: answer
+            });
+          } catch (err) {
+            console.warn('[RoomVoice] Error answering voice offer:', err);
+          }
+        }
+        break;
+
+      case 'ROOM_VOICE_ANSWER':
+        if (payload.targetId === myId()) {
+          try {
+            const pc = state.peerConnections.get(payload.senderId);
+            if (pc) {
+              await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+            }
+          } catch (err) {
+            console.warn('[RoomVoice] Error setting remote answer:', err);
+          }
+        }
+        break;
+
+      case 'ROOM_VOICE_CANDIDATE':
+        if (payload.targetId === myId() && payload.candidate) {
+          try {
+            const pc = state.peerConnections.get(payload.senderId);
+            if (pc) {
+              await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            }
+          } catch (err) {
+            console.warn('[RoomVoice] Error adding ICE candidate:', err);
+          }
+        }
+        break;
+
+      case 'ROOM_VOICE_CHUNK':
+        if (payload.data) {
+          playAudioChunk(payload.senderId, payload.data, payload.mimeType);
+        }
+        break;
     }
   }
 
@@ -838,7 +1190,12 @@
   function ensureRoom() {
     setRoomMeta();
     renderQr();
-    publish({ type: 'ROOM_PRESENCE', name: profile().name, avatar: profile().avatar, speaking: !state.muted });
+    publish({
+      type: 'ROOM_PRESENCE',
+      name: profile().name,
+      avatar: profile().avatar,
+      speaking: !state.muted
+    });
     renderMembers();
     hydrateHistory(window.RealtimeSanctuary?.roomChatHistory || []);
   }
@@ -866,16 +1223,53 @@
 
   async function toggleMic() {
     const button = document.getElementById('room-mic-button');
+    const meter = document.getElementById('room-voice-meter');
+
     try {
-      if (!state.stream) state.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // 1. Acquire microphone stream with noise suppression & echo cancellation
+      if (!state.stream) {
+        state.stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+      }
+
       state.muted = !state.muted;
-      state.stream.getAudioTracks().forEach(track => { track.enabled = !state.muted; });
+      state.stream.getAudioTracks().forEach(track => {
+        track.enabled = !state.muted;
+      });
+
       button?.classList.toggle('is-live', !state.muted);
-      setText('room-mic-label', state.muted ? 'Bật mic' : 'Tắt mic');
-      publish({ type: 'ROOM_PRESENCE', name: profile().name, avatar: profile().avatar, speaking: !state.muted });
+      setText('room-mic-label', state.muted ? 'Bật mic đàm thoại' : 'Đang bật mic · Chạm tắt');
+      meter?.classList.toggle('is-active', !state.muted);
+
+      if (!state.muted) {
+        setupAudioVisualizer();
+        startMediaRecorderFallback();
+
+        // Initiate WebRTC call to all known members in the room
+        state.members.forEach((_, peerId) => {
+          callPeer(peerId);
+        });
+      } else {
+        stopMediaRecorderFallback();
+      }
+
+      // Broadcast presence state
+      publish({
+        type: 'ROOM_PRESENCE',
+        name: profile().name,
+        avatar: profile().avatar,
+        speaking: !state.muted
+      });
       renderMembers();
-    } catch (_) {
-      alert('Không thể kết nối micro hoặc trình duyệt chưa cấp quyền.');
+
+    } catch (err) {
+      console.error('[RoomVoice] getUserMedia error:', err);
+      alert('Không thể kết nối Micro: Vui lòng nhấn vào biểu tượng ổ khóa 🔒 trên thanh địa chỉ trình duyệt và chọn "Cho phép (Allow)" Micro để tham gia đàm thoại.');
     }
   }
 
@@ -886,7 +1280,7 @@
 
     const message = {
       type: 'ROOM_CHAT',
-      messageId: `${window.RealtimeSanctuary?.clientId || 'guest'}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      messageId: `${myId()}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       channel: state.channel,
       name: profile().name,
       text,
@@ -908,6 +1302,11 @@
     state.messages = [];
     state.messageIds.clear();
     state.members.clear();
+    // Reset voice connections on room change
+    state.peerConnections.forEach(pc => pc.close());
+    state.peerConnections.clear();
+    state.remoteAudioStreams.clear();
+    if (audioContainer) audioContainer.innerHTML = '';
     setRoomMeta();
     renderQr();
     renderMembers();
@@ -940,8 +1339,12 @@
   };
   window.switchRoomChannel = function (channel) {
     state.channel = channel === 'dm' ? 'dm' : 'lobby';
-    document.querySelectorAll('.room-channel-tab').forEach(tab => tab.classList.toggle('is-active', tab.dataset.channel === state.channel));
-    setText('room-channel-title', state.channel === 'dm' ? '🔒 Nhắn tin riêng tư cùng Đạo Hữu' : (isPublicRoom() ? '🌐 Đạo Tràng Toàn Cầu · Mọi người cùng chiêm bái' : '🔒 Phòng Tu Riêng · Trong mã phòng này'));
+    document.querySelectorAll('.room-channel-tab').forEach(tab => {
+      tab.classList.toggle('is-active', tab.dataset.channel === state.channel);
+    });
+    setText('room-channel-title', state.channel === 'dm'
+      ? '🔒 Nhắn tin riêng tư cùng Đạo Hữu'
+      : (isPublicRoom() ? '🌐 Đạo Tràng Toàn Cầu · Mọi người cùng chiêm bái' : '🔒 Phòng Tu Riêng · Trong mã phòng này'));
     renderMessages();
   };
 
@@ -1017,15 +1420,24 @@
             </div>
           </section>
 
-          <!-- Sidebar Column: Members & Invite -->
+          <!-- Sidebar Column: Members & Voice Control -->
           <aside class="room-chat-sidebar" aria-label="Thông tin phòng">
             <span class="room-side-title">Đồng Tu Đang Huân Tu</span>
-            <p class="room-side-caption">Các đạo hữu trong cùng phòng sẽ thấy tin nhắn và trạng thái tịnh tâm.</p>
+            <p class="room-side-caption">Các đạo hữu trong cùng phòng sẽ nghe giọng nói trực tiếp và trạng thái tịnh tâm.</p>
             <div id="room-members-list"></div>
 
+            <!-- Mic Control with Animated Sound Level Meter -->
             <button type="button" id="room-mic-button" onclick="toggleRoomMic()" class="room-mic-button">
               <span>🎙</span><span id="room-mic-label">Bật mic đàm thoại</span>
             </button>
+            <div id="room-voice-meter" class="room-voice-meter" title="Âm lượng giọng nói">
+              <span class="room-voice-bar"></span>
+              <span class="room-voice-bar"></span>
+              <span class="room-voice-bar"></span>
+              <span class="room-voice-bar"></span>
+              <span class="room-voice-bar"></span>
+            </div>
+
             <button type="button" onclick="createRoomChat()" class="room-secondary-action">
               <span>＋</span><span>Tạo phòng tu riêng</span>
             </button>
@@ -1061,7 +1473,10 @@
   window.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !document.getElementById('room-chat-modal')?.classList.contains('hidden')) close();
   });
-  window.addEventListener('beforeunload', () => state.stream?.getTracks().forEach(track => track.stop()));
+  window.addEventListener('beforeunload', () => {
+    state.stream?.getTracks().forEach(track => track.stop());
+    state.peerConnections.forEach(pc => pc.close());
+  });
   window.addEventListener('load', injectRoomUi);
   document.addEventListener('DOMContentLoaded', injectRoomUi, { once: true });
   if (document.readyState !== 'loading') injectRoomUi();

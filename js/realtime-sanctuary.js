@@ -826,6 +826,10 @@
       switch (msg.type) {
         case 'ROOM_CHAT':
         case 'ROOM_PRESENCE':
+        case 'ROOM_VOICE_OFFER':
+        case 'ROOM_VOICE_ANSWER':
+        case 'ROOM_VOICE_CANDIDATE':
+        case 'ROOM_VOICE_CHUNK':
           window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: msg }));
           break;
         case 'HELLO_SYNC':
