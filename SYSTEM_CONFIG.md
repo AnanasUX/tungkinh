@@ -75,17 +75,27 @@ node server.js
 
 ### 3.3. Đàm Thoại Giọng Nói Thời Gian Thực (Realtime Voice / Mic Engine)
 - Hệ thống truyền dẫn âm thanh giọng nói 2 chiều (WebRTC Mesh + Web Audio API Opus Chunk Broadcast):
-  1. **WebSocket Stream Tức Thời**: Mọi thiết bị truy cập qua mạng nội bộ hoặc Internet kết nối thẳng vào luồng WebSocket của Node server (`ws://.../ws`).
-  2. **Giải Mã Web Audio API Trực Tiếp**: Toàn bộ luồng âm thanh và gói tin âm thanh được giải mã và phát qua `AudioEngine.ctx` (`decodeAudioData` + `BufferSource`), giải quyết 100% lỗi Autoplay Policy bị chặn trên iOS Safari và Android Chrome.
-  3. **Nút Bật Mic Nhanh Trên Thanh Đáy (`#btn-dock-mic`)**: Hành giả có thể trực tiếp chạm bật/tắt Micro đàm thoại ngay tại Chánh Điện mà không cần phải mở bảng chat.
+  1. **WebSocket Stream Tức Thời**: Mọi thiết bị truy cập qua mạng nội bộ hoặc Internet kết nối thẳng vào luồng WebSocket của Node server (`ws://.../ws`) sử dụng gói tin phụ thuộc `ws` chuẩn hóa.
+  2. **Chu Kỳ Thu Âm Tự Thân (Self-Contained Looping Slices)**: Thu âm từng lát cắt 400ms độc lập, đảm bảo 100% gói tin âm thanh xuất ra đều mang đầy đủ container header (EBML/moov), loại bỏ hoàn toàn lỗi không nhận dạng định dạng khi giải mã.
+  3. **Giải Mã Web Audio API Trực Tiếp & Lên Lịch Phát (Timeline Scheduler)**: Toàn bộ luồng âm thanh được giải mã qua `AudioEngine.ctx` (`decodeAudioData` + `BufferSource.start(nextScheduledTime)`), tạo dòng âm thanh liền mạch, không giật cục, không bị chặn bởi Autoplay Policy trên iOS Safari và Android Chrome.
+  4. **Nút Bật Mic Nhanh Đa Vị Trí**:
+     - Nút Mic trên thanh đáy Chánh Điện (`#btn-dock-mic`).
+     - Nút Mic trên Header của hộp thoại Chat (`#room-header-mic-btn`).
+     - Nút Mic trong Sidebar thành viên kèm thước đo âm lượng nhấp nhô (`.room-voice-meter`).
 
 ---
 
 ## 4. CẤU HÌNH DỮ LIỆU & GIAO THỨC CHAT THỜI GIAN THỰC
 
-### 4.1. Room Chat Protocol ([js/room-chat.js](file:///d:/Python/tungkinh/js/room-chat.js))
+### 4.1. Room Chat Protocol & Giao Diện Không Đè Lấn ([js/room-chat.js](file:///d:/Python/tungkinh/js/room-chat.js))
 - Nút kích hoạt trên Header: `#room-chat-header-button` (icon bong bóng thoại viền xanh cyan ngọc bích).
-- Panel chat: `#room-chat-panel` hỗ trợ chat công cộng toàn đạo tràng (`lobby`) và tin nhắn đạo hữu (`dm`).
+- Panel chat: `#room-chat-modal` kiến trúc kính trầm hương thiền tịnh (Imperial Gold Zen Glassmorphism).
+- **Quy tắc chống đè lấn (Zero Overlapping Invariant)**:
+  - Khung thoại `.room-chat-shell` cố định theo Flexbox hướng dọc (`flex-direction: column; overflow: hidden`), chiều cao giới hạn `min(650px, 94dvh)`.
+  - Danh sách tin nhắn `.room-chat-messages` nằm trong khoang cuộn độc lập (`flex: 1 1 0%; min-height: 0; overflow-y: auto`).
+  - Thanh lời lành `.room-dharma-pills` (1 hàng duy nhất trượt ngang, không bao giờ rơi dòng đè chữ).
+  - Khung soạn thảo `.room-chat-composer` cố định vững chắc ở đáy (chiều cao 46px - 52px), không bao giờ bị trôi hoặc che lấp tin nhắn.
+  - Trên màn hình nhỏ hoặc xoay ngang ($\le 840\text{px}$ hoặc $\le 540\text{px}$ chiều cao): Tự động tách thành các tab thông minh (`🌐 Đạo Tràng Toàn Cầu`, `🔒 Nhắn Tin Riêng`, `👥 Đồng Tu & Mã Phòng`) — khi xem chat thì khung chat chiếm 100% diện tích, khi xem thành viên thì chiếm 100% diện tích, triệt tiêu hoàn toàn tình trạng sidebar 280px chèn ép làm vỡ khung chat.
 - Sự kiện phát sóng:
   ```json
   {
