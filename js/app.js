@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'female_layman': '🧘‍♀️',
         'monk': '🦲',
         'nun': '🧕',
-        'lotus': '🪷'
+        'lotus': '🌸'
     };
 
     // ==========================================

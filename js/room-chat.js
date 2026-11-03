@@ -935,7 +935,16 @@
       list.innerHTML = `
         <div class="room-chat-empty">
           <div>
-            <div class="room-chat-empty-icon">🪷</div>
+            <div class="room-chat-empty-icon">
+              <svg viewBox="0 0 32 32" width="40" height="40" fill="none" class="mx-auto" aria-hidden="true">
+                <path d="M16 3C16 3 11.5 9.5 11.5 16C11.5 19.5 13.5 22 16 23C18.5 22 20.5 19.5 20.5 16C20.5 9.5 16 3 16 3Z" fill="#FFFBEB"/>
+                <path d="M14.5 10C14.5 10 8.5 13.5 8 18.5C7.7 21.5 10.5 23 13.5 22.5C13.5 19.5 14 15.5 14.5 10Z" fill="#FCD34D"/>
+                <path d="M17.5 10C17.5 10 23.5 13.5 24 18.5C24.3 21.5 21.5 23 18.5 22.5C18.5 19.5 18 15.5 17.5 10Z" fill="#FCD34D"/>
+                <path d="M10 16C10 16 4.5 18 3.5 22C3 24 5 25.5 8.5 24.5C10 22 10.5 19 10 16Z" fill="#F59E0B"/>
+                <path d="M22 16C22 16 27.5 18 28.5 22C29 24 27 25.5 23.5 24.5C22 22 21.5 19 22 16Z" fill="#F59E0B"/>
+                <path d="M11 24C13 25.5 16 26 16 26C16 26 19 25.5 21 24C18 23 14 23 11 24Z" fill="#D97706"/>
+              </svg>
+            </div>
             <strong>Không Gian Đang Tĩnh Lặng</strong>
             <span>Hãy gửi lời chúc an lành hoặc câu niệm Phật đầu tiên cho Đạo Tràng.</span>
           </div>
@@ -1587,7 +1596,16 @@
         <!-- Sacred Header -->
         <header class="room-chat-header">
           <div class="room-header-left">
-            <div class="room-lotus-emblem" title="Đạo Tràng An Nhiên">🪷</div>
+            <div class="room-lotus-emblem" title="Đạo Tràng An Nhiên">
+              <svg viewBox="0 0 32 32" width="20" height="20" fill="none" class="shrink-0" aria-hidden="true">
+                <path d="M16 3C16 3 11.5 9.5 11.5 16C11.5 19.5 13.5 22 16 23C18.5 22 20.5 19.5 20.5 16C20.5 9.5 16 3 16 3Z" fill="#FFFBEB"/>
+                <path d="M14.5 10C14.5 10 8.5 13.5 8 18.5C7.7 21.5 10.5 23 13.5 22.5C13.5 19.5 14 15.5 14.5 10Z" fill="#FCD34D"/>
+                <path d="M17.5 10C17.5 10 23.5 13.5 24 18.5C24.3 21.5 21.5 23 18.5 22.5C18.5 19.5 18 15.5 17.5 10Z" fill="#FCD34D"/>
+                <path d="M10 16C10 16 4.5 18 3.5 22C3 24 5 25.5 8.5 24.5C10 22 10.5 19 10 16Z" fill="#F59E0B"/>
+                <path d="M22 16C22 16 27.5 18 28.5 22C29 24 27 25.5 23.5 24.5C22 22 21.5 19 22 16Z" fill="#F59E0B"/>
+                <path d="M11 24C13 25.5 16 26 16 26C16 26 19 25.5 21 24C18 23 14 23 11 24Z" fill="#D97706"/>
+              </svg>
+            </div>
             <div class="room-header-titles">
               <div class="room-header-topline">
                 <h3 id="room-chat-title">Đạo Tràng Chung</h3>
@@ -1633,7 +1651,7 @@
             <div class="room-dharma-pills">
               <span class="text-[10px] text-amber-300/70 font-bold uppercase tracking-wider shrink-0 mr-1">Lời lành:</span>
               <button type="button" onclick="sendQuickDharmaBlessing('Nam Mô A Di Đà Phật 🙏')" class="room-dharma-pill">🙏 A Di Đà Phật</button>
-              <button type="button" onclick="sendQuickDharmaBlessing('Tùy hỷ công đức quý Đạo hữu 🪷')" class="room-dharma-pill">🪷 Tùy hỷ công đức</button>
+              <button type="button" onclick="sendQuickDharmaBlessing('Tùy hỷ công đức quý Đạo hữu 🌸')" class="room-dharma-pill">🌸 Tùy hỷ công đức</button>
               <button type="button" onclick="sendQuickDharmaBlessing('Nguyện thân tâm thường an lạc ✨')" class="room-dharma-pill">✨ Thân tâm an lạc</button>
               <button type="button" onclick="sendQuickDharmaBlessing('Nguyện cầu quốc thới dân an 🕯️')" class="room-dharma-pill">🕯️ Nguyện cầu bình an</button>
               <button type="button" onclick="sendQuickDharmaBlessing('Vạn sự cát tường, phước huệ trang nghiêm 🕊️')" class="room-dharma-pill">🕊️ Cát tường như ý</button>

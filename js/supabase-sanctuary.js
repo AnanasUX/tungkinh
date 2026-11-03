@@ -254,7 +254,7 @@
           window.triggerDevoteeBow(`seat-${seatNo}`, 'Dâng 3 nén tâm hương', 'lotus');
         }
         if (window.showLiveGiftBanner) {
-          window.showLiveGiftBanner('Dâng Hương Cúng Phật', `🪷 Đồng tu ${payload.name || payload.senderName || 'Đồng Tu'} vừa dâng 3 nén tâm hương (+20 Công Đức)`, 'lotus');
+          window.showLiveGiftBanner('Dâng Hương Cúng Phật', `🌸 Đồng tu ${payload.name || payload.senderName || 'Đồng Tu'} vừa dâng 3 nén tâm hương (+20 Công Đức)`, 'lotus');
         }
       };
 
@@ -272,7 +272,7 @@
             window.addMeritPoints(window.currentUserProfile.fullName, 5, 'lotus', `Nhận tùy hỷ công đức từ ${payload.fromName}`, true);
           }
           if (window.showLiveGiftBanner) {
-            window.showLiveGiftBanner('Tùy Hỷ Công Đức', `🪷 Đạo hữu ${payload.fromName} vừa tùy hỷ tán thán công đức của bạn (+5 Công Đức)!`, 'lotus');
+            window.showLiveGiftBanner('Tùy Hỷ Công Đức', `🌸 Đạo hữu ${payload.fromName} vừa tùy hỷ tán thán công đức của bạn (+5 Công Đức)!`, 'lotus');
           }
           const mySeatNo = window.currentUserProfile && window.currentUserProfile.assignedSeatNo;
           if (mySeatNo && window.triggerDevoteeBow) {
@@ -280,7 +280,7 @@
           }
         } else {
           if (window.showLiveGiftBanner) {
-            window.showLiveGiftBanner('Tùy Hỷ Công Đức', `🪷 ${payload.fromName || 'Đồng tu'} vừa tán thán công đức của ${payload.targetName || 'quý đạo hữu'}!`, 'lotus');
+            window.showLiveGiftBanner('Tùy Hỷ Công Đức', `🌸 ${payload.fromName || 'Đồng tu'} vừa tán thán công đức của ${payload.targetName || 'quý đạo hữu'}!`, 'lotus');
           }
           if (payload.targetSeatNo && window.triggerDevoteeBow) {
             window.triggerDevoteeBow(`seat-${payload.targetSeatNo}`, '🙏 Cảm niệm công đức!', 'lotus');

@@ -62,7 +62,7 @@ class TempleCertificateGenerator {
 
     ctx.fillStyle = '#d4af37';
     ctx.font = '24px serif';
-    ctx.fillText('🪷', 600, 152);
+    ctx.fillText('🌸', 600, 152);
 
     // 4. TIÊU ĐỀ BẰNG CÔNG ĐỨC
     ctx.fillStyle = '#7a1c02';

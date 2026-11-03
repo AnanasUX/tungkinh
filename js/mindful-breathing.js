@@ -36,7 +36,7 @@ class MindfulBreathingEngine {
 
           // 3. Thở ra (6 giây)
           this.breathPhase = 'exhale';
-          if (typeof onPhaseChange === 'function') onPhaseChange('exhale', 'Thở ra từ từ... Miệng mỉm cười an nhiên 🪷', 6000);
+          if (typeof onPhaseChange === 'function') onPhaseChange('exhale', 'Thở ra từ từ... Miệng mỉm cười an nhiên 🌸', 6000);
 
           this.timerInterval = setTimeout(() => {
             if (!this.isActive) return;
