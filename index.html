@@ -309,6 +309,75 @@
       }
     }
 
+    /* 11. Màn hình Mobile Landscape nhỏ và cực thấp (Height <= 420px down to 240px) */
+    @media screen and (max-height: 420px) {
+      :root {
+        --cushion-w: 42px !important;
+        --cushion-h: 29px !important;
+        --chibi-w: 36px !important;
+        --chibi-h: 46px !important;
+        --seat-name-size: 7.5px !important;
+        --seat-sub-size: 6.2px !important;
+        --seat-badge-max-w: 62px !important;
+
+        --dock-btn-h: 21px !important;
+        --dock-font-size: 8px !important;
+        --dock-icon-size: 10px !important;
+        --dock-padding: 1px 2.5px !important;
+
+        --header-h: 30px !important;
+        --header-title-size: 12px !important;
+        --header-sub-size: 7px !important;
+      }
+      footer {
+        height: 44px !important;
+        max-height: 44px !important;
+      }
+      #bottom-dock-scroll > button {
+        height: 19px !important;
+        font-size: 7.5px !important;
+        padding: 1px 2px !important;
+      }
+    }
+
+    @media screen and (max-height: 320px) {
+      :root {
+        --cushion-w: 36px !important;
+        --cushion-h: 25px !important;
+        --chibi-w: 30px !important;
+        --chibi-h: 38px !important;
+        --seat-name-size: 7px !important;
+        --seat-sub-size: 5.8px !important;
+        --seat-badge-max-w: 54px !important;
+
+        --dock-btn-h: 18px !important;
+        --dock-font-size: 7px !important;
+        --dock-icon-size: 9px !important;
+        --dock-padding: 0.5px 2px !important;
+
+        --header-h: 26px !important;
+        --header-title-size: 11px !important;
+      }
+      header {
+        height: 26px !important;
+        min-height: 26px !important;
+      }
+      footer {
+        height: 38px !important;
+        max-height: 38px !important;
+      }
+      #bottom-dock-scroll > button {
+        height: 17px !important;
+        font-size: 7px !important;
+        padding: 0.5px 1.5px !important;
+      }
+      [id$="-modal"] > .temple-panel,
+      [id$="-modal"] > div.temple-panel {
+        max-height: 94dvh !important;
+        padding: 8px !important;
+      }
+    }
+
     /* ==========================================================================
        RESPONSIVE ADAPTIVE SANCTUARY CONTAINER (MOBILE & DESKTOP)
        ========================================================================== */
@@ -630,9 +699,24 @@
         display: none !important;
       }
 
-      /* Ẩn các nút tab nổi hai bên sườn trên mobile landscape để không che sàn Chánh Điện */
-      #btn-tab-drawer-left, #btn-tab-drawer-right {
-        display: none !important;
+      /* Tab nổi hai bên sườn trên mobile landscape: Siêu gọn gàng, không che bồ đoàn */
+      #btn-tab-drawer-left {
+        display: flex !important;
+        left: 0 !important;
+        top: 38px !important;
+        padding: 2.5px 5px !important;
+        font-size: 8.5px !important;
+        border-radius: 0 8px 8px 0 !important;
+        z-index: 40 !important;
+      }
+      #btn-tab-drawer-right {
+        display: flex !important;
+        right: 0 !important;
+        top: 38px !important;
+        padding: 2.5px 5px !important;
+        font-size: 8.5px !important;
+        border-radius: 8px 0 0 8px !important;
+        z-index: 40 !important;
       }
 
       /* Băng rôn Đồng Tụng (Communal Chant Banner) tinh gọn */
@@ -1669,6 +1753,12 @@
             <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[8px] font-bold flex items-center justify-center border border-white/60">1</span>
           </button>
 
+          <!-- BẢNG VÀNG CÔNG ĐỨC & NGƯỜI ONLINE (QUICK TOGGLE) -->
+          <button onclick="toggleMobileDrawer('right')" class="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-emerald-400/50 flex items-center justify-center text-emerald-300 shadow-lg transition active:scale-90" title="Bảng Vàng Công Đức & Danh Sách Người Online">
+            <span class="text-xs">👥</span>
+            <span id="header-right-online-badge" class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-600 text-white text-[8px] font-bold flex items-center justify-center border border-white/60">1</span>
+          </button>
+
           <button id="room-chat-header-button" onclick="window.openRoomChat && window.openRoomChat()" title="Pháp Thoại & Đàm Luận Đạo Tràng" aria-label="Pháp Thoại & Đàm Luận Đạo Tràng"
             class="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-950/85 hover:bg-amber-900 border border-amber-300/60 backdrop-blur-md flex items-center justify-center text-amber-200 shadow-[0_0_12px_rgba(245,180,60,0.3)] transition active:scale-90 mr-1">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
@@ -1766,9 +1856,9 @@
         <span>🎁 Lời Chúc</span>
       </button>
 
-      <button onclick="toggleMobileDrawer('right')" id="btn-tab-drawer-right" title="Mở Mõ & Bảng Công Đức"
+      <button onclick="toggleMobileDrawer('right')" id="btn-tab-drawer-right" title="Mở Mõ, Bảng Công Đức & Danh Sách Người Online"
         class="2xl:hidden absolute right-0 top-[22%] z-30 px-2 py-1.5 rounded-l-xl bg-amber-950/90 border-y border-l border-amber-300/60 text-amber-200 text-[10px] font-bold shadow-xl backdrop-blur-md flex items-center gap-1 active:scale-95 transition pointer-events-auto">
-        <span>Công Đức 📜</span>
+        <span>Công Đức & Online 👥</span>
       </button>
 
       <!-- LEFT PANEL -->
@@ -1969,6 +2059,35 @@
             <span id="auto-practice-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
             <span id="auto-practice-label">Tự động tụng: BẬT</span>
           </button>
+        </div>
+
+        <!-- ====================================================================
+             KHU VỰC 2: DANH SÁCH NGƯỜI ONLINE TRONG PHIÊN (VỊ TRÍ THỰC TẾ GPS)
+             ==================================================================== -->
+        <div id="sanctuary-online-devotees-card" class="temple-panel w-[176px] sm:w-[226px] rounded-xl p-2 sm:p-2.5 flex flex-col pointer-events-auto border border-emerald-400/50 shadow-[0_0_20px_rgba(16,185,129,0.22)]">
+          <div class="pb-1 border-b border-emerald-400/30 flex items-center justify-between">
+            <span class="text-[9.5px] sm:text-[10.5px] font-bold tracking-wider text-emerald-300 uppercase flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>NGƯỜI ONLINE (<span id="side-online-count">1</span>)</span>
+            </span>
+            <button onclick="detectUserRealLocation()" title="Lấy lại vị trí GPS thực tế của thiết bị" class="text-[9px] text-amber-300 hover:text-amber-100 flex items-center gap-0.5 underline cursor-pointer">
+              <span>📍 GPS</span>
+            </button>
+          </div>
+
+          <div id="side-online-devotees-list" class="my-1.5 max-h-[120px] sm:max-h-[160px] overflow-y-auto merit-scroll space-y-1.5 pr-0.5">
+            <!-- Populated dynamically via renderSideOnlineDevotees() -->
+          </div>
+
+          <div class="pt-1 border-t border-emerald-400/20 flex items-center justify-between text-[8.5px] sm:text-[9px] text-emerald-200/80 px-0.5">
+            <span class="flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span>Trực tuyến</span>
+            </span>
+            <span id="side-my-gps-badge" class="text-amber-300 font-bold truncate max-w-[95px]" title="Vị trí thiết bị">
+              📍 Thái Bình
+            </span>
+          </div>
         </div>
 
       </aside>
@@ -2510,7 +2629,7 @@
                     Quẻ Số 01 · Thượng Thượng Cát
                   </span>
                   <span id="oracle-target-user" class="text-[9.5px] text-emerald-300 font-semibold">
-                    Hành giả: Nguyễn Bá Ngọc
+                    Hành giả: Đạo Hữu
                   </span>
                 </div>
                 <h4 id="oracle-title" class="font-serif-title text-lg sm:text-xl font-bold text-amber-200 mt-1">
@@ -3555,7 +3674,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     let currentDetectedIP = '';
 
     const SAMPLE_NAMES = [
-      { name: 'Kim Tiền', dharma: 'Tịnh Tâm', gender: 'female' },
+      { name: 'Kim Tiến', dharma: 'Minh Tâm', gender: 'monk' },
       { name: 'Trần Văn Nam', dharma: 'Minh Tâm', gender: 'monk' },
       { name: 'Lê Diệu Hoa', dharma: 'Diệu Hoa', gender: 'female' },
       { name: 'Nguyễn Phúc Thiện', dharma: 'Phúc Thiện', gender: 'monk' },
@@ -3671,6 +3790,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           currentUserProfile.hometown = loc;
           updateLocationDisplayUI(loc, isGps);
           saveRealUserSession();
+          const userSeat = sanctuarySeats.find(s => s.isUser || s.seatNo === currentUserProfile.assignedSeatNo);
+          if (userSeat) {
+            userSeat.hometown = loc;
+          }
+          if (typeof renderSideOnlineDevotees === 'function') {
+            renderSideOnlineDevotees();
+          }
           if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.broadcastHelloSync === 'function') {
             window.RealtimeSanctuary.broadcastHelloSync();
           }
@@ -3736,6 +3862,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       const locVal = document.getElementById('detected-location-val');
       const hometownInput = document.getElementById('reg-hometown');
       const gpsBadge = document.getElementById('reg-gps-badge');
+      const sideMyGps = document.getElementById('side-my-gps-badge');
       if (locVal) {
         locVal.textContent = `• 📍 ${loc} (${isGps ? 'GPS thực tế' : 'IP'})`;
       }
@@ -3747,6 +3874,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         gpsBadge.innerHTML = isGps 
           ? `<span class="text-emerald-400 font-bold">✓ Đã xác thực GPS: ${loc}</span>` 
           : `<span class="text-amber-300">📍 Vị trí: ${loc}</span>`;
+      }
+      if (sideMyGps) {
+        sideMyGps.textContent = `📍 ${loc}`;
+        sideMyGps.title = isGps ? `GPS thực tế: ${loc}` : `Vị trí: ${loc}`;
       }
     }
     window.updateLocationDisplayUI = updateLocationDisplayUI;
@@ -3862,13 +3993,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         targetSeat.isUser = true;
         targetSeat.isDummy = false;
         targetSeat.remoteClientId = window.SANCTUARY_CLIENT_ID;
-        targetSeat.name = prof.fullName || 'Đồng Tu Mới';
-        targetSeat.dharma = prof.dharmaName || 'Tịnh Tâm';
-        targetSeat.age = prof.age || 26;
-        targetSeat.hometown = prof.hometown || '';
-        targetSeat.type = prof.avatarType || 'monk';
-        targetSeat.points = prof.meritScore || 0;
-        targetSeat.ip = prof.clientIp || currentDetectedIP || '117.5.x.x';
+        targetSeat.name = prof.fullName || currentUserProfile.fullName || 'Kim Tiến';
+        targetSeat.dharma = prof.dharmaName || currentUserProfile.dharmaName || 'Minh Tâm';
+        targetSeat.age = prof.age || currentUserProfile.age || 26;
+        targetSeat.hometown = prof.hometown || currentUserProfile.realGpsLocation || currentUserProfile.hometown || 'Thái Bình';
+        targetSeat.type = prof.avatarType || currentUserProfile.avatarType || 'monk';
+        targetSeat.points = prof.meritScore || currentUserProfile.meritScore || 0;
+        targetSeat.ip = prof.clientIp || currentUserProfile.clientIp || currentDetectedIP || '117.5.x.x';
         prof.assignedSeatNo = targetSeat.seatNo;
       }
       return targetSeat;
@@ -3887,8 +4018,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         if (!data) return false;
 
         Object.assign(currentUserProfile, data);
-
-        if (document.getElementById('reg-fullname') && currentUserProfile.fullName) document.getElementById('reg-fullname').value = currentUserProfile.fullName;
+        if (currentUserProfile.fullName === 'Nguyễn Bá Ngọc' || !currentUserProfile.fullName) {
+          currentUserProfile.fullName = 'Kim Tiến';
+        }
+        if (!currentUserProfile.dharmaName) {
+          currentUserProfile.dharmaName = 'Minh Tâm';
+        }
         if (document.getElementById('reg-dharma-name') && currentUserProfile.dharmaName) document.getElementById('reg-dharma-name').value = currentUserProfile.dharmaName;
         if (document.getElementById('reg-hometown') && currentUserProfile.hometown) document.getElementById('reg-hometown').value = currentUserProfile.hometown;
         if (document.getElementById('reg-day') && currentUserProfile.day) document.getElementById('reg-day').value = currentUserProfile.day;
@@ -4118,7 +4253,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
     function fillSamplePractitioner() {
       const samples = [
-        { name: 'Nguyễn Bá Ngọc', dharma: 'Minh Tâm', home: 'Hà Nội', d: '31', m: '10', y: '1996', type: 'monk' },
+        { name: 'Kim Tiến', dharma: 'Minh Tâm', home: 'Thái Bình', d: '31', m: '10', y: '1996', type: 'monk' },
         { name: 'Trần Ngọc Tâm',  dharma: 'Diệu Liên', home: 'TP.HCM', d: '29', m: '05', y: '2001', type: 'female' },
         { name: 'Lê Hoàng Phúc',  dharma: 'Thiện Đức', home: 'Đà Nẵng', d: '30', m: '12', y: '1995', type: 'layman' },
         { name: 'Phạm Thanh Vân', dharma: 'Tịnh Vân',  home: 'Huế', d: '19', m: '04', y: '2002', type: 'female' }
@@ -4485,12 +4620,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       const dharmaInput = document.getElementById('reg-dharma-name');
 
       if (!nameInput.value || nameInput.value === 'Nguyễn Bá Ngọc' || nameInput.value === 'Đồng Tu Mới') {
+        const validExisting = currentUserProfile.fullName && currentUserProfile.fullName !== 'Nguyễn Bá Ngọc' && currentUserProfile.fullName !== 'Đồng Tu Mới';
         const pick = pickUniqueSampleDevotee();
-        nameInput.value = pick.name;
-        if (dharmaInput) dharmaInput.value = pick.dharma;
-        currentUserProfile.fullName = pick.name;
-        currentUserProfile.dharmaName = pick.dharma;
-        currentUserProfile.avatarType = pick.gender || 'monk';
+        const initialName = validExisting ? currentUserProfile.fullName : (pick.name || 'Kim Tiến');
+        nameInput.value = initialName;
+        if (dharmaInput) dharmaInput.value = currentUserProfile.dharmaName || pick.dharma || 'Minh Tâm';
+        currentUserProfile.fullName = initialName;
+        currentUserProfile.dharmaName = dharmaInput ? dharmaInput.value : 'Minh Tâm';
+        currentUserProfile.avatarType = currentUserProfile.avatarType || pick.gender || 'monk';
         const avRadio = document.querySelector(`input[name="regAvatarType"][value="${currentUserProfile.avatarType}"]`);
         if (avRadio) avRadio.checked = true;
       }
@@ -5612,7 +5749,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         wrapper.style.zIndex = Math.round(seatY * 10) + (seat.isUser ? 8 : 0);
         wrapper.className = 'absolute flex flex-col items-center cursor-pointer pointer-events-auto group';
 
-        if (!seat.occupied) {
+        const isUserSeat = seat.isUser || (currentUserProfile.assignedSeatNo && seat.seatNo === currentUserProfile.assignedSeatNo);
+        if (isUserSeat) {
+          seat.isUser = true;
+          seat.occupied = true;
+          seat.name = currentUserProfile.fullName || 'Kim Tiến';
+          seat.dharma = currentUserProfile.dharmaName || 'Minh Tâm';
+          seat.hometown = currentUserProfile.realGpsLocation || currentUserProfile.hometown || 'Thái Bình';
+        }
+
+        if (!seat.occupied && !isUserSeat) {
           wrapper.innerHTML = `
             <div class="relative flex items-center justify-center transition-transform group-hover:scale-110">
               <div style="width: var(--cushion-w); height: var(--cushion-h);" class="flex items-center justify-center">
@@ -5628,31 +5774,33 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           });
         } else {
           const delay = (idx * 0.29).toFixed(2);
-          const seatRealm = seat.isUser ? getRealmByPoints(currentUserProfile.meritScore) : getRealmByPoints(seat.points || 20);
+          const seatRealm = isUserSeat ? getRealmByPoints(currentUserProfile.meritScore) : getRealmByPoints(seat.points || 20);
 
           const spotlightHTML = (spotlightSeatNo === seat.seatNo)
             ? `<div class="seat-spotlight absolute bottom-2 left-1/2 w-24 h-64 bg-gradient-to-t from-amber-300/55 via-yellow-200/20 to-transparent rounded-full pointer-events-none blur-sm"></div>`
             : '';
 
-          const userAuraHTML = seat.isUser
+          const userAuraHTML = isUserSeat
             ? `<div class="user-lotus-aura absolute bottom-0 left-1/2 rounded-full border-2 pointer-events-none" style="width: calc(var(--cushion-w) * 1.15); height: calc(var(--cushion-h) * 0.7); background:${seatRealm.color}33; border-color:${seatRealm.ringStroke}; box-shadow: 0 0 16px ${seatRealm.color}; z-index: 1; transform: translate(-50%, 15%);"></div>`
             : '';
 
-          const isRemoteHuman = !!seat.remoteClientId;
-          const badgeClasses = seat.isUser
+          const isRemoteHuman = !isUserSeat && !!seat.remoteClientId;
+          const badgeClasses = isUserSeat
             ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-stone-950 border-white font-extrabold ring-1 ring-amber-200/90'
             : (isRemoteHuman 
                 ? 'bg-emerald-950/95 text-emerald-100 border-emerald-400 font-bold ring-1 ring-emerald-400/60 shadow-[0_0_10px_rgba(52,211,153,0.35)]'
                 : 'bg-[#261c14]/92 text-[#f5ebd6] border-amber-200/30 font-semibold');
 
-          const metaSubtitle = seat.isUser
+          const displayName = isUserSeat ? (currentUserProfile.fullName || 'Kim Tiến') : (seat.name || 'Hành Giả');
+
+          const metaSubtitle = isUserSeat
             ? `<span class="block font-bold text-stone-900/95 leading-none mt-0.5 truncate" style="font-size: var(--seat-sub-size);">Bạn • #${seat.seatNo} • PD: ${currentUserProfile.dharmaName || 'Minh Tâm'}</span>`
             : (isRemoteHuman
                 ? `<span class="inline-flex items-center gap-1 font-bold text-emerald-300 leading-none mt-0.5 truncate" style="font-size: var(--seat-sub-size);"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span>Live • #${seat.seatNo} • PD: ${seat.dharma || 'Tịnh Tâm'}</span>`
                 : `<span class="block font-semibold text-amber-200/80 leading-none mt-0.5 truncate" style="font-size: var(--seat-sub-size);">#${seat.seatNo} • PD: ${seat.dharma || 'Tịnh Tâm'}</span>`);
 
-          wrapper.title = seat.isUser
-            ? `Bồ đoàn #${seat.seatNo} (CỦA BẠN - ĐÃ NIÊM PHONG) • IP: ${currentUserProfile.clientIp || '117.5.x.x'}`
+          wrapper.title = isUserSeat
+            ? `Bồ đoàn #${seat.seatNo} (CỦA BẠN - ${displayName}) • IP: ${currentUserProfile.clientIp || '117.5.x.x'}`
             : (isRemoteHuman
                 ? `🟢 Bồ đoàn #${seat.seatNo} (ĐỒNG TU LIVE ĐANG TRỰC TUYẾN) • ${seat.name} • PD: ${seat.dharma || 'Tịnh Tâm'} • IP: ${seat.ip || '113.161.x.x'} • ${seat.hometown}`
                 : `Bồ đoàn #${seat.seatNo} • ${seat.name} (PD: ${seat.dharma || 'Tịnh Tâm'}) • IP: ${seat.ip || '113.161.x.x'} • ${seat.hometown}`);
@@ -5668,13 +5816,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
               </div>
               <!-- Nhân vật ngồi trang nghiêm trên bồ đoàn -->
               <div id="figure-${seat.id}" class="chibi-idle transition-transform group-hover:scale-105 relative" style="width: var(--chibi-w); height: var(--chibi-h); animation-delay: -${delay}s; z-index: 3; margin-bottom: 2px;">
-                ${createChibiSVG(seat.type, seat.id, seat.isUser, false, seatRealm.level)}
+                ${createChibiSVG(seat.type, seat.id, isUserSeat, false, seatRealm.level)}
               </div>
             </div>
             <!-- Bảng tên định danh dưới bồ đoàn -->
             <div id="label-${seat.id}" class="relative z-10 -mt-1 px-1.5 py-0.5 rounded border shadow-md text-center ${badgeClasses}" style="max-width: var(--seat-badge-max-w);">
               <span class="whitespace-nowrap tracking-tight block leading-tight truncate" style="font-size: var(--seat-name-size);">
-                ${seat.name}
+                ${displayName}
               </span>
               ${metaSubtitle}
             </div>
@@ -5719,6 +5867,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
         container.appendChild(wrapper);
       });
+      renderSideOnlineDevotees();
     }
 
     function triggerDevoteeBow(seatId, messageText = 'Bình an mỗi ngày', iconKey = 'rose') {
@@ -7602,10 +7751,22 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     let totalSessionPoints = 0;
 
     function addMeritPoints(senderName, points, iconKey, wishText, broadcast = true) {
+      if ((senderName === 'Nguyễn Bá Ngọc' || !senderName) && currentUserProfile.fullName) {
+        senderName = currentUserProfile.fullName;
+      }
       totalSessionPoints += points;
       if (senderName === currentUserProfile.fullName) {
         currentUserProfile.meritScore += points;
         saveRealUserSession();
+      }
+
+      // Tự động chuyển đổi nếu có bản ghi cũ mang tên mẫu
+      if (meritRecords.has('Nguyễn Bá Ngọc') && currentUserProfile.fullName && currentUserProfile.fullName !== 'Nguyễn Bá Ngọc') {
+        const stale = meritRecords.get('Nguyễn Bá Ngọc');
+        meritRecords.delete('Nguyễn Bá Ngọc');
+        const userRec = meritRecords.get(currentUserProfile.fullName) || { name: currentUserProfile.fullName, points: 0, lastIcon: stale.lastIcon, lastWish: stale.lastWish };
+        userRec.points += stale.points;
+        meritRecords.set(currentUserProfile.fullName, userRec);
       }
 
       const existing = meritRecords.get(senderName) || { name: senderName, points: 0, lastIcon: iconKey, lastWish: wishText };
@@ -7616,6 +7777,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
       renderMeritLeaderboard();
       updatePractitionerHUD();
+      renderSideOnlineDevotees();
 
       if (broadcast && liveChannel) {
         try {
@@ -7642,8 +7804,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         targetSeat = occupiedSeats[Math.floor(Math.random() * occupiedSeats.length)];
       }
 
-      const senderName = targetSeat.name;
-      triggerDevoteeBow(targetSeat.id, wishText, iconKey);
+      const senderName = currentUserProfile.fullName || (targetSeat ? (targetSeat.isUser ? currentUserProfile.fullName : targetSeat.name) : 'Kim Tiến');
+      if (targetSeat) {
+        triggerDevoteeBow(targetSeat.id, wishText, iconKey);
+      }
       AudioEngine.playGiftChime();
       showLiveGiftBanner(senderName, `${giftName} • ${wishText}`, iconKey);
       addMeritPoints(senderName, points, iconKey, wishText, true);
@@ -7694,6 +7858,114 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
       footerLabel.textContent = `Điểm quà trong phiên: ${totalSessionPoints}`;
     }
+
+    /**************************************************************************
+     * KHU VỰC 2: DANH SÁCH ĐỒNG TU ONLINE TRONG PHIÊN (VỊ TRÍ THỰC TẾ THEO GPS)
+     **************************************************************************/
+    function renderSideOnlineDevotees() {
+      const listEl = document.getElementById('side-online-devotees-list');
+      const countEl = document.getElementById('side-online-count');
+      const headerBadge = document.getElementById('header-right-online-badge');
+      const myGpsBadge = document.getElementById('side-my-gps-badge');
+      if (!listEl) return;
+
+      const myLocation = currentUserProfile.realGpsLocation || currentUserProfile.hometown || 'Thái Bình';
+      if (myGpsBadge) {
+        myGpsBadge.textContent = `📍 ${myLocation}`;
+        myGpsBadge.title = `Vị trí thiết bị: ${myLocation}`;
+      }
+
+      // Danh sách người online thực tế
+      const devotees = [];
+
+      // 1. Bản thân người dùng
+      const userSeatNo = currentUserProfile.assignedSeatNo || (sanctuarySeats.find(s => s.isUser)?.seatNo) || 2;
+      devotees.push({
+        id: 'user-me',
+        name: currentUserProfile.fullName || 'Kim Tiến',
+        dharma: currentUserProfile.dharmaName || 'Minh Tâm',
+        location: myLocation,
+        isGps: !!currentUserProfile.realGpsLocation,
+        seatNo: userSeatNo,
+        isUser: true,
+        points: currentUserProfile.meritScore || 0,
+        type: currentUserProfile.avatarType || 'monk'
+      });
+
+      // 2. Các đồng tu đang ngồi trên Bồ đoàn trong Chánh Điện
+      sanctuarySeats.forEach(s => {
+        if (s.occupied && !s.isUser && s.seatNo !== userSeatNo) {
+          devotees.push({
+            id: s.id || `seat-${s.seatNo}`,
+            name: s.name || 'Đồng Tu',
+            dharma: s.dharma || 'Tịnh Tâm',
+            location: s.hometown || s.location || 'Chùa An Nhiên',
+            isGps: false,
+            seatNo: s.seatNo,
+            isUser: false,
+            points: s.points || 20,
+            type: s.type || 'monk'
+          });
+        }
+      });
+
+      // 3. Các thành viên online từ RoomChat nếu có
+      if (window.RoomChat && window.RoomChat.state && window.RoomChat.state.members) {
+        window.RoomChat.state.members.forEach((m, senderId) => {
+          if (!devotees.some(d => d.name === m.name)) {
+            devotees.push({
+              id: senderId,
+              name: m.name,
+              dharma: m.dharma || 'Tịnh Tâm',
+              location: m.location || 'Việt Nam',
+              isGps: !!m.location,
+              seatNo: m.seatNo || '—',
+              isUser: false,
+              points: m.points || 0,
+              type: 'monk'
+            });
+          }
+        });
+      }
+
+      if (countEl) countEl.textContent = devotees.length;
+      if (headerBadge) headerBadge.textContent = devotees.length;
+
+      listEl.innerHTML = devotees.map(dev => {
+        const initial = (dev.name || 'Đ').trim().charAt(0).toUpperCase();
+        const seatBadge = dev.seatNo ? `#${dev.seatNo}` : '—';
+        const isMe = dev.isUser;
+        const locLabel = dev.location ? dev.location : 'Việt Nam';
+        const bgGrad = isMe 
+          ? 'bg-gradient-to-r from-amber-950/70 via-black/60 to-emerald-950/60 border-amber-300/60 ring-1 ring-amber-300/30'
+          : 'bg-black/45 border-emerald-400/30 hover:border-emerald-400/60';
+
+        return `
+          <div class="p-1.5 rounded-lg ${bgGrad} border transition flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full ${isMe ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-stone-950' : 'bg-emerald-900/90 text-emerald-200 border border-emerald-400/50'} flex items-center justify-center text-[10px] font-extrabold shrink-0 shadow-sm">
+              ${initial}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-1 leading-tight">
+                <span class="text-[10px] sm:text-[10.5px] font-bold ${isMe ? 'text-amber-200' : 'text-stone-100'} truncate">
+                  ${dev.name} ${isMe ? '<span class="text-emerald-300 font-semibold text-[8.5px]">(Bạn)</span>' : ''}
+                </span>
+                <span class="text-[8.5px] font-mono font-bold px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30 shrink-0">
+                  ${seatBadge}
+                </span>
+              </div>
+              <div class="flex items-center justify-between text-[8px] sm:text-[9px] text-emerald-300/90 mt-0.5 leading-none">
+                <span class="truncate max-w-[105px]" title="${locLabel}">📍 ${locLabel}${dev.isGps ? ' (GPS)' : ''}</span>
+                <span class="text-emerald-400 font-medium flex items-center gap-0.5 shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-ping"></span> Live
+                </span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    window.renderSideOnlineDevotees = renderSideOnlineDevotees;
 
     let bannerTimeout = null;
     function showLiveGiftBanner(sender, wish, iconKey = 'lotus') {
