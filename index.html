@@ -803,15 +803,15 @@
       100% { transform: translateX(-100%); }
     }
 
-      /* Floating Toast Notification trên Mobile: Luôn ở z-[300], nổi bật, không bị che */
+      /* Floating Toast Notification trên Mobile: z-80 để không che popup/modal */
       #live-gift-banner {
         position: fixed !important;
-        top: 8px !important;
+        top: 4px !important;
         left: 50% !important;
         transform: translateX(-50%) !important;
-        z-index: 300 !important;
+        z-index: 80 !important;
         pointer-events: none !important;
-        max-width: 92vw !important;
+        max-width: 70vw !important;
       }
 
       /* Widget Đếm Giờ Tụng Kinh thu gọn nhẹ nhàng góc trên phải */
@@ -842,7 +842,7 @@
         display: grid !important;
         grid-template-rows: repeat(2, 24px) !important;
         grid-auto-flow: column !important;
-        grid-auto-columns: minmax(76px, 1fr) !important;
+        grid-auto-columns: max-content !important;
         gap: 3px 6px !important;
         width: auto !important;
         max-width: 96vw !important;
@@ -865,8 +865,7 @@
       }
       #bottom-dock-scroll > button {
         height: 24px !important;
-        font-size: 10px !important;
-        padding: 0 8px !important;
+        font-size: 9.5px !important; padding: 0 7px !important; text-overflow: clip !important;
         white-space: nowrap !important;
         display: inline-flex !important;
         align-items: center !important;
@@ -883,6 +882,137 @@
       footer .hidden.sm\:block,
       footer .hidden.lg\:block {
         display: none !important;
+      }
+
+      
+      /* Left & Right Drawers trên Mobile Landscape: Giới hạn chiều rộng và không đè thanh công cụ dưới */
+      #panel-left-drawer,
+      #panel-right-drawer {
+        top: 36px !important;
+        bottom: 58px !important;
+        max-height: calc(100dvh - 94px) !important;
+        width: min(250px, 35vw) !important;
+        padding: 6px 8px !important;
+        z-index: 60 !important;
+        overflow-y: auto !important;
+      }
+      #panel-left-drawer .gift-item-btn {
+        padding-top: 2px !important;
+        padding-bottom: 2px !important;
+      }
+      #panel-left-drawer .gift-item-btn > div:first-child {
+        font-size: 10px !important;
+      }
+      #panel-left-drawer .gift-item-btn > div:last-child {
+        font-size: 8.5px !important;
+      }
+      #panel-left-drawer input {
+        height: 24px !important;
+        font-size: 9.5px !important;
+        padding: 0 6px !important;
+      }
+      #panel-left-drawer button[type="submit"] {
+        padding: 2px 8px !important;
+        font-size: 9.5px !important;
+        height: 24px !important;
+      }
+      #panel-left-drawer .mt-2 {
+        margin-top: 4px !important;
+      }
+
+
+      /* Modals luôn ở z-1000 để phủ kín toàn màn hình, không bị đè bởi toast */
+      [id$="-modal"],
+      #registration-gate-modal,
+      #practitioner-profile-modal,
+      #room-chat-modal {
+        z-index: 1000 !important;
+      }
+
+      /* Tối ưu Cổng Tam Quan - Sổ Ghi Danh trên Mobile Landscape (Bố cục 2 cột không bị cắt nút) */
+      #registration-gate-modal {
+        align-items: flex-start !important;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+      }
+      #registration-gate-modal .temple-panel {
+        max-width: 760px !important;
+        max-height: 96dvh !important;
+        padding: 8px 14px !important;
+        margin: 0 auto !important;
+        overflow-y: auto !important;
+      }
+      #registration-gate-modal h2 {
+        font-size: 14px !important;
+      }
+      #entry-registration-form {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px 12px !important;
+        margin-top: 4px !important;
+      }
+      #entry-registration-form > div {
+        margin: 0 !important;
+      }
+      #entry-registration-form input {
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+        font-size: 11.5px !important;
+      }
+      #entry-registration-form details {
+        grid-column: span 2 !important;
+      }
+      #entry-registration-form .pt-1 {
+        grid-column: span 2 !important;
+        padding-top: 4px !important;
+      }
+
+      /* Tối ưu Hồ Sơ Tu Tập 3D trên Mobile Landscape (Bố cục 2 cột ngang trang nghiêm) */
+      #practitioner-profile-modal {
+        align-items: flex-start !important;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+      }
+      #practitioner-profile-modal > div {
+        max-width: 760px !important;
+        max-height: 96dvh !important;
+        padding: 10px 16px !important;
+        border-radius: 18px !important;
+        margin: 0 auto !important;
+        overflow-y: auto !important;
+      }
+      #practitioner-profile-modal .flex.items-center.justify-between.pb-3 {
+        padding-bottom: 4px !important;
+      }
+      #practitioner-profile-modal h3 {
+        font-size: 16px !important;
+      }
+      #practitioner-profile-modal .mt-3.5 {
+        margin-top: 6px !important;
+      }
+      #profile-pane-my-profile {
+        display: grid !important;
+        grid-template-columns: 1.05fr 1fr !important;
+        gap: 8px 14px !important;
+        align-items: start !important;
+      }
+      #profile-pane-my-profile > div:first-child {
+        grid-column: 1 !important;
+      }
+      #profile-pane-my-profile > .grid.grid-cols-2 {
+        grid-column: 1 !important;
+        margin-top: 6px !important;
+        gap: 4px !important;
+      }
+      #profile-pane-my-profile > div:nth-child(2) {
+        grid-column: 2 !important;
+        grid-row: 1 / span 2 !important;
+        height: 180px !important;
+        margin-top: 0 !important;
+      }
+      #profile-pane-my-profile > div:nth-child(3) {
+        grid-column: 2 !important;
+        margin-top: 4px !important;
       }
 
       /* Tối ưu tất cả Popups/Modals trên Mobile Landscape */
@@ -3592,18 +3722,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
      * 1. DỮ LIỆU BỒ ĐOÀN TRONG CHÁNH ĐIỆN (MẶC ĐỊNH 12 CHỖ & TỰ ĐỘNG SINH HÀNG MỚI KHI > 12)
      **************************************************************************/
     const sanctuarySeats = [
-      { seatNo: 1,  id: 'seat-1',  x: 15,   y: 66.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 2,  id: 'seat-2',  x: 26,   y: 66.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
-      { seatNo: 3,  id: 'seat-3',  x: 37,   y: 66.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 4,  id: 'seat-4',  x: 63,   y: 66.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
-      { seatNo: 5,  id: 'seat-5',  x: 74,   y: 66.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 6,  id: 'seat-6',  x: 85,   y: 66.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
-      { seatNo: 7,  id: 'seat-7',  x: 12,   y: 83.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 8,  id: 'seat-8',  x: 23.5, y: 83.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
-      { seatNo: 9,  id: 'seat-9',  x: 35,   y: 83.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 10, id: 'seat-10', x: 65,   y: 83.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
-      { seatNo: 11, id: 'seat-11', x: 76.5, y: 83.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
-      { seatNo: 12, id: 'seat-12', x: 88,   y: 83.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' }
+      { seatNo: 1,  id: 'seat-1',  x: 15,   y: 62.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 2,  id: 'seat-2',  x: 26,   y: 62.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 3,  id: 'seat-3',  x: 37,   y: 62.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 4,  id: 'seat-4',  x: 63,   y: 62.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 5,  id: 'seat-5',  x: 74,   y: 62.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 6,  id: 'seat-6',  x: 85,   y: 62.5, scale: 0.86, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 7,  id: 'seat-7',  x: 12,   y: 76.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 8,  id: 'seat-8',  x: 23.5, y: 76.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 9,  id: 'seat-9',  x: 35,   y: 76.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 10, id: 'seat-10', x: 65,   y: 76.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' },
+      { seatNo: 11, id: 'seat-11', x: 76.5, y: 76.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'monk',   points: 0, ip: '' },
+      { seatNo: 12, id: 'seat-12', x: 88,   y: 76.5, scale: 0.98, occupied: false, isUser: false, isDummy: false, remoteClientId: null, name: '', dharma: '', age: 0, hometown: '', type: 'female', points: 0, ip: '' }
     ];
     window.sanctuarySeats = sanctuarySeats;
 
@@ -5799,12 +5929,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           if (row === 0) {
             const colXsRow0 = [15, 26, 37, 63, 74, 85];
             seatX = colXsRow0[col] !== undefined ? colXsRow0[col] : (15 + col * 14);
-            seatY = 66.5;
+            seatY = 62.5;
             seatScale = isMobileLandscape ? (seat.isUser ? 0.92 : 0.84) : (seat.isUser ? 0.90 : 0.82);
           } else if (row === 1) {
             const colXsRow1 = [12, 23.5, 35, 65, 76.5, 88];
             seatX = colXsRow1[col] !== undefined ? colXsRow1[col] : (12 + col * 15.2);
-            seatY = 83.5;
+            seatY = 76.5;
             seatScale = isMobileLandscape ? (seat.isUser ? 1.04 : 0.94) : (seat.isUser ? 1.02 : 0.92);
           } else {
             const extraRow = row - 1;
@@ -5817,7 +5947,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
               Math.min(94, 83 + extraRow * 2.5)
             ];
             seatX = colXsExtra[col] !== undefined ? colXsExtra[col] : (16 + col * 13.6);
-            seatY = 83.5 + extraRow * 15;
+            seatY = 76.5 + extraRow * 14;
             seatScale = seat.isUser ? 1.10 : 1.00;
           }
         }

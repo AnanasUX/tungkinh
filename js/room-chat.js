@@ -44,7 +44,7 @@
       justify-content: center;
       position: fixed;
       inset: 0;
-      z-index: 130;
+      z-index: 1000;
       background: rgba(4, 2, 1, 0.85);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
@@ -759,6 +759,12 @@
       }
       .room-chat-grid:not(.show-members) .room-chat-sidebar {
         display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
       }
       .room-chat-grid:not(.show-members) .room-chat-main {
         display: flex !important;
