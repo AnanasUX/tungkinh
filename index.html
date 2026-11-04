@@ -554,6 +554,11 @@
         top: clamp(60px, 8vh, 85px) !important;
         bottom: auto !important;
         z-index: 30 !important;
+        transform: translateX(calc(100% + 40px)) !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      }
+      #panel-right-drawer.drawer-open,
+      #panel-right-drawer:not(.drawer-collapsed) {
         transform: translateX(0) !important;
       }
       #panel-right-drawer.drawer-collapsed {
@@ -2293,9 +2298,11 @@
         <span>🎁 Lời Chúc</span>
       </button>
 
-      <button onclick="toggleMobileDrawer('right')" id="btn-tab-drawer-right" title="Mở Mõ, Bảng Công Đức & Danh Sách Người Online"
-        class="2xl:hidden absolute right-0 top-[22%] z-30 px-2 py-1.5 rounded-l-xl bg-amber-950/90 border-y border-l border-amber-300/60 text-amber-200 text-[10px] font-bold shadow-xl backdrop-blur-md flex items-center gap-1 active:scale-95 transition pointer-events-auto">
-        <span>Công Đức & Online 👥</span>
+      <button onclick="toggleMobileDrawer('right')" id="btn-tab-drawer-right" title="Mở Gõ Mõ, Bảng Công Đức & Người Online"
+        class="absolute right-0 top-[76px] sm:top-[82px] z-30 px-2.5 py-1.5 rounded-l-xl bg-stone-950/95 border-y border-l border-amber-300/60 text-amber-200 hover:text-amber-100 text-[10px] font-bold shadow-2xl backdrop-blur-md flex items-center gap-1.5 active:scale-95 transition pointer-events-auto cursor-pointer">
+        <span class="text-xs">🔔</span>
+        <span class="hidden sm:inline">Mõ & Công Đức</span>
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
       </button>
 
       <!-- LEFT PANEL -->
@@ -2403,130 +2410,145 @@
         </div>
       </aside>
 
-      <!-- RIGHT COLUMN -->
-      <aside id="panel-right-drawer" class="flex flex-col items-end gap-2 pointer-events-auto max-h-[84vh] overflow-y-auto scrollbar-none shadow-2xl p-2 2xl:p-0">
-        <div class="w-full flex justify-between items-center px-1 mb-1 pointer-events-auto">
-          <button onclick="toggleDesktopDrawer('right')" class="hidden 2xl:flex w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 text-amber-200 text-[10px] items-center justify-center transition active:scale-90 ml-auto" title="Thu gọn bảng">▶</button>
-          <button onclick="closeMobileDrawers()" class="2xl:hidden px-2.5 py-1 rounded-full bg-stone-900/90 border border-amber-300/40 text-amber-200 text-[10px] font-bold flex items-center gap-1 shadow ml-auto">✕ Đóng</button>
-        </div>
-        
-        <!-- BẢNG VÀNG CÔNG ĐỨC -->
-        <div class="temple-panel w-[176px] sm:w-[226px] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between pointer-events-auto">
-          <div class="text-center pb-1 border-b border-amber-300/25 flex items-center justify-between">
-            <span class="text-[10px] sm:text-[11px] font-bold tracking-wider text-[#f7d894] uppercase mx-auto">
-              ✦ BẢNG VÀNG CÔNG ĐỨC
-            </span>
+      <!-- RIGHT COLUMN: GỘP MÕ TỤNG KINH, BẢNG CÔNG ĐỨC & ĐỒNG TU ONLINE THÀNH 1 HỘP GỌN GÀNG -->
+      <aside id="panel-right-drawer" class="drawer-collapsed pointer-events-auto shadow-2xl p-0">
+        <div class="temple-panel w-[230px] sm:w-[260px] rounded-2xl p-2 sm:p-2.5 flex flex-col pointer-events-auto border-2 border-amber-300/60 shadow-[0_10px_35px_rgba(0,0,0,0.85)] relative">
+          
+          <!-- TAB HEADER PILLS & CLOSE BUTTON -->
+          <div class="flex items-center justify-between border-b border-amber-300/30 pb-1.5 mb-2">
+            <div class="flex items-center gap-1 overflow-x-auto scrollbar-none">
+              <button type="button" onclick="switchUnifiedRightTab('mo')" id="tab-btn-side-mo"
+                class="unified-tab-btn px-2.5 py-1 rounded-lg text-[9.5px] font-bold transition shadow bg-gradient-to-r from-amber-500 to-yellow-400 text-stone-950">
+                🔔 Gõ Mõ
+              </button>
+              <button type="button" onclick="switchUnifiedRightTab('merit')" id="tab-btn-side-merit"
+                class="unified-tab-btn px-2.5 py-1 rounded-lg text-[9.5px] font-semibold transition text-amber-200/80 hover:text-amber-100 hover:bg-white/10">
+                🏆 Công Đức
+              </button>
+              <button type="button" onclick="switchUnifiedRightTab('online')" id="tab-btn-side-online"
+                class="unified-tab-btn px-2.5 py-1 rounded-lg text-[9.5px] font-semibold transition text-emerald-300/90 hover:text-emerald-100 hover:bg-white/10">
+                👥 Online (<span id="side-online-count-tab">1</span>)
+              </button>
+            </div>
+            <button type="button" onclick="closeMobileDrawers()" class="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-amber-200 flex items-center justify-center text-xs ml-1 shrink-0 active:scale-90 transition" title="Thu gọn bảng">✕</button>
           </div>
 
-          <div id="merit-empty-state" class="my-auto py-3 text-center flex flex-col items-center justify-center gap-0.5">
-            <p class="text-[10px] sm:text-[11px] text-amber-100/80 leading-snug">Chưa có quà trong phiên</p>
-            <p class="text-[9.5px] sm:text-[10.5px] text-amber-100/70 leading-snug">Ghi nhận người tặng thật</p>
-          </div>
+          <!-- TAB 1: MÕ TỤNG KINH & TRÀNG HẠT 108 -->
+          <div id="unified-pane-mo" class="unified-right-pane flex flex-col items-center">
+            <div id="mo-floating-pop-layer" class="absolute inset-x-0 top-0 pointer-events-none z-40"></div>
 
-          <div id="merit-list-container" class="hidden my-1 max-h-[95px] overflow-y-auto merit-scroll space-y-1 pr-0.5"></div>
+            <div class="w-full flex items-center justify-between text-[9px] sm:text-[9.5px] font-bold tracking-wider text-amber-200 uppercase mb-0.5 px-0.5">
+              <span class="flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <span>MÕ TỤNG KINH</span>
+              </span>
+              <span id="zen-combo-badge" class="px-1.5 py-0.2 rounded bg-amber-500/20 border border-amber-300/40 text-amber-300 font-extrabold">x1</span>
+            </div>
 
-          <div class="pt-1 border-t border-amber-300/20 text-center flex items-center justify-between text-[9.5px] sm:text-[10px] text-amber-200/85 px-1">
-            <span id="merit-footer-label" class="font-medium">Điểm quà trong phiên: 0</span>
-          </div>
-        </div>
+            <button id="btn-right-wooden-fish" onclick="performUserWoodenFishTap(event)" title="Nhấp hoặc ấn Space để Gõ Mõ"
+              class="relative w-20 h-16 sm:w-24 sm:h-20 flex items-center justify-center rounded-xl bg-gradient-to-b from-amber-500/15 to-amber-900/30 hover:from-amber-400/25 hover:to-amber-800/40 border border-amber-300/35 transition active:scale-95 group overflow-visible">
+              
+              <svg viewBox="0 0 120 96" class="w-full h-full overflow-visible drop-shadow-[0_6px_10px_rgba(0,0,0,0.75)]">
+                <defs>
+                  <radialGradient id="moWoodGrad" cx="42%" cy="32%" r="65%">
+                    <stop offset="0%" stop-color="#f6c163" />
+                    <stop offset="45%" stop-color="#c97d28" />
+                    <stop offset="82%" stop-color="#7c3f09" />
+                    <stop offset="100%" stop-color="#4a2103" />
+                  </radialGradient>
+                  <linearGradient id="moCushionGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#dc2626" />
+                    <stop offset="60%" stop-color="#991b1b" />
+                    <stop offset="100%" stop-color="#450a0a" />
+                  </linearGradient>
+                </defs>
 
-        <!-- CỤM MÕ 3D & 108 MALA -->
-        <div class="temple-panel rounded-2xl p-2 sm:p-2.5 w-[142px] sm:w-[168px] flex flex-col items-center pointer-events-auto border border-amber-300/60 shadow-[0_0_25px_rgba(245,185,66,0.28)] relative">
-          <div id="mo-floating-pop-layer" class="absolute inset-x-0 top-0 pointer-events-none z-40"></div>
+                <circle cx="54" cy="48" r="42" fill="none" stroke="rgba(251, 191, 36, 0.16)" stroke-width="3" stroke-dasharray="3 3" />
+                <circle id="mala-progress-circle" cx="54" cy="48" r="42" fill="none" stroke="#fde047" stroke-width="3.2"
+                  stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 54 48)"
+                  style="transition: stroke-dashoffset 0.25s ease;" />
 
-          <div class="w-full flex items-center justify-between text-[9px] sm:text-[9.5px] font-bold tracking-wider text-amber-200 uppercase mb-0.5 px-0.5">
-            <span class="flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-              <span>MÕ TỤNG KINH</span>
-            </span>
-            <span id="zen-combo-badge" class="px-1.5 py-0.2 rounded bg-amber-500/20 border border-amber-300/40 text-amber-300 font-extrabold">x1</span>
-          </div>
+                <ellipse cx="52" cy="76" rx="34" ry="9" fill="rgba(0,0,0,0.55)" />
+                <path d="M20,70 C20,63 84,63 84,70 C84,77 20,77 20,70 Z" fill="url(#moCushionGrad)" stroke="#f5c453" stroke-width="1.6" />
+                <path d="M28,71 Q52,75 76,71" fill="none" stroke="#fde047" stroke-width="1.1" stroke-dasharray="4 3" />
 
-          <button id="btn-right-wooden-fish" onclick="performUserWoodenFishTap(event)" title="Nhấp hoặc ấn Space để Gõ Mõ"
-            class="relative w-20 h-16 sm:w-24 sm:h-20 flex items-center justify-center rounded-xl bg-gradient-to-b from-amber-500/15 to-amber-900/30 hover:from-amber-400/25 hover:to-amber-800/40 border border-amber-300/35 transition active:scale-95 group overflow-visible">
-            
-            <svg viewBox="0 0 120 96" class="w-full h-full overflow-visible drop-shadow-[0_6px_10px_rgba(0,0,0,0.75)]">
-              <defs>
-                <radialGradient id="moWoodGrad" cx="42%" cy="32%" r="65%">
-                  <stop offset="0%" stop-color="#f6c163" />
-                  <stop offset="45%" stop-color="#c97d28" />
-                  <stop offset="82%" stop-color="#7c3f09" />
-                  <stop offset="100%" stop-color="#4a2103" />
-                </radialGradient>
-                <linearGradient id="moCushionGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#dc2626" />
-                  <stop offset="60%" stop-color="#991b1b" />
-                  <stop offset="100%" stop-color="#450a0a" />
-                </linearGradient>
-              </defs>
+                <g id="right-mo-body" style="transform-origin: 52px 50px;">
+                  <path d="M22,50 C20,28 38,17 57,19 C76,21 85,35 83,52 C81,64 68,68 52,68 C33,68 23,62 22,50 Z" fill="url(#moWoodGrad)" stroke="#472004" stroke-width="1.5" />
+                  <ellipse cx="48" cy="30" rx="18" ry="6.5" fill="#fff3c4" opacity="0.38" transform="rotate(-10 48 30)" />
+                  <path d="M23,51 Q48,58 74,47" fill="none" stroke="#291002" stroke-width="5" stroke-linecap="round" />
+                  <path d="M23,51 Q48,58 74,47" fill="none" stroke="#783909" stroke-width="1.4" stroke-linecap="round" />
+                  <circle cx="73" cy="47" r="4.2" fill="#291002" />
+                  <circle cx="40" cy="40" r="3" fill="#4a2103" stroke="#f7c865" stroke-width="1" />
+                </g>
 
-              <circle cx="54" cy="48" r="42" fill="none" stroke="rgba(251, 191, 36, 0.16)" stroke-width="3" stroke-dasharray="3 3" />
-              <circle id="mala-progress-circle" cx="54" cy="48" r="42" fill="none" stroke="#fde047" stroke-width="3.2"
-                stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" transform="rotate(-90 54 48)"
-                style="transition: stroke-dashoffset 0.25s ease;" />
+                <g id="right-mo-mallet">
+                  <line x1="68" y1="25" x2="106" y2="63" stroke="#78350f" stroke-width="5" stroke-linecap="round" />
+                  <line x1="68" y1="25" x2="106" y2="63" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round" opacity="0.65" />
+                  <ellipse cx="66" cy="23" rx="8.5" ry="6" transform="rotate(-40 66 23)" fill="url(#moWoodGrad)" stroke="#451a03" stroke-width="1.2" />
+                </g>
+              </svg>
+            </button>
 
-              <ellipse cx="52" cy="76" rx="34" ry="9" fill="rgba(0,0,0,0.55)" />
-              <path d="M20,70 C20,63 84,63 84,70 C84,77 20,77 20,70 Z" fill="url(#moCushionGrad)" stroke="#f5c453" stroke-width="1.6" />
-              <path d="M28,71 Q52,75 76,71" fill="none" stroke="#fde047" stroke-width="1.1" stroke-dasharray="4 3" />
+            <div class="w-full mt-1 flex items-center justify-between text-[9px] sm:text-[9.5px] px-1">
+              <span class="text-amber-200/85">Mõ: <strong id="mo-tap-count" class="text-amber-300">0</strong></span>
+              <span class="text-emerald-300 font-semibold">Tràng hạt: <strong id="mala-bead-count">0</strong>/108</span>
+            </div>
 
-              <g id="right-mo-body" style="transform-origin: 52px 50px;">
-                <path d="M22,50 C20,28 38,17 57,19 C76,21 85,35 83,52 C81,64 68,68 52,68 C33,68 23,62 22,50 Z" fill="url(#moWoodGrad)" stroke="#472004" stroke-width="1.5" />
-                <ellipse cx="48" cy="30" rx="18" ry="6.5" fill="#fff3c4" opacity="0.38" transform="rotate(-10 48 30)" />
-                <path d="M23,51 Q48,58 74,47" fill="none" stroke="#291002" stroke-width="5" stroke-linecap="round" />
-                <path d="M23,51 Q48,58 74,47" fill="none" stroke="#783909" stroke-width="1.4" stroke-linecap="round" />
-                <circle cx="73" cy="47" r="4.2" fill="#291002" />
-                <circle cx="40" cy="40" r="3" fill="#4a2103" stroke="#f7c865" stroke-width="1" />
-              </g>
-
-              <g id="right-mo-mallet">
-                <line x1="68" y1="25" x2="106" y2="63" stroke="#78350f" stroke-width="5" stroke-linecap="round" />
-                <line x1="68" y1="25" x2="106" y2="63" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round" opacity="0.65" />
-                <ellipse cx="66" cy="23" rx="8.5" ry="6" transform="rotate(-40 66 23)" fill="url(#moWoodGrad)" stroke="#451a03" stroke-width="1.2" />
-              </g>
-            </svg>
-          </button>
-
-          <div class="w-full mt-1 flex items-center justify-between text-[9px] sm:text-[9.5px] px-1">
-            <span class="text-amber-200/85">Mõ: <strong id="mo-tap-count" class="text-amber-300">0</strong></span>
-            <span class="text-emerald-300 font-semibold">Tràng hạt: <strong id="mala-bead-count">0</strong>/108</span>
-          </div>
-
-          <button id="btn-auto-mo" onclick="toggleAutoChanting()"
-            class="mt-1 w-full py-1 px-2 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-400/45 text-[9px] sm:text-[9.5px] font-semibold text-emerald-200 flex items-center justify-center gap-1.5 transition">
-            <span id="auto-practice-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span id="auto-practice-label">Tự động tụng: BẬT</span>
-          </button>
-        </div>
-
-        <!-- ====================================================================
-             KHU VỰC 2: DANH SÁCH NGƯỜI ONLINE TRONG PHIÊN (VỊ TRÍ THỰC TẾ GPS)
-             ==================================================================== -->
-        <div id="sanctuary-online-devotees-card" class="temple-panel w-[176px] sm:w-[226px] rounded-xl p-2 sm:p-2.5 flex flex-col pointer-events-auto border border-emerald-400/50 shadow-[0_0_20px_rgba(16,185,129,0.22)]">
-          <div class="pb-1 border-b border-emerald-400/30 flex items-center justify-between">
-            <span class="text-[9.5px] sm:text-[10.5px] font-bold tracking-wider text-emerald-300 uppercase flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>NGƯỜI ONLINE (<span id="side-online-count">1</span>)</span>
-            </span>
-            <button onclick="detectUserRealLocation()" title="Lấy lại vị trí GPS thực tế của thiết bị" class="text-[9px] text-amber-300 hover:text-amber-100 flex items-center gap-0.5 underline cursor-pointer">
-              <span>📍 GPS</span>
+            <button id="btn-auto-mo" onclick="toggleAutoChanting()"
+              class="mt-1.5 w-full py-1 px-2 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-400/45 text-[9px] sm:text-[9.5px] font-semibold text-emerald-200 flex items-center justify-center gap-1.5 transition">
+              <span id="auto-practice-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="auto-practice-label">Tự động tụng: BẬT</span>
             </button>
           </div>
 
-          <div id="side-online-devotees-list" class="my-1.5 max-h-[120px] sm:max-h-[160px] overflow-y-auto merit-scroll space-y-1.5 pr-0.5">
-            <!-- Populated dynamically via renderSideOnlineDevotees() -->
+          <!-- TAB 2: BẢNG VÀNG CÔNG ĐỨC -->
+          <div id="unified-pane-merit" class="unified-right-pane hidden flex flex-col justify-between">
+            <div class="text-center pb-1 border-b border-amber-300/25 flex items-center justify-between">
+              <span class="text-[10px] sm:text-[11px] font-bold tracking-wider text-[#f7d894] uppercase mx-auto">
+                ✦ BẢNG VÀNG CÔNG ĐỨC
+              </span>
+            </div>
+
+            <div id="merit-empty-state" class="my-auto py-4 text-center flex flex-col items-center justify-center gap-0.5">
+              <p class="text-[10px] sm:text-[11px] text-amber-100/80 leading-snug">Chưa có quà trong phiên</p>
+              <p class="text-[9.5px] sm:text-[10.5px] text-amber-100/70 leading-snug">Ghi nhận người tặng thật</p>
+            </div>
+
+            <div id="merit-list-container" class="hidden my-1 max-h-[120px] overflow-y-auto merit-scroll space-y-1 pr-0.5"></div>
+
+            <div class="pt-1.5 border-t border-amber-300/20 text-center flex items-center justify-between text-[9.5px] sm:text-[10px] text-amber-200/85 px-1 mt-1">
+              <span id="merit-footer-label" class="font-medium">Điểm quà trong phiên: 0</span>
+            </div>
           </div>
 
-          <div class="pt-1 border-t border-emerald-400/20 flex items-center justify-between text-[8.5px] sm:text-[9px] text-emerald-200/80 px-0.5">
-            <span class="flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              <span>Trực tuyến</span>
-            </span>
-            <span id="side-my-gps-badge" class="text-amber-300 font-bold truncate max-w-[95px]" title="Vị trí thiết bị">
-              📍 Thái Bình
-            </span>
+          <!-- TAB 3: NGƯỜI ONLINE (KÈM GPS) -->
+          <div id="unified-pane-online" class="unified-right-pane hidden flex flex-col">
+            <div class="pb-1 border-b border-emerald-400/30 flex items-center justify-between">
+              <span class="text-[9.5px] sm:text-[10.5px] font-bold tracking-wider text-emerald-300 uppercase flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>NGƯỜI ONLINE (<span id="side-online-count">1</span>)</span>
+              </span>
+              <button onclick="detectUserRealLocation()" title="Lấy lại vị trí GPS thực tế của thiết bị" class="text-[9px] text-amber-300 hover:text-amber-100 flex items-center gap-0.5 underline cursor-pointer">
+                <span>📍 GPS</span>
+              </button>
+            </div>
+
+            <div id="side-online-devotees-list" class="my-1.5 max-h-[140px] overflow-y-auto merit-scroll space-y-1.5 pr-0.5">
+              <!-- Populated dynamically via renderSideOnlineDevotees() -->
+            </div>
+
+            <div class="pt-1 border-t border-emerald-400/20 flex items-center justify-between text-[8.5px] sm:text-[9px] text-emerald-200/80 px-0.5 mt-auto">
+              <span class="flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span>Trực tuyến</span>
+              </span>
+              <span id="side-my-gps-badge" class="text-amber-300 font-bold truncate max-w-[95px]" title="Vị trí thiết bị">
+                📍 Thái Bình
+              </span>
+            </div>
           </div>
+
         </div>
-
       </aside>
 
       <!-- ======================================================================
@@ -6363,10 +6385,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         fig.classList.remove('chibi-bowing');
       }, 1300);
 
+      const isLeftSide = seatObj ? (seatObj.x < 50) : true;
+      const alignClass = isLeftSide ? '-translate-x-3/4 sm:-translate-x-1/2' : 'translate-x-0 sm:-translate-x-1/2';
       bubbleHost.innerHTML = `
-        <div class="wish-bubble px-2.5 py-1 rounded-full bg-stone-950/95 border border-amber-300/80 shadow-xl flex items-center gap-1.5 whitespace-nowrap">
-          ${getGiftIconSVG(iconKey, 'w-3.5 h-3.5')}
-          <span class="text-[10px] sm:text-[11px] font-semibold text-amber-100">${messageText}</span>
+        <div class="wish-bubble px-2.5 py-1 rounded-full bg-stone-950/95 border border-amber-300/80 shadow-xl flex items-center gap-1.5 whitespace-nowrap max-w-[170px] sm:max-w-[210px] ${alignClass}">
+          ${getGiftIconSVG(iconKey, 'w-3.5 h-3.5 shrink-0')}
+          <span class="text-[9.5px] sm:text-[10.5px] font-semibold text-amber-100 truncate">${messageText}</span>
         </div>
       `;
 
@@ -8342,6 +8366,32 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
     /**************************************************************************
      * KHU VỰC 2: DANH SÁCH ĐỒNG TU ONLINE TRONG PHIÊN (VỊ TRÍ THỰC TẾ THEO GPS)
      **************************************************************************/
+    
+    function switchUnifiedRightTab(tab) {
+      const tabs = ['mo', 'merit', 'online'];
+      tabs.forEach(t => {
+        const pane = document.getElementById(`unified-pane-${t}`);
+        const btn = document.getElementById(`tab-btn-side-${t}`);
+        if (pane) {
+          if (t === tab) {
+            pane.classList.remove('hidden');
+            if (t === 'mo') pane.className = 'unified-right-pane flex flex-col items-center';
+            else pane.className = 'unified-right-pane flex flex-col';
+          } else {
+            pane.classList.add('hidden');
+          }
+        }
+        if (btn) {
+          if (t === tab) {
+            btn.className = 'unified-tab-btn px-2.5 py-1 rounded-lg text-[9.5px] font-bold transition shadow bg-gradient-to-r from-amber-500 to-yellow-400 text-stone-950';
+          } else {
+            btn.className = `unified-tab-btn px-2.5 py-1 rounded-lg text-[9.5px] font-semibold transition ${t === 'online' ? 'text-emerald-300/90' : 'text-amber-200/80'} hover:text-amber-100 hover:bg-white/10`;
+          }
+        }
+      });
+    }
+    window.switchUnifiedRightTab = switchUnifiedRightTab;
+
     function renderSideOnlineDevotees() {
       const listEl = document.getElementById('side-online-devotees-list');
       const countEl = document.getElementById('side-online-count');
@@ -8409,6 +8459,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       }
 
       if (countEl) countEl.textContent = devotees.length;
+      const countTabEl = document.getElementById('side-online-count-tab');
+      if (countTabEl) countTabEl.textContent = devotees.length;
       if (headerBadge) headerBadge.textContent = devotees.length;
 
       listEl.innerHTML = devotees.map(dev => {
