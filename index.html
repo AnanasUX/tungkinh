@@ -309,25 +309,62 @@
       }
     }
 
-    /* 11. Màn hình Mobile Landscape nhỏ và cực thấp (Height <= 420px down to 240px) */
+    /* 11. Màn hình Mobile Landscape căn chỉnh tự động phóng to chuẩn nét */
     @media screen and (max-height: 420px) {
       :root {
-        --cushion-w: 42px !important;
-        --cushion-h: 29px !important;
-        --chibi-w: 36px !important;
-        --chibi-h: 46px !important;
+        --cushion-w: 48px !important;
+        --cushion-h: 33px !important;
+        --chibi-w: 42px !important;
+        --chibi-h: 54px !important;
+        --seat-name-size: 8.5px !important;
+        --seat-sub-size: 7px !important;
+        --seat-badge-max-w: 78px !important;
+
+        --dock-btn-h: 24px !important;
+        --dock-font-size: 9px !important;
+        --dock-icon-size: 11px !important;
+        --dock-padding: 1.5px 3px !important;
+
+        --header-h: 34px !important;
+        --header-title-size: 13px !important;
+        --header-sub-size: 8px !important;
+      }
+      header {
+        height: 34px !important;
+        min-height: 34px !important;
+      }
+      footer {
+        height: 54px !important;
+        max-height: 54px !important;
+      }
+      #bottom-dock-scroll > button {
+        height: 23.5px !important;
+        font-size: 8.5px !important;
+        padding: 1.5px 2.5px !important;
+      }
+    }
+
+    @media screen and (max-height: 320px) {
+      :root {
+        --cushion-w: 40px !important;
+        --cushion-h: 28px !important;
+        --chibi-w: 34px !important;
+        --chibi-h: 44px !important;
         --seat-name-size: 7.5px !important;
         --seat-sub-size: 6.2px !important;
-        --seat-badge-max-w: 62px !important;
+        --seat-badge-max-w: 64px !important;
 
-        --dock-btn-h: 21px !important;
-        --dock-font-size: 8px !important;
+        --dock-btn-h: 20px !important;
+        --dock-font-size: 7.8px !important;
         --dock-icon-size: 10px !important;
-        --dock-padding: 1px 2.5px !important;
+        --dock-padding: 1px 2px !important;
 
-        --header-h: 30px !important;
-        --header-title-size: 12px !important;
-        --header-sub-size: 7px !important;
+        --header-h: 28px !important;
+        --header-title-size: 11px !important;
+      }
+      header {
+        height: 28px !important;
+        min-height: 28px !important;
       }
       footer {
         height: 44px !important;
@@ -336,39 +373,6 @@
       #bottom-dock-scroll > button {
         height: 19px !important;
         font-size: 7.5px !important;
-        padding: 1px 2px !important;
-      }
-    }
-
-    @media screen and (max-height: 320px) {
-      :root {
-        --cushion-w: 36px !important;
-        --cushion-h: 25px !important;
-        --chibi-w: 30px !important;
-        --chibi-h: 38px !important;
-        --seat-name-size: 7px !important;
-        --seat-sub-size: 5.8px !important;
-        --seat-badge-max-w: 54px !important;
-
-        --dock-btn-h: 18px !important;
-        --dock-font-size: 7px !important;
-        --dock-icon-size: 9px !important;
-        --dock-padding: 0.5px 2px !important;
-
-        --header-h: 26px !important;
-        --header-title-size: 11px !important;
-      }
-      header {
-        height: 26px !important;
-        min-height: 26px !important;
-      }
-      footer {
-        height: 38px !important;
-        max-height: 38px !important;
-      }
-      #bottom-dock-scroll > button {
-        height: 17px !important;
-        font-size: 7px !important;
         padding: 0.5px 1.5px !important;
       }
       [id$="-modal"] > .temple-panel,
@@ -453,8 +457,8 @@
     /* Mobile Portrait Optimizations (Tối Ưu Hiển Thị Điện Thoại Dọc) */
     @media screen and (max-width: 767px) and (orientation: portrait) {
       #sanctuary-svg-bg {
-        transform: scale(0.72) translateY(-10%);
-        transform-origin: 50% 0%;
+        transform: scale(0.86) translateY(-5%);
+        transform-origin: 50% 10%;
       }
       #sanctuary-floor-stage {
         top: 36% !important;
@@ -699,22 +703,29 @@
         display: none !important;
       }
 
-      /* Tab nổi hai bên sườn trên mobile landscape: Siêu gọn gàng, không che bồ đoàn */
+      /* Chánh Điện phóng to tự nhiên, trang nghiêm trên mobile ngang */
+      #sanctuary-svg-bg {
+        transform: scale(1.05) translateY(-1.2%);
+        transform-origin: 50% 30%;
+        transition: transform 0.4s ease;
+      }
+
+      /* Tab nổi hai bên sườn trên mobile landscape: Căn chỉnh thẳng hàng, không chồng lấn */
       #btn-tab-drawer-left {
         display: flex !important;
         left: 0 !important;
-        top: 38px !important;
-        padding: 2.5px 5px !important;
-        font-size: 8.5px !important;
+        top: 40px !important;
+        padding: 3px 6px !important;
+        font-size: 9px !important;
         border-radius: 0 8px 8px 0 !important;
         z-index: 40 !important;
       }
       #btn-tab-drawer-right {
         display: flex !important;
         right: 0 !important;
-        top: 38px !important;
-        padding: 2.5px 5px !important;
-        font-size: 8.5px !important;
+        top: 76px !important;
+        padding: 3px 6px !important;
+        font-size: 9px !important;
         border-radius: 8px 0 0 8px !important;
         z-index: 40 !important;
       }
@@ -798,32 +809,32 @@
         padding-left: max(4px, env(safe-area-inset-left)) !important;
         padding-right: max(4px, env(safe-area-inset-right)) !important;
         padding-bottom: max(2px, env(safe-area-inset-bottom)) !important;
-        max-height: 50px !important;
-        height: 50px !important;
+        max-height: 56px !important;
+        height: 56px !important;
       }
       #bottom-dock-scroll {
         display: grid !important;
         grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
-        gap: 2px 3px !important;
+        gap: 2.5px 3.5px !important;
         width: 100% !important;
-        max-width: 820px !important;
+        max-width: 860px !important;
         margin: 0 auto !important;
         overflow: visible !important;
-        padding: 2px 4px !important;
-        background: rgba(18, 9, 4, 0.88) !important;
+        padding: 2.5px 5px !important;
+        background: rgba(18, 9, 4, 0.90) !important;
         backdrop-filter: blur(8px) !important;
-        border: 1px solid rgba(245, 190, 70, 0.3) !important;
-        border-radius: 12px !important;
+        border: 1px solid rgba(245, 190, 70, 0.35) !important;
+        border-radius: 14px !important;
         justify-items: stretch !important;
       }
       #bottom-dock-scroll::-webkit-scrollbar {
         display: none !important;
       }
       #bottom-dock-scroll > button {
-        padding: 1px 2px !important;
-        font-size: 8px !important;
-        line-height: 1.1 !important;
-        height: 21px !important;
+        padding: 1.5px 2.5px !important;
+        font-size: 9px !important;
+        line-height: 1.15 !important;
+        height: 23.5px !important;
         min-width: 0 !important;
         width: 100% !important;
         justify-content: center !important;
@@ -834,10 +845,11 @@
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: clip !important;
+        font-weight: 700 !important;
       }
       #bottom-dock-scroll > button svg {
-        width: 10px !important;
-        height: 10px !important;
+        width: 11px !important;
+        height: 11px !important;
         flex-shrink: 0 !important;
       }
       footer .hidden.sm\:block,
@@ -5709,8 +5721,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           const col = idx % 4;
           const colXs = [16, 33, 67, 84];
           seatX = colXs[col] !== undefined ? colXs[col] : 50;
-          seatY = 58 + row * 12;
-          seatScale = seat.isUser ? 0.90 : 0.82;
+          seatY = 56 + row * 12;
+          seatScale = seat.isUser ? 0.98 : 0.88;
         } else {
           // Perspective layout in landscape & desktop: Row 0 on upper floor, Row 1 on lower floor
           const row = Math.floor(idx / 6);
@@ -5718,13 +5730,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           if (row === 0) {
             const colXsRow0 = [19, 30, 41, 59, 70, 81];
             seatX = colXsRow0[col] !== undefined ? colXsRow0[col] : (18 + col * 12.8);
-            seatY = isMobileLandscape ? 55 : 56.5;
-            seatScale = seat.isUser ? 0.90 : 0.84;
+            seatY = isMobileLandscape ? 52.5 : 56.5;
+            seatScale = isMobileLandscape ? (seat.isUser ? 0.98 : 0.90) : (seat.isUser ? 0.90 : 0.84);
           } else if (row === 1) {
             const colXsRow1 = [16, 27.5, 39, 61, 72.5, 84];
             seatX = colXsRow1[col] !== undefined ? colXsRow1[col] : (16 + col * 13.6);
-            seatY = isMobileLandscape ? 70 : 71.5;
-            seatScale = seat.isUser ? 1.02 : 0.95;
+            seatY = isMobileLandscape ? 66.5 : 71.5;
+            seatScale = isMobileLandscape ? (seat.isUser ? 1.10 : 1.02) : (seat.isUser ? 1.02 : 0.95);
           } else {
             const extraRow = row - 1;
             const colXsExtra = [
