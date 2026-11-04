@@ -825,6 +825,10 @@
     handleIncomingMessage(msg) {
       if (!msg || !msg.type || msg.senderId === clientId || msg.senderId === window.SANCTUARY_CLIENT_ID) return;
 
+      if (msg.type && msg.type.startsWith('ROOM_')) {
+        window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: msg }));
+        return;
+      }
       switch (msg.type) {
         case 'ROOM_CHAT':
         case 'ROOM_PRESENCE':

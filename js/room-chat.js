@@ -176,6 +176,170 @@
       background: #059669;
     }
 
+    
+    /* Incoming Video Call Modal (Zalo-Style) */
+    .zalo-incoming-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 5000;
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+      animation: zaloFadeIn 0.25s ease-out;
+    }
+    .zalo-incoming-modal-backdrop.hidden {
+      display: none !important;
+    }
+    @keyframes zaloFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .zalo-incoming-call-box {
+      width: 100%;
+      max-width: 380px;
+      background: radial-gradient(circle at 50% 20%, #3d2010 0%, #170b04 100%);
+      border: 2px solid rgba(251, 191, 36, 0.85);
+      border-radius: 28px;
+      padding: 24px 20px 20px;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(245, 158, 11, 0.45);
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    .zalo-inc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.25);
+      border: 1px solid #34d399;
+      color: #6ee7b7;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+    .zalo-inc-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 8px #34d399;
+    }
+    .zalo-inc-avatar-wrapper {
+      position: relative;
+      width: 86px;
+      height: 86px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .zalo-inc-pulse-ring {
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid #f59e0b;
+      animation: callPulseRing 2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+    }
+    .zalo-inc-pulse-ring.ring-delay {
+      animation-delay: 0.65s;
+    }
+    @keyframes callPulseRing {
+      0% { transform: scale(0.85); opacity: 0.9; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .zalo-inc-avatar-circle {
+      position: relative;
+      z-index: 2;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #f59e0b 0%, #92400e 100%);
+      border: 3px solid #fef08a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      font-weight: 900;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.5);
+    }
+    .zalo-inc-name {
+      font-size: 19px;
+      font-weight: 800;
+      color: #fffbeb;
+      margin: 0 0 4px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+    }
+    .zalo-inc-sub {
+      font-size: 12px;
+      color: #fde68a;
+      opacity: 0.9;
+      margin: 0 0 10px;
+    }
+    .zalo-inc-message {
+      font-size: 12px;
+      color: #e5e7eb;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 14px;
+      padding: 8px 12px;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    .zalo-inc-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 12px;
+    }
+    .zalo-inc-btn {
+      height: 48px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .zalo-inc-btn.btn-decline {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1.5px solid #ef4444;
+      color: #fca5a5;
+    }
+    .zalo-inc-btn.btn-decline:hover {
+      background: #dc2626;
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+    }
+    .zalo-inc-btn.btn-accept {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: 1.5px solid #6ee7b7;
+      color: #fff;
+      box-shadow: 0 6px 22px rgba(16, 185, 129, 0.6);
+    }
+    .zalo-inc-btn.btn-accept:hover {
+      background: #10b981;
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 28px rgba(16, 185, 129, 0.85);
+    }
+    .zalo-inc-btn-icon {
+      font-size: 18px;
+    }
+
     /* Zalo Video Call Modal & Stage */
     #zalo-video-call-modal {
       position: fixed;
@@ -1823,6 +1987,25 @@
         }
         break;
 
+      
+      case 'ROOM_VIDEO_CALL_OFFER':
+        if (payload.targetId === myId() || payload.targetId === 'all' || !payload.targetId) {
+          showIncomingVideoCallModal(payload);
+        }
+        break;
+
+      case 'ROOM_VIDEO_CALL_ACCEPT':
+        handleRemoteAcceptedVideoCall(payload);
+        break;
+
+      case 'ROOM_VIDEO_CALL_DECLINE':
+        handleRemoteDeclinedVideoCall(payload);
+        break;
+
+      case 'ROOM_VIDEO_CALL_END':
+        handleRemoteEndedVideoCall(payload);
+        break;
+
       case 'ROOM_VOICE_CHUNK':
         if (payload.data) {
           playAudioChunk(payload.senderId, payload.data, payload.mimeType);
@@ -2213,7 +2396,219 @@
     return canvas.captureStream(30);
   }
 
-  async function startZaloVideoCall(targetDevotee = null) {
+  
+  let incomingCallRingtoneTimer = null;
+  let incomingCallTimeoutTimer = null;
+  let activeIncomingCallData = null;
+
+  function playIncomingCallRingtone() {
+    if (incomingCallRingtoneTimer) clearInterval(incomingCallRingtoneTimer);
+    const ring = () => {
+      try {
+        if (window.AudioEngine) {
+          if (typeof window.AudioEngine.playGiftChime === 'function') {
+            window.AudioEngine.playGiftChime();
+          } else if (typeof window.AudioEngine.playWoodenFish === 'function') {
+            window.AudioEngine.playWoodenFish(1);
+          }
+        }
+      } catch (_) {}
+    };
+    ring();
+    incomingCallRingtoneTimer = setInterval(ring, 2400);
+  }
+
+  function stopIncomingCallRingtone() {
+    if (incomingCallRingtoneTimer) {
+      clearInterval(incomingCallRingtoneTimer);
+      incomingCallRingtoneTimer = null;
+    }
+  }
+
+  function showIncomingVideoCallModal(callData) {
+    // If user is already inside active video call, skip
+    const currentCallModal = document.getElementById('zalo-video-call-modal');
+    if (currentCallModal && !currentCallModal.classList.contains('hidden')) {
+      return;
+    }
+
+    activeIncomingCallData = callData;
+
+    let modal = document.getElementById('zalo-incoming-call-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'zalo-incoming-call-modal';
+      modal.className = 'zalo-incoming-modal-backdrop';
+      modal.innerHTML = `
+        <div class="zalo-incoming-call-box">
+          <!-- Top badge -->
+          <div class="zalo-inc-badge">
+            <span class="zalo-inc-dot animate-pulse"></span>
+            <span>CUỘC GỌI VIDEO ĐẠO TRÀNG</span>
+          </div>
+
+          <!-- Pulsing Avatar -->
+          <div class="zalo-inc-avatar-wrapper">
+            <div class="zalo-inc-pulse-ring"></div>
+            <div class="zalo-inc-pulse-ring ring-delay"></div>
+            <div class="zalo-inc-avatar-circle" id="zalo-inc-avatar-text">🌸</div>
+          </div>
+
+          <!-- Caller identity -->
+          <h3 class="zalo-inc-name" id="zalo-inc-caller-name">Đạo Hữu Đồng Tu</h3>
+          <p class="zalo-inc-sub" id="zalo-inc-caller-sub">Live • Chánh Điện • Việt Nam</p>
+          <div class="zalo-inc-message">
+            <span>📹 Mời bạn cùng tham gia đàm thoại Video trực tuyến Chánh Điện</span>
+          </div>
+
+          <!-- 2 Action Buttons -->
+          <div class="zalo-inc-actions">
+            <!-- Decline Button -->
+            <button type="button" onclick="declineIncomingVideoCall()" class="zalo-inc-btn btn-decline" title="Từ chối cuộc gọi">
+              <span class="zalo-inc-btn-icon">✕</span>
+              <span>Từ Chối</span>
+            </button>
+
+            <!-- Accept Button -->
+            <button type="button" onclick="acceptIncomingVideoCall()" class="zalo-inc-btn btn-accept" title="Tham gia cuộc gọi video">
+              <span class="zalo-inc-btn-icon">📹</span>
+              <span>Tham Gia</span>
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    // Populate Caller data
+    const nameEl = document.getElementById('zalo-inc-caller-name');
+    const subEl = document.getElementById('zalo-inc-caller-sub');
+    const avatarEl = document.getElementById('zalo-inc-avatar-text');
+
+    const callerName = callData.callerName || callData.name || 'Đạo Hữu Đồng Tu';
+    const callerDharma = callData.callerDharma || callData.dharma || 'Tịnh Tâm';
+    const callerLoc = callData.callerLocation || callData.location || 'Việt Nam';
+    const callerAvatar = callData.callerAvatar || callerName.slice(0, 1).toUpperCase() || '🌸';
+
+    if (nameEl) nameEl.textContent = callerName;
+    if (subEl) subEl.textContent = `Pháp danh: ${callerDharma} • 📍 ${callerLoc}`;
+    if (avatarEl) avatarEl.textContent = callerAvatar;
+
+    modal.classList.remove('hidden');
+
+    // Ring tone
+    playIncomingCallRingtone();
+
+    // Auto-dismiss after 35 seconds
+    if (incomingCallTimeoutTimer) clearTimeout(incomingCallTimeoutTimer);
+    incomingCallTimeoutTimer = setTimeout(() => {
+      declineIncomingVideoCall(true);
+    }, 35000);
+  }
+
+  function declineIncomingVideoCall(isAutoTimeout = false) {
+    stopIncomingCallRingtone();
+    if (incomingCallTimeoutTimer) {
+      clearTimeout(incomingCallTimeoutTimer);
+      incomingCallTimeoutTimer = null;
+    }
+    const modal = document.getElementById('zalo-incoming-call-modal');
+    if (modal) modal.classList.add('hidden');
+
+    if (!isAutoTimeout && activeIncomingCallData) {
+      publish({
+        type: 'ROOM_VIDEO_CALL_DECLINE',
+        callId: activeIncomingCallData.callId,
+        targetId: activeIncomingCallData.senderId,
+        senderId: myId(),
+        name: profile().name
+      });
+    }
+    activeIncomingCallData = null;
+  }
+
+  async function acceptIncomingVideoCall() {
+    stopIncomingCallRingtone();
+    if (incomingCallTimeoutTimer) {
+      clearTimeout(incomingCallTimeoutTimer);
+      incomingCallTimeoutTimer = null;
+    }
+    const modal = document.getElementById('zalo-incoming-call-modal');
+    if (modal) modal.classList.add('hidden');
+
+    const callData = activeIncomingCallData;
+    activeIncomingCallData = null;
+
+    if (!callData) return;
+
+    // Notify caller that we accepted
+    const myProf = profile();
+    publish({
+      type: 'ROOM_VIDEO_CALL_ACCEPT',
+      callId: callData.callId,
+      targetId: callData.senderId,
+      senderId: myId(),
+      name: myProf.name,
+      dharma: myProf.dharma,
+      location: myProf.location
+    });
+
+    // Start video call UI and attach stream
+    await startZaloVideoCall({
+      id: callData.senderId,
+      name: callData.callerName || callData.name || 'Đạo Hữu',
+      dharma: callData.callerDharma || callData.dharma || 'Tịnh Tâm',
+      location: callData.callerLocation || callData.location || 'Việt Nam'
+    }, false);
+  }
+
+  function handleRemoteAcceptedVideoCall(payload) {
+    const devNameEl = document.getElementById('zalo-remote-devotee-name');
+    const devSubEl = document.getElementById('zalo-remote-devotee-sub');
+    const statusRow = document.querySelector('.zalo-call-status-row');
+
+    if (devNameEl) devNameEl.textContent = payload.name || 'Đạo Hữu Đồng Tu';
+    if (devSubEl) devSubEl.textContent = `Pháp danh: ${payload.dharma || 'Tịnh Tâm'} • 📍 ${payload.location || 'Việt Nam'}`;
+    if (statusRow) {
+      statusRow.innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-emerald-300 font-bold">Đã kết nối trực tuyến</span>
+        <span class="zalo-call-hd-badge">HD 720p</span>
+        <span class="text-stone-300">• Ping ~18ms</span>
+      `;
+    }
+
+    if (window.AudioEngine && window.AudioEngine.playGiftChime) {
+      window.AudioEngine.playGiftChime();
+    }
+    if (window.showLiveGiftBanner) {
+      window.showLiveGiftBanner(payload.name || 'Đạo Hữu', '📹 Đã kết nối Video Call cùng bạn', 'lotus');
+    }
+  }
+
+  function handleRemoteDeclinedVideoCall(payload) {
+    if (window.showLiveGiftBanner) {
+      window.showLiveGiftBanner(payload.name || 'Đạo Hữu', 'Đạo hữu hiện chưa tiện nhận cuộc gọi video', 'lotus');
+    }
+  }
+
+  function handleRemoteEndedVideoCall(payload) {
+    const incomingModal = document.getElementById('zalo-incoming-call-modal');
+    if (incomingModal) {
+      incomingModal.classList.add('hidden');
+      stopIncomingCallRingtone();
+    }
+
+    const currentCallModal = document.getElementById('zalo-video-call-modal');
+    if (currentCallModal && !currentCallModal.classList.contains('hidden')) {
+      endZaloVideoCall();
+      if (window.showLiveGiftBanner) {
+        window.showLiveGiftBanner('Video Call', 'Cuộc gọi video đã kết thúc', 'lotus');
+      }
+    }
+  }
+
+  async function startZaloVideoCall(targetDevotee = null, isInitiator = true) {
     const modal = ensureZaloCallModal();
     modal.classList.remove('hidden', 'pip-mode');
     isZaloPiPActive = false;
@@ -2299,17 +2694,32 @@
       remoteVideo.play().catch(() => {});
     }
 
-    // Broadcast Video Call Offer via Supabase/Realtime
-    publish({
-      type: 'ROOM_VIDEO_CALL_OFFER',
-      roomId: state.roomId,
-      senderId: myId(),
-      name: myProf.name,
-      targetId: targetDevotee?.id || null
-    });
+    // Broadcast Video Call Offer via Supabase/Realtime if initiator
+    if (isInitiator) {
+      const targetId = targetDevotee?.id || (typeof targetDevotee === 'string' ? targetDevotee : 'all');
+      publish({
+        type: 'ROOM_VIDEO_CALL_OFFER',
+        callId: 'call_' + Date.now() + '_' + myId(),
+        roomId: state.roomId,
+        senderId: myId(),
+        callerName: myProf.name || 'Phật Tử',
+        callerAvatar: (myProf.name || 'P').slice(0, 1).toUpperCase(),
+        callerDharma: myProf.dharma || 'Minh Tâm',
+        callerLocation: myProf.location || 'Việt Nam',
+        targetId: targetId
+      });
+
+      // Announce in room chat lobby
+      sendText(`📹 Đang khởi tạo cuộc gọi Video Đạo Tràng (${targetDevotee ? (targetDevotee.name || 'Đạo Hữu') : 'Đạo Tràng Toàn Cầu'}). Kính mời chư Đạo Hữu cùng tham gia!`);
+    }
   }
 
   function endZaloVideoCall() {
+    publish({
+      type: 'ROOM_VIDEO_CALL_END',
+      roomId: state.roomId,
+      senderId: myId()
+    });
     const modal = document.getElementById('zalo-video-call-modal');
     if (modal) modal.classList.add('hidden');
 
@@ -2421,6 +2831,9 @@
   }
 
   window.startZaloVideoCall = startZaloVideoCall;
+  window.showIncomingVideoCallModal = showIncomingVideoCallModal;
+  window.acceptIncomingVideoCall = acceptIncomingVideoCall;
+  window.declineIncomingVideoCall = declineIncomingVideoCall;
   window.endZaloVideoCall = endZaloVideoCall;
   window.toggleZaloVideoCallMic = toggleZaloVideoCallMic;
   window.toggleZaloVideoCallCam = toggleZaloVideoCallCam;
