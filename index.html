@@ -427,8 +427,11 @@
       backdrop-filter: blur(10px);
     }
 
-    /* Khôi phục Chánh Điện: Luôn hiển thị Chánh Điện trực tiếp, không chặn cửa bằng overlay */
-    #orientation-guard-overlay {
+    /* Khóa xoay dọc: Chỉ hiện overlay khi thiết bị di động đang ở tư thế dọc */
+    body.mobile-portrait #orientation-guard-overlay {
+      display: flex !important;
+    }
+    body.mobile-landscape #orientation-guard-overlay {
       display: none !important;
     }
 
@@ -673,12 +676,13 @@
        -------------------------------------------------------------------------- */
     @media screen and (max-height: 560px) and (orientation: landscape), screen and (max-height: 560px) and (min-width: 576px) {
       header {
-        height: 34px !important;
-        min-height: 34px !important;
-        padding-top: 2px !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        margin-top: 6px !important;
+        padding-top: max(4px, env(safe-area-inset-top)) !important;
         padding-bottom: 2px !important;
-        padding-left: 6px !important;
-        padding-right: 6px !important;
+        padding-left: max(8px, env(safe-area-inset-left)) !important;
+        padding-right: max(8px, env(safe-area-inset-right)) !important;
       }
       header h1 {
         font-size: 13px !important;
@@ -717,7 +721,7 @@
       #btn-tab-drawer-left {
         display: flex !important;
         left: 0 !important;
-        top: 40px !important;
+        top: 44px !important;
         padding: 3px 6px !important;
         font-size: 9px !important;
         border-radius: 0 8px 8px 0 !important;
@@ -726,7 +730,7 @@
       #btn-tab-drawer-right {
         display: flex !important;
         right: 0 !important;
-        top: 76px !important;
+        top: 80px !important;
         padding: 3px 6px !important;
         font-size: 9px !important;
         border-radius: 8px 0 0 8px !important;
@@ -793,7 +797,7 @@
 
       /* Widget Đếm Giờ Tụng Kinh thu gọn nhẹ nhàng góc trên phải */
       #quest-floating-hud {
-        top: 36px !important;
+        top: 42px !important;
         right: 6px !important;
         transform: scale(0.80) !important;
         transform-origin: top right !important;
@@ -4427,7 +4431,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
     function checkDeviceOrientationGuard() {
       const overlay = document.getElementById('orientation-guard-overlay');
-      if (overlay) {
+      if (!overlay) return;
+      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
+      const isPortrait = window.innerHeight > window.innerWidth;
+
+      if (isMobile && isPortrait) {
+        overlay.style.display = 'flex';
+        lockLandscapeUniversal();
+      } else {
         overlay.style.display = 'none';
       }
     }
@@ -4480,15 +4491,35 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       checkMobileOrientationBanner();
 
       const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (window.innerWidth < 1024 && 'ontouchstart' in window);
-      const onFirstInteraction = () => {
+      
+      const enforceLandscapeLock = () => {
+        if (isMobile) {
+          lockLandscapeUniversal();
+          checkMobileOrientationBanner();
+          if (typeof renderSanctuaryFloor === 'function' && !is3DModeActive) {
+            renderSanctuaryFloor();
+          }
+        }
+      };
+
+      const onInteraction = () => {
         if (isMobile) {
           requestAppFullscreen(true);
           lockLandscapeUniversal();
         }
       };
 
-      window.addEventListener('click', onFirstInteraction, { passive: true, once: true });
-      window.addEventListener('touchend', onFirstInteraction, { passive: true, once: true });
+      window.addEventListener('click', onInteraction, { passive: true });
+      window.addEventListener('touchend', onInteraction, { passive: true });
+
+      // Khi người dùng thoát ra ngoài rồi quay lại (switch app, khóa màn hình, mở lại tab)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          enforceLandscapeLock();
+        }
+      });
+      window.addEventListener('focus', enforceLandscapeLock);
+      window.addEventListener('pageshow', enforceLandscapeLock);
     }
 
     function updateFullscreenUI() {
@@ -5731,14 +5762,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           const row = Math.floor(idx / 6);
           const col = idx % 6;
           if (row === 0) {
-            const colXsRow0 = [17, 28, 39, 61, 72, 83];
-            seatX = colXsRow0[col] !== undefined ? colXsRow0[col] : (17 + col * 13.2);
-            seatY = isMobileLandscape ? 53.5 : 56.5;
+            const colXsRow0 = [16, 27, 38, 62, 73, 84];
+            seatX = colXsRow0[col] !== undefined ? colXsRow0[col] : (16 + col * 13.6);
+            seatY = isMobileLandscape ? 62.5 : 56.5;
             seatScale = isMobileLandscape ? (seat.isUser ? 0.94 : 0.86) : (seat.isUser ? 0.90 : 0.84);
           } else if (row === 1) {
-            const colXsRow1 = [14, 25.5, 37, 63, 74.5, 86];
-            seatX = colXsRow1[col] !== undefined ? colXsRow1[col] : (14 + col * 14.4);
-            seatY = isMobileLandscape ? 68.5 : 71.5;
+            const colXsRow1 = [13, 24.5, 36, 64, 75.5, 87];
+            seatX = colXsRow1[col] !== undefined ? colXsRow1[col] : (13 + col * 14.8);
+            seatY = isMobileLandscape ? 79.5 : 71.5;
             seatScale = isMobileLandscape ? (seat.isUser ? 1.05 : 0.96) : (seat.isUser ? 1.02 : 0.95);
           } else {
             const extraRow = row - 1;
