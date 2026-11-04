@@ -96,6 +96,109 @@
       letter-spacing: 0.5px;
     }
 
+    
+    /* Live Active Video Call Strip in Chat Stream */
+    .room-active-call-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 12px;
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.28) 0%, rgba(5, 150, 105, 0.18) 100%);
+      border-bottom: 1.5px solid #10b981;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .room-active-call-strip.hidden {
+      display: none !important;
+    }
+    .room-active-call-preview {
+      width: 52px;
+      height: 38px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+      border: 1.5px solid #34d399;
+      flex-shrink: 0;
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+    }
+    #room-strip-remote-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .room-active-call-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #ecfdf5;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .room-active-call-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      flex-shrink: 0;
+      animation: callPulseRing 1.5s infinite;
+    }
+    .room-strip-timer {
+      font-family: monospace;
+      color: #fde68a;
+      font-size: 11px;
+      margin-left: 4px;
+    }
+    .room-active-call-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .room-strip-btn {
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+    .room-strip-btn.btn-expand {
+      background: #10b981;
+      color: #fff;
+    }
+    .room-strip-btn.btn-expand:hover {
+      background: #059669;
+      transform: scale(1.05);
+    }
+    .room-strip-btn.btn-end {
+      background: rgba(239, 68, 68, 0.25);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+    }
+    .room-strip-btn.btn-end:hover {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    #zalo-local-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    .zalo-avatar-fallback.hidden {
+      display: none !important;
+    }
+
     /* Video Call Button in Chat Header */
     .room-header-video-btn {
       display: inline-flex;
@@ -1683,23 +1786,70 @@
     }
   }
 
+  function attachCurrentTracksToPC(pc) {
+    if (!pc) return;
+    const senders = (typeof pc.getSenders === 'function') ? pc.getSenders() : [];
+
+    // 1. Attach audio tracks from voice chat stream (if active)
+    if (state.stream) {
+      state.stream.getAudioTracks().forEach(track => {
+        const hasTrack = senders.some(s => s.track && s.track.kind === 'audio' && s.track.id === track.id);
+        if (!hasTrack) {
+          try { pc.addTrack(track, state.stream); } catch (_) {}
+        }
+      });
+    }
+
+    // 2. Attach Video and Audio tracks from Zalo Video Call stream (if active)
+    if (zaloMediaStream) {
+      zaloMediaStream.getTracks().forEach(track => {
+        const hasTrack = senders.some(s => s.track && s.track.kind === track.kind);
+        if (!hasTrack) {
+          try { pc.addTrack(track, zaloMediaStream); } catch (_) {}
+        }
+      });
+    }
+  }
+
   function getOrCreatePeerConnection(peerId) {
     if (state.peerConnections.has(peerId)) {
-      return state.peerConnections.get(peerId);
+      const existingPc = state.peerConnections.get(peerId);
+      attachCurrentTracksToPC(existingPc);
+      return existingPc;
     }
 
     const pc = new RTCPeerConnection(RTC_CONFIG);
     state.peerConnections.set(peerId, pc);
 
-    if (state.stream) {
-      state.stream.getAudioTracks().forEach(track => {
-        pc.addTrack(track, state.stream);
-      });
-    }
+    attachCurrentTracksToPC(pc);
 
     pc.ontrack = (event) => {
-      if (event.streams && event.streams[0]) {
-        playRemoteAudioStream(peerId, event.streams[0]);
+      const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+
+      // Handle Video Track
+      if (event.track.kind === 'video' || stream.getVideoTracks().length > 0) {
+        console.log('[ZaloVideoCall] Received remote video stream from', peerId);
+        const remoteVideo = document.getElementById('zalo-remote-video');
+        const stripVideo = document.getElementById('room-strip-remote-video');
+        const avatarFallback = document.getElementById('zalo-avatar-fallback');
+
+        if (remoteVideo) {
+          remoteVideo.srcObject = stream;
+          remoteVideo.play().catch(e => console.warn('Remote video play err:', e));
+        }
+        if (stripVideo) {
+          stripVideo.srcObject = stream;
+          stripVideo.play().catch(() => {});
+        }
+        if (avatarFallback) {
+          avatarFallback.classList.add('hidden');
+        }
+      }
+
+      // Handle Audio Track
+      if (event.track.kind === 'audio' || stream.getAudioTracks().length > 0) {
+        console.log('[ZaloVideoCall] Received remote audio stream from', peerId);
+        playRemoteAudioStream(peerId, stream);
       }
     };
 
@@ -1726,11 +1876,40 @@
     return pc;
   }
 
+  async function connectVideoPeer(peerId, isOfferInitiator) {
+    if (!peerId || peerId === myId()) return;
+    try {
+      const pc = getOrCreatePeerConnection(peerId);
+      attachCurrentTracksToPC(pc);
+
+      if (isOfferInitiator) {
+        const offer = await pc.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true
+        });
+        await pc.setLocalDescription(offer);
+        publish({
+          type: 'ROOM_VOICE_OFFER',
+          senderId: myId(),
+          targetId: peerId,
+          sdp: offer,
+          isVideoCall: true
+        });
+      }
+    } catch (err) {
+      console.warn('[ZaloVideoCall] connectVideoPeer error:', err);
+    }
+  }
+
   async function callPeer(peerId) {
     if (!peerId || peerId === myId()) return;
     try {
       const pc = getOrCreatePeerConnection(peerId);
-      const offer = await pc.createOffer({ offerToReceiveAudio: true });
+      const isVideoActive = Boolean(zaloMediaStream);
+      const offer = await pc.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: isVideoActive
+  });
       await pc.setLocalDescription(offer);
       publish({
         type: 'ROOM_VOICE_OFFER',
@@ -2164,6 +2343,9 @@
   function close() {
     const modal = document.getElementById('room-chat-modal');
     if (modal) modal.classList.add('hidden');
+    updateActiveCallStrip(false);
+    const avatarFallback = document.getElementById('zalo-avatar-fallback');
+    if (avatarFallback) avatarFallback.classList.remove('hidden');
   }
 
   function sendText(customText) {
@@ -2560,7 +2742,43 @@
       dharma: callData.callerDharma || callData.dharma || 'Tịnh Tâm',
       location: callData.callerLocation || callData.location || 'Việt Nam'
     }, false);
+
+    // Prepare WebRTC peer connection
+    connectVideoPeer(callData.senderId, false);
+    updateActiveCallStrip(true, callData.callerName || 'Đạo Hữu');
   }
+
+  function updateActiveCallStrip(active, peerName) {
+    const strip = document.getElementById('room-active-call-strip');
+    if (!strip) return;
+    if (active) {
+      strip.classList.remove('hidden');
+      const titleEl = document.getElementById('room-strip-call-title');
+      if (titleEl && peerName) titleEl.textContent = `📹 Cuộc gọi Video cùng ${peerName}`;
+      const stripVideo = document.getElementById('room-strip-remote-video');
+      const remoteVideo = document.getElementById('zalo-remote-video');
+      if (stripVideo && remoteVideo && remoteVideo.srcObject) {
+        stripVideo.srcObject = remoteVideo.srcObject;
+        stripVideo.play().catch(() => {});
+      }
+    } else {
+      strip.classList.add('hidden');
+      const stripVideo = document.getElementById('room-strip-remote-video');
+      if (stripVideo) stripVideo.srcObject = null;
+    }
+  }
+
+  function openZaloCallFromStrip() {
+    const chatModal = document.getElementById('room-chat-modal');
+    if (chatModal) chatModal.classList.add('hidden');
+    const callModal = document.getElementById('zalo-video-call-modal');
+    if (callModal) {
+      callModal.classList.remove('hidden', 'pip-mode');
+      isZaloPiPActive = false;
+    }
+  }
+  window.openZaloCallFromStrip = openZaloCallFromStrip;
+  window.updateActiveCallStrip = updateActiveCallStrip;
 
   function handleRemoteAcceptedVideoCall(payload) {
     const devNameEl = document.getElementById('zalo-remote-devotee-name');
@@ -2577,6 +2795,13 @@
         <span class="text-stone-300">• Ping ~18ms</span>
       `;
     }
+
+    // Connect WebRTC video call offer to User B!
+    if (payload.senderId) {
+      connectVideoPeer(payload.senderId, true);
+    }
+
+    updateActiveCallStrip(true, payload.name || 'Đạo Hữu');
 
     if (window.AudioEngine && window.AudioEngine.playGiftChime) {
       window.AudioEngine.playGiftChime();
@@ -2628,6 +2853,8 @@
       const mins = String(Math.floor(zaloCallSeconds / 60)).padStart(2, '0');
       const secs = String(zaloCallSeconds % 60).padStart(2, '0');
       if (timerLabel) timerLabel.textContent = `${mins}:${secs}`;
+      const stripTimer = document.getElementById('room-strip-timer');
+      if (stripTimer) stripTimer.textContent = `${mins}:${secs}`;
     }, 1000);
 
     // Set remote devotee info
@@ -2954,6 +3181,26 @@
           
           <!-- Messages Column -->
           <section class="room-chat-main" aria-label="Tin nhắn phòng">
+            <!-- Live Active Video Call Strip in Chat Stream -->
+            <div id="room-active-call-strip" class="room-active-call-strip hidden">
+              <div class="room-active-call-preview">
+                <video id="room-strip-remote-video" autoplay playsinline muted></video>
+              </div>
+              <div class="room-active-call-info">
+                <span class="room-active-call-dot"></span>
+                <span id="room-strip-call-title">Đang trong cuộc gọi Video Đạo Tràng</span>
+                <span class="room-strip-timer" id="room-strip-timer">00:00</span>
+              </div>
+              <div class="room-active-call-actions">
+                <button type="button" onclick="openZaloCallFromStrip()" class="room-strip-btn btn-expand" title="Mở toàn màn hình Video Call">
+                  <span>⛶ Mở to</span>
+                </button>
+                <button type="button" onclick="endZaloVideoCall()" class="room-strip-btn btn-end" title="Kết thúc cuộc gọi">
+                  <span>✕ Tắt</span>
+                </button>
+              </div>
+            </div>
+
             <div id="room-channel-title" class="room-channel-title">
               <span>🌐</span><span>Đạo Tràng Toàn Cầu · Mọi người cùng chiêm bái</span>
             </div>
