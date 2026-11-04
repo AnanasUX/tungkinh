@@ -837,6 +837,7 @@
         padding-bottom: max(2px, env(safe-area-inset-bottom)) !important;
         max-height: 60px !important;
         height: auto !important;
+        z-index: 70 !important;
       }
       #bottom-dock-scroll {
         display: grid !important;
@@ -889,8 +890,8 @@
       #panel-left-drawer,
       #panel-right-drawer {
         top: 36px !important;
-        bottom: 58px !important;
-        max-height: calc(100dvh - 94px) !important;
+        bottom: max(60px, calc(56px + env(safe-area-inset-bottom, 0px))) !important;
+        max-height: calc(100dvh - 96px) !important;
         width: min(250px, 35vw) !important;
         padding: 6px 8px !important;
         z-index: 60 !important;
@@ -1016,10 +1017,16 @@
       }
 
       /* Tối ưu tất cả Popups/Modals trên Mobile Landscape */
+      [id$="-modal"] {
+        align-items: flex-start !important;
+        padding: 6px 10px !important;
+      }
       .temple-panel {
-        max-height: 88vh !important;
-        max-height: 88dvh !important;
+        max-height: 96vh !important;
+        max-height: 96dvh !important;
         padding: 8px 12px !important;
+        margin: 0 auto !important;
+        overflow-y: auto !important;
       }
       .temple-panel h3 {
         font-size: 14px !important;
@@ -1035,6 +1042,266 @@
       .temple-panel button {
         padding-top: 4px !important;
         padding-bottom: 4px !important;
+      }
+
+      /* 1. Xin Xăm Từ Bi (Oracle) - Bố cục 2 cột ngang */
+      #oracle-fortune-modal {
+        align-items: flex-start !important;
+        padding: 6px 10px !important;
+      }
+      #oracle-fortune-modal .temple-panel {
+        max-width: 640px !important;
+        max-height: 96dvh !important;
+        margin: 0 auto !important;
+        padding: 8px 14px !important;
+      }
+      #oracle-fortune-modal .my-3.flex {
+        flex-direction: row !important;
+        gap: 12px !important;
+        margin: 4px 0 !important;
+      }
+      #oracle-cylinder-svg {
+        width: 72px !important;
+        height: 96px !important;
+      }
+      #oracle-card-result {
+        min-height: auto !important;
+        padding: 6px 10px !important;
+      }
+      #oracle-poem {
+        padding: 4px 8px !important;
+        font-size: 10.5px !important;
+        line-height: 1.3 !important;
+        margin-top: 4px !important;
+      }
+      #oracle-advice {
+        margin-top: 4px !important;
+        font-size: 9.5px !important;
+      }
+
+      /* 2. Kho Tàng Kinh Thư (Scriptures) */
+      #scripture-library-modal {
+        align-items: flex-start !important;
+        padding: 6px 10px !important;
+      }
+      #scripture-library-modal .temple-panel {
+        max-width: 720px !important;
+        max-height: 96dvh !important;
+        margin: 0 auto !important;
+        padding: 8px 14px !important;
+      }
+      #scripture-reader-box {
+        max-height: min(150px, 42vh) !important;
+        font-size: 11.5px !important;
+        line-height: 1.4 !important;
+        padding: 6px 10px !important;
+      }
+
+      /* 3. Phòng Đồng Tụng Thời Gian Thực */
+      #shared-chanting-modal {
+        align-items: flex-start !important;
+        padding: 6px 10px !important;
+      }
+      #shared-chanting-modal .temple-panel {
+        max-width: 720px !important;
+        max-height: 96dvh !important;
+        margin: 0 auto !important;
+        padding: 8px 14px !important;
+      }
+      #shared-chanting-modal p.text-xs {
+        font-size: 10px !important;
+        margin-top: 4px !important;
+      }
+      #shared-room-status-card {
+        margin: 4px 0 !important;
+        padding: 6px 10px !important;
+      }
+      #shared-room-config-section {
+        display: grid !important;
+        grid-template-columns: 1.15fr 1fr !important;
+        gap: 6px 10px !important;
+      }
+      #shared-room-config-section > div {
+        margin: 0 !important;
+      }
+      #shared-room-actions {
+        margin-top: 6px !important;
+        padding-top: 4px !important;
+      }
+
+      /* 4. Thiền Thở Chánh Niệm 4-2-6 */
+      #mindful-breathing-modal {
+        align-items: flex-start !important;
+        padding: 6px 10px !important;
+      }
+      #mindful-breathing-modal .temple-panel {
+        max-width: 520px !important;
+        max-height: 96dvh !important;
+        margin: 0 auto !important;
+        padding: 8px 14px !important;
+      }
+      #mindful-breathing-modal .relative.w-44 {
+        width: 86px !important;
+        height: 86px !important;
+        margin: 6px auto !important;
+      }
+      #mindful-breathing-modal #breathing-lotus-center {
+        width: 40px !important;
+        height: 40px !important;
+      }
+      #mindful-breathing-modal #breathing-lotus-center svg {
+        width: 32px !important;
+        height: 32px !important;
+      }
+      #mindful-breathing-modal #breathing-prompt-label {
+        min-height: 22px !important;
+        font-size: 11.5px !important;
+      }
+      #mindful-breathing-modal p {
+        font-size: 9.5px !important;
+      }
+      #mindful-breathing-modal .mt-4 {
+        margin-top: 6px !important;
+      }
+
+      /* 5. Việc Lành Mỗi Ngày (Daily Quests) - Lưới 2 Cột */
+      #daily-quest-modal {
+        align-items: flex-start !important;
+        padding: 6px 10px !important;
+      }
+      #daily-quest-modal .temple-panel {
+        max-width: 740px !important;
+        max-height: 96dvh !important;
+        margin: 0 auto !important;
+        padding: 8px 14px !important;
+      }
+      #daily-quest-modal .my-2\.5 {
+        margin: 4px 0 !important;
+        padding: 4px 8px !important;
+      }
+      #daily-quest-modal .mb-3\.p-2\.5,
+      #daily-quest-modal .mb-3 {
+        margin-bottom: 6px !important;
+        padding: 4px 8px !important;
+      }
+      #daily-quest-modal #quest-cards-container {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px 10px !important;
+        margin-bottom: 6px !important;
+      }
+      #daily-quest-modal #quest-cards-container > div {
+        margin: 0 !important;
+        padding: 5px 8px !important;
+      }
+      #quest-grand-reward-card {
+        padding: 6px 10px !important;
+      }
+
+      /* 6. Hẹn Giờ Tu Tập & Bằng Công Đức */
+      #session-timer-modal {
+        align-items: flex-start !important;
+        padding: 6px 10px !important;
+      }
+      #session-timer-modal .temple-panel {
+        max-width: 620px !important;
+        max-height: 96dvh !important;
+        margin: 0 auto !important;
+        padding: 8px 14px !important;
+      }
+      #session-timer-modal .my-3 {
+        margin: 4px 0 !important;
+        padding: 6px 10px !important;
+      }
+
+      /* 7. Sớ Cầu An & Cầu Siêu */
+      #prayer-sutra-modal {
+        align-items: flex-start !important;
+        padding: 6px 10px !important;
+      }
+      #prayer-sutra-modal .temple-panel {
+        max-width: 640px !important;
+        max-height: 96dvh !important;
+        margin: 0 auto !important;
+        padding: 8px 14px !important;
+      }
+      #prayer-sutra-modal textarea {
+        height: 44px !important;
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+      }
+      #prayer-sutra-modal input {
+        height: 28px !important;
+        font-size: 11px !important;
+      }
+      #prayer-sutra-modal .pt-2 {
+        padding-top: 4px !important;
+      }
+
+      /* 8. Sơ Đồ 12 Vị Trí Bồ Đoàn */
+      #seat-directory-modal {
+        align-items: flex-start !important;
+        padding: 6px 10px !important;
+      }
+      #seat-directory-modal .temple-panel {
+        max-width: 680px !important;
+        max-height: 96dvh !important;
+        margin: 0 auto !important;
+        padding: 8px 14px !important;
+      }
+      #seat-directory-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        max-height: min(170px, 46vh) !important;
+        gap: 6px !important;
+        margin: 4px 0 !important;
+      }
+
+      /* 9. Máy Chủ & Luồng Dữ Liệu */
+      #sanctuary-server-modal {
+        align-items: flex-start !important;
+        padding: 6px 10px !important;
+      }
+      #sanctuary-server-modal .temple-panel {
+        max-width: 700px !important;
+        max-height: 96dvh !important;
+        margin: 0 auto !important;
+        padding: 8px 14px !important;
+      }
+      #sanctuary-server-modal .my-3 {
+        margin: 4px 0 !important;
+        padding: 4px 8px !important;
+      }
+      #sanctuary-server-modal .mb-3\.5 {
+        margin-bottom: 4px !important;
+      }
+
+      /* 10. Lời Phật Dạy Theo Tâm Trạng */
+      #dharma-wisdom-modal {
+        align-items: flex-start !important;
+        padding: 6px 10px !important;
+      }
+      #dharma-wisdom-modal .temple-panel {
+        max-width: 640px !important;
+        max-height: 96dvh !important;
+        margin: 0 auto !important;
+        padding: 8px 14px !important;
+      }
+      #dharma-wisdom-modal .grid-cols-3 {
+        grid-template-columns: repeat(6, 1fr) !important;
+        margin: 4px 0 !important;
+        gap: 4px !important;
+      }
+      #dharma-wisdom-card {
+        padding: 6px 10px !important;
+      }
+      #dharma-verse-text {
+        font-size: 12px !important;
+        line-height: 1.3 !important;
+      }
+      #dharma-practice-box {
+        margin-top: 6px !important;
+        padding: 4px 8px !important;
+        font-size: 9.5px !important;
       }
     }
 
