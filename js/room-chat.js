@@ -45,9 +45,9 @@
       position: fixed;
       inset: 0;
       z-index: 1000;
-      background: rgba(4, 2, 1, 0.85);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: rgba(8, 4, 2, 0.70);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       padding: clamp(6px, 2vw, 16px);
       box-sizing: border-box;
     }
@@ -1793,6 +1793,45 @@
 
   const remoteAudioNodes = new Map(); // peerId -> { gainNode, highpass, notch, source, audioCtx }
   let echoShieldEnabled = true;
+  const pendingIceCandidates = new Map(); // peerId -> array of RTCIceCandidateInit
+
+  async function flushPendingIceCandidates(peerId, pc) {
+    if (!pc || !pc.remoteDescription) return;
+    const list = pendingIceCandidates.get(peerId);
+    if (list && list.length > 0) {
+      for (const cand of list) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(cand));
+        } catch (e) {
+          console.warn('[RoomVoice] Error adding buffered ICE candidate:', e);
+        }
+      }
+      pendingIceCandidates.delete(peerId);
+    }
+  }
+
+  async function routeAudioToSpeaker(mediaEl) {
+    if (!mediaEl) return;
+    try {
+      mediaEl.muted = false;
+      mediaEl.volume = 1.0;
+      if (typeof mediaEl.setSinkId === 'function') {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const speaker = devices.find(d => d.kind === 'audiooutput' && (d.deviceId === 'speaker' || d.label.toLowerCase().includes('speaker') || d.label.toLowerCase().includes('loa')));
+        if (speaker) {
+          await mediaEl.setSinkId(speaker.deviceId);
+        }
+      }
+    } catch (_) {}
+
+    // iOS WebKit videoChat mode forces audio routing to Loudspeaker (loa ngoài)
+    if (navigator.audioSession) {
+      try {
+        navigator.audioSession.type = 'play-and-record';
+        navigator.audioSession.mode = 'videoChat';
+      } catch (_) {}
+    }
+  }
 
   function setRemoteAudioDucking(ducked) {
     if (!echoShieldEnabled) return;
@@ -1960,10 +1999,15 @@
 
         if (remoteVideo) {
           remoteVideo.srcObject = stream;
+          remoteVideo.playsInline = true;
+          remoteVideo.muted = false;
+          remoteVideo.volume = 1.0;
+          routeAudioToSpeaker(remoteVideo);
           remoteVideo.play().catch(e => console.warn('Remote video play err:', e));
         }
         if (stripVideo) {
           stripVideo.srcObject = stream;
+          stripVideo.playsInline = true;
           stripVideo.play().catch(() => {});
         }
         if (avatarFallback) {
@@ -2277,7 +2321,9 @@
         if (payload.targetId === myId() || payload.targetId === 'all') {
           try {
             const pc = getOrCreatePeerConnection(payload.senderId);
+            attachCurrentTracksToPC(pc);
             await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+            await flushPendingIceCandidates(payload.senderId, pc);
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             publish({
@@ -2298,6 +2344,7 @@
             const pc = state.peerConnections.get(payload.senderId);
             if (pc) {
               await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+              await flushPendingIceCandidates(payload.senderId, pc);
             }
           } catch (err) {
             console.warn('[RoomVoice] Error setting remote answer:', err);
@@ -2309,8 +2356,13 @@
         if (payload.targetId === myId() && payload.candidate) {
           try {
             const pc = state.peerConnections.get(payload.senderId);
-            if (pc) {
+            if (pc && pc.remoteDescription && pc.remoteDescription.type) {
               await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+            } else {
+              if (!pendingIceCandidates.has(payload.senderId)) {
+                pendingIceCandidates.set(payload.senderId, []);
+              }
+              pendingIceCandidates.get(payload.senderId).push(payload.candidate);
             }
           } catch (err) {
             console.warn('[RoomVoice] Error adding ICE candidate:', err);
@@ -2885,7 +2937,18 @@
 
     if (!callData) return;
 
-    // Notify caller that we accepted
+    // 1. Start local video & audio capture FIRST before notifying caller
+    await startZaloVideoCall({
+      id: callData.senderId,
+      name: callData.callerName || callData.name || 'Đạo Hữu',
+      dharma: callData.callerDharma || callData.dharma || 'Tịnh Tâm',
+      location: callData.callerLocation || callData.location || 'Việt Nam'
+    }, false);
+
+    // 2. Prepare WebRTC peer connection and attach our local tracks
+    connectVideoPeer(callData.senderId, false);
+
+    // 3. Notify caller that we accepted and tracks are attached!
     const myProf = profile();
     publish({
       type: 'ROOM_VIDEO_CALL_ACCEPT',
@@ -2897,16 +2960,6 @@
       location: myProf.location
     });
 
-    // Start video call UI and attach stream
-    await startZaloVideoCall({
-      id: callData.senderId,
-      name: callData.callerName || callData.name || 'Đạo Hữu',
-      dharma: callData.callerDharma || callData.dharma || 'Tịnh Tâm',
-      location: callData.callerLocation || callData.location || 'Việt Nam'
-    }, false);
-
-    // Prepare WebRTC peer connection
-    connectVideoPeer(callData.senderId, false);
     updateActiveCallStrip(true, callData.callerName || 'Đạo Hữu');
   }
 
@@ -3072,13 +3125,17 @@
       }
     }
 
-    // Remote Video Simulation / WebRTC Stream
-    const remoteCanvas = document.createElement('canvas');
-    const remoteStream = createSimulatedTempleVideo(remoteCanvas, targetDevotee?.name || 'Hành Giả');
+    // Remote Video Stage: Keep avatar fallback visible until real peer video arrives via pc.ontrack
+    const avatarFallback = document.getElementById('zalo-avatar-fallback');
+    if (avatarFallback) avatarFallback.classList.remove('hidden');
     if (remoteVideo) {
-      remoteVideo.srcObject = remoteStream;
-      remoteVideo.play().catch(() => {});
+      remoteVideo.playsInline = true;
+      remoteVideo.muted = false;
+      remoteVideo.volume = 1.0;
+      routeAudioToSpeaker(remoteVideo);
     }
+    // Attach our active camera/mic tracks to any ongoing peer connections
+    state.peerConnections.forEach(pc => attachCurrentTracksToPC(pc));
 
     // Broadcast Video Call Offer via Supabase/Realtime if initiator
     if (isInitiator) {

@@ -352,7 +352,7 @@
 
       const widget = document.createElement('div');
       widget.id = 'quest-floating-hud';
-      widget.className = 'absolute top-11 sm:top-14 right-2 sm:right-5 z-35 flex items-center gap-1 sm:gap-1.5 pointer-events-auto select-none transition-all duration-300';
+      widget.className = 'absolute top-11 sm:top-16 lg:top-[72px] right-2 sm:right-5 lg:right-6 z-35 flex items-center gap-1 sm:gap-1.5 pointer-events-auto select-none transition-all duration-300';
 
       widget.innerHTML = `
         <!-- EXPANDED COMPACT PILL -->
@@ -478,10 +478,10 @@
 
       const modal = document.createElement('div');
       modal.id = 'daily-quest-modal';
-      modal.className = 'hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto';
+      modal.className = 'hidden fixed inset-0 z-[100] temple-modal-backdrop flex items-center justify-center p-2 sm:p-4 overflow-y-auto';
 
       modal.innerHTML = `
-        <div class="temple-panel w-full max-w-[620px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative shadow-2xl">
+        <div class="temple-panel temple-modal-box max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative shadow-2xl">
           
           <!-- MODAL HEADER -->
           <div class="flex items-center justify-between border-b border-amber-300/25 pb-2.5">
