@@ -309,38 +309,38 @@
       }
     }
 
-    /* 11. Màn hình Mobile Landscape căn chỉnh tự động phóng to chuẩn nét */
+    /* 11. Màn hình Mobile Landscape căn chỉnh tự động chuẩn nét (Bảo tồn Chánh Điện) */
     @media screen and (max-height: 420px) {
       :root {
-        --cushion-w: 48px !important;
-        --cushion-h: 33px !important;
-        --chibi-w: 42px !important;
-        --chibi-h: 54px !important;
-        --seat-name-size: 8.5px !important;
-        --seat-sub-size: 7px !important;
-        --seat-badge-max-w: 78px !important;
+        --cushion-w: 44px !important;
+        --cushion-h: 30px !important;
+        --chibi-w: 38px !important;
+        --chibi-h: 48px !important;
+        --seat-name-size: 8px !important;
+        --seat-sub-size: 6.5px !important;
+        --seat-badge-max-w: 68px !important;
 
-        --dock-btn-h: 24px !important;
-        --dock-font-size: 9px !important;
-        --dock-icon-size: 11px !important;
-        --dock-padding: 1.5px 3px !important;
+        --dock-btn-h: 20px !important;
+        --dock-font-size: 8px !important;
+        --dock-icon-size: 10px !important;
+        --dock-padding: 1px 2px !important;
 
-        --header-h: 34px !important;
-        --header-title-size: 13px !important;
-        --header-sub-size: 8px !important;
+        --header-h: 30px !important;
+        --header-title-size: 12px !important;
+        --header-sub-size: 7px !important;
       }
       header {
-        height: 34px !important;
-        min-height: 34px !important;
+        height: 30px !important;
+        min-height: 30px !important;
       }
       footer {
-        height: 54px !important;
-        max-height: 54px !important;
+        height: 46px !important;
+        max-height: 46px !important;
       }
       #bottom-dock-scroll > button {
-        height: 23.5px !important;
-        font-size: 8.5px !important;
-        padding: 1.5px 2.5px !important;
+        height: 19.5px !important;
+        font-size: 8px !important;
+        padding: 1px 2px !important;
       }
     }
 
@@ -703,11 +703,14 @@
         display: none !important;
       }
 
-      /* Chánh Điện phóng to tự nhiên, trang nghiêm trên mobile ngang */
+      /* Ẩn badge server online bên trái trên mobile ngang để Chùa An Nhiên thanh thoát ở giữa (đã có icon người online ở phải) */
+      #btn-realtime-server-badge {
+        display: none !important;
+      }
+
+      /* Bảo tồn trọn vẹn đầu tượng Phật & hào quang đỉnh trên mobile ngang */
       #sanctuary-svg-bg {
-        transform: scale(1.05) translateY(-1.2%);
-        transform-origin: 50% 30%;
-        transition: transform 0.4s ease;
+        transform: none !important;
       }
 
       /* Tab nổi hai bên sườn trên mobile landscape: Căn chỉnh thẳng hàng, không chồng lấn */
@@ -809,47 +812,47 @@
         padding-left: max(4px, env(safe-area-inset-left)) !important;
         padding-right: max(4px, env(safe-area-inset-right)) !important;
         padding-bottom: max(2px, env(safe-area-inset-bottom)) !important;
-        max-height: 56px !important;
-        height: 56px !important;
+        max-height: 46px !important;
+        height: 46px !important;
       }
       #bottom-dock-scroll {
         display: grid !important;
         grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
-        gap: 2.5px 3.5px !important;
+        gap: 2px 2.5px !important;
         width: 100% !important;
-        max-width: 860px !important;
+        max-width: 840px !important;
         margin: 0 auto !important;
         overflow: visible !important;
-        padding: 2.5px 5px !important;
+        padding: 2px 4px !important;
         background: rgba(18, 9, 4, 0.90) !important;
         backdrop-filter: blur(8px) !important;
         border: 1px solid rgba(245, 190, 70, 0.35) !important;
-        border-radius: 14px !important;
+        border-radius: 12px !important;
         justify-items: stretch !important;
       }
       #bottom-dock-scroll::-webkit-scrollbar {
         display: none !important;
       }
       #bottom-dock-scroll > button {
-        padding: 1.5px 2.5px !important;
-        font-size: 9px !important;
-        line-height: 1.15 !important;
-        height: 23.5px !important;
+        padding: 1px 2px !important;
+        font-size: 8px !important;
+        line-height: 1.1 !important;
+        height: 19.5px !important;
         min-width: 0 !important;
         width: 100% !important;
         justify-content: center !important;
         text-align: center !important;
         border-radius: 9999px !important;
         flex-shrink: 1 !important;
-        gap: 2px !important;
+        gap: 1.5px !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: clip !important;
         font-weight: 700 !important;
       }
       #bottom-dock-scroll > button svg {
-        width: 11px !important;
-        height: 11px !important;
+        width: 10px !important;
+        height: 10px !important;
         flex-shrink: 0 !important;
       }
       footer .hidden.sm\:block,
@@ -1320,7 +1323,7 @@
       <!-- ======================================================================
            1. WIDESCREEN 16:9 ARCHITECTURAL & ALTAR SVG ILLUSTRATION (1600 x 900)
            ====================================================================== -->
-      <svg id="sanctuary-svg-bg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" class="absolute inset-0 w-full h-full pointer-events-none">
+      <svg id="sanctuary-svg-bg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMin slice" class="absolute inset-0 w-full h-full pointer-events-none">
         <defs>
           <radialGradient id="sanctuaryGlow" cx="50%" cy="24%" r="55%">
             <stop offset="0%" stop-color="#fff7d6" stop-opacity="1" />
@@ -5728,15 +5731,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           const row = Math.floor(idx / 6);
           const col = idx % 6;
           if (row === 0) {
-            const colXsRow0 = [19, 30, 41, 59, 70, 81];
-            seatX = colXsRow0[col] !== undefined ? colXsRow0[col] : (18 + col * 12.8);
-            seatY = isMobileLandscape ? 52.5 : 56.5;
-            seatScale = isMobileLandscape ? (seat.isUser ? 0.98 : 0.90) : (seat.isUser ? 0.90 : 0.84);
+            const colXsRow0 = [17, 28, 39, 61, 72, 83];
+            seatX = colXsRow0[col] !== undefined ? colXsRow0[col] : (17 + col * 13.2);
+            seatY = isMobileLandscape ? 53.5 : 56.5;
+            seatScale = isMobileLandscape ? (seat.isUser ? 0.94 : 0.86) : (seat.isUser ? 0.90 : 0.84);
           } else if (row === 1) {
-            const colXsRow1 = [16, 27.5, 39, 61, 72.5, 84];
-            seatX = colXsRow1[col] !== undefined ? colXsRow1[col] : (16 + col * 13.6);
-            seatY = isMobileLandscape ? 66.5 : 71.5;
-            seatScale = isMobileLandscape ? (seat.isUser ? 1.10 : 1.02) : (seat.isUser ? 1.02 : 0.95);
+            const colXsRow1 = [14, 25.5, 37, 63, 74.5, 86];
+            seatX = colXsRow1[col] !== undefined ? colXsRow1[col] : (14 + col * 14.4);
+            seatY = isMobileLandscape ? 68.5 : 71.5;
+            seatScale = isMobileLandscape ? (seat.isUser ? 1.05 : 0.96) : (seat.isUser ? 1.02 : 0.95);
           } else {
             const extraRow = row - 1;
             const colXsExtra = [
