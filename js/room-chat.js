@@ -702,6 +702,38 @@
       color: #ffffff;
       box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
     }
+    .zalo-action-btn.active-shield {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.6) !important;
+    }
+    .zalo-feedback-banner {
+      position: absolute;
+      top: 54px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 25;
+      background: rgba(15, 23, 42, 0.90);
+      border: 1px solid rgba(16, 185, 129, 0.6);
+      color: #a7f3d0;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 0.70rem;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 90vw;
+      white-space: normal;
+      text-align: center;
+      pointer-events: auto;
+      animation: fadeInDown 0.3s ease;
+    }
+    .zalo-feedback-banner.hidden {
+      display: none !important;
+    }
     .zalo-action-btn.btn-end-call {
       background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
       color: #ffffff;
@@ -1744,7 +1776,37 @@
      WEBRTC VOICE ENGINE & HIGH-FIDELITY AUDIO SLICE RELAY
      ========================================================================== */
 
-  // Play remote audio stream safely with Web Audio destination routing
+  const AUDIO_CONSTRAINTS = {
+    echoCancellation: { ideal: true },
+    noiseSuppression: { ideal: true },
+    autoGainControl: { ideal: true },
+    channelCount: 1,
+    sampleRate: 48000,
+    // Google Chrome / Android hardware acoustic echo cancellation & noise suppression
+    googEchoCancellation: { ideal: true },
+    googAutoGainControl: { ideal: true },
+    googNoiseSuppression: { ideal: true },
+    googHighpassFilter: { ideal: true },
+    googAudioMirroring: { ideal: false },
+    googTypingNoiseDetection: { ideal: true }
+  };
+
+  const remoteAudioNodes = new Map(); // peerId -> { gainNode, highpass, notch, source, audioCtx }
+  let echoShieldEnabled = true;
+
+  function setRemoteAudioDucking(ducked) {
+    if (!echoShieldEnabled) return;
+    const targetGain = ducked ? 0.12 : 0.95;
+    remoteAudioNodes.forEach(({ gainNode, audioCtx }) => {
+      try {
+        if (gainNode && audioCtx && audioCtx.state !== 'closed') {
+          gainNode.gain.setTargetAtTime(targetGain, audioCtx.currentTime, ducked ? 0.04 : 0.18);
+        }
+      } catch (_) {}
+    });
+  }
+
+  // Play remote audio stream safely with Web Audio DSP routing & acoustic feedback shield
   function playRemoteAudioStream(peerId, stream) {
     if (!stream) return;
     state.remoteAudioStreams.set(peerId, stream);
@@ -1759,25 +1821,82 @@
       audioContainer.appendChild(audioEl);
     }
     audioEl.srcObject = stream;
-    audioEl.volume = 1.0;
-    audioEl.play().catch(() => {
-      const resume = () => {
-        audioEl.play().catch(() => {});
-        window.removeEventListener('click', resume);
-        window.removeEventListener('touchstart', resume);
-      };
-      window.addEventListener('click', resume, { once: true });
-      window.addEventListener('touchstart', resume, { once: true });
-    });
 
+    // Web Audio DSP Chain: Source -> Highpass(120Hz) -> Anti-Feedback Notch(2.5kHz) -> Ducking Gain -> Destination
+    let routedViaWebAudio = false;
     try {
-      const audioCtx = window.AudioEngine?.ctx || state.audioContext || (window.AudioContext && new (window.AudioContext || window.webkitAudioContext)());
-      if (audioCtx) {
-        if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        let audioCtx = state.audioContext;
+        if (!audioCtx || audioCtx.state === 'closed') {
+          audioCtx = new AudioCtx();
+          state.audioContext = audioCtx;
+        }
+        if (audioCtx.state === 'suspended') {
+          const unlock = () => {
+            audioCtx.resume().catch(() => {});
+            window.removeEventListener('click', unlock);
+            window.removeEventListener('touchstart', unlock);
+          };
+          window.addEventListener('click', unlock, { once: true });
+          window.addEventListener('touchstart', unlock, { once: true });
+        }
+
+        // Clean up previous DSP chain for this peer
+        if (remoteAudioNodes.has(peerId)) {
+          try {
+            const old = remoteAudioNodes.get(peerId);
+            if (old.source) old.source.disconnect();
+          } catch (_) {}
+        }
+
         const source = audioCtx.createMediaStreamSource(stream);
-        source.connect(audioCtx.destination);
+
+        // 1. Highpass filter (120Hz) - eliminates low frequency rumble, hand-holding thuds, and AC mains buzz
+        const highpass = audioCtx.createBiquadFilter();
+        highpass.type = 'highpass';
+        highpass.frequency.value = 120;
+        highpass.Q.value = 0.7;
+
+        // 2. Anti-howling Notch filter (2500Hz) - cuts sharp screeching resonance in mobile speaker/mic loops
+        const notch = audioCtx.createBiquadFilter();
+        notch.type = 'notch';
+        notch.frequency.value = 2500;
+        notch.Q.value = 2.0;
+
+        // 3. Dynamic Acoustic Gain Node - enables auto-ducking to break acoustic feedback between adjacent phones
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0.95;
+
+        source.connect(highpass);
+        highpass.connect(notch);
+        notch.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        remoteAudioNodes.set(peerId, { source, highpass, notch, gainNode, audioCtx });
+        routedViaWebAudio = true;
       }
-    } catch (_) {}
+    } catch (dspErr) {
+      console.warn('[RoomVoice] Web Audio DSP fallback to HTMLAudio:', dspErr);
+    }
+
+    // If Web Audio routed successfully, mute audioEl so we never double-play the audio stream
+    if (routedViaWebAudio) {
+      audioEl.muted = true;
+      audioEl.play().catch(() => {});
+    } else {
+      audioEl.muted = false;
+      audioEl.volume = 1.0;
+      audioEl.play().catch(() => {
+        const resume = () => {
+          audioEl.play().catch(() => {});
+          window.removeEventListener('click', resume);
+          window.removeEventListener('touchstart', resume);
+        };
+        window.addEventListener('click', resume, { once: true });
+        window.addEventListener('touchstart', resume, { once: true });
+      });
+    }
 
     const member = state.members.get(peerId);
     if (member) {
@@ -1790,24 +1909,30 @@
     if (!pc) return;
     const senders = (typeof pc.getSenders === 'function') ? pc.getSenders() : [];
 
-    // 1. Attach audio tracks from voice chat stream (if active)
-    if (state.stream) {
-      state.stream.getAudioTracks().forEach(track => {
-        const hasTrack = senders.some(s => s.track && s.track.kind === 'audio' && s.track.id === track.id);
-        if (!hasTrack) {
-          try { pc.addTrack(track, state.stream); } catch (_) {}
-        }
-      });
+    // Strictly send ONE active audio track (prefer video call mic if active, else voice chat mic)
+    const activeStream = zaloMediaStream || state.stream;
+    const audioTrack = activeStream ? activeStream.getAudioTracks()[0] : null;
+
+    if (audioTrack) {
+      const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
+      if (!audioSender) {
+        try { pc.addTrack(audioTrack, activeStream); } catch (_) {}
+      } else if (audioSender.track && audioSender.track.id !== audioTrack.id) {
+        try { audioSender.replaceTrack(audioTrack); } catch (_) {}
+      }
     }
 
-    // 2. Attach Video and Audio tracks from Zalo Video Call stream (if active)
+    // Attach Video track from Zalo Video Call stream (if active)
     if (zaloMediaStream) {
-      zaloMediaStream.getTracks().forEach(track => {
-        const hasTrack = senders.some(s => s.track && s.track.kind === track.kind);
-        if (!hasTrack) {
-          try { pc.addTrack(track, zaloMediaStream); } catch (_) {}
+      const videoTrack = zaloMediaStream.getVideoTracks()[0];
+      if (videoTrack) {
+        const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+        if (!videoSender) {
+          try { pc.addTrack(videoTrack, zaloMediaStream); } catch (_) {}
+        } else if (videoSender.track && videoSender.track.id !== videoTrack.id) {
+          try { videoSender.replaceTrack(videoTrack); } catch (_) {}
         }
-      });
+      }
     }
   }
 
@@ -2044,38 +2169,65 @@
     }
   }
 
-  // Setup Visual Mic Waveform Meter
-  function setupAudioVisualizer() {
-    if (!state.stream) return;
+  // Setup Visual Mic Waveform Meter & Acoustic Feedback Ducking
+  function setupAudioVisualizer(customStream) {
+    const streamToMonitor = customStream || state.stream || zaloMediaStream;
+    if (!streamToMonitor || streamToMonitor.getAudioTracks().length === 0) return;
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!state.audioContext) state.audioContext = new AudioCtx();
-      if (state.audioContext.state === 'suspended') state.audioContext.resume();
+      if (!state.audioContext || state.audioContext.state === 'closed') {
+        state.audioContext = new AudioCtx();
+      }
+      if (state.audioContext.state === 'suspended') {
+        state.audioContext.resume().catch(() => {});
+      }
 
-      const source = state.audioContext.createMediaStreamSource(state.stream);
+      if (state.visualizerSource) {
+        try { state.visualizerSource.disconnect(); } catch (_) {}
+      }
+
+      state.visualizerSource = state.audioContext.createMediaStreamSource(streamToMonitor);
       state.analyser = state.audioContext.createAnalyser();
       state.analyser.fftSize = 64;
-      source.connect(state.analyser);
+      state.visualizerSource.connect(state.analyser);
 
       const bufferLength = state.analyser.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
       const meter = document.getElementById('room-voice-meter');
 
+      let speechHold = 0;
       function updateMeter() {
-        if (!state.muted && state.analyser && meter) {
+        const isMicLive = (!state.muted && state.stream) || (!isZaloVideoMuted && zaloMediaStream);
+        if (isMicLive && state.analyser) {
           state.analyser.getByteFrequencyData(dataArray);
           let sum = 0;
           for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
           const average = sum / bufferLength;
 
-          const bars = meter.querySelectorAll('.room-voice-bar');
-          bars.forEach((bar, idx) => {
-            const h = Math.min(16, Math.max(4, (average / 12) * (idx + 1) * 0.7));
-            bar.style.height = `${h}px`;
-          });
+          // VAD Anti-Howling Ducking: When local user speaks into mic (above room noise floor > 16)
+          if (average > 16) {
+            speechHold = 8;
+            setRemoteAudioDucking(true);
+          } else if (speechHold > 0) {
+            speechHold--;
+            if (speechHold === 0) {
+              setRemoteAudioDucking(false);
+            }
+          }
+
+          if (meter) {
+            const bars = meter.querySelectorAll('.room-voice-bar');
+            bars.forEach((bar, idx) => {
+              const h = Math.min(16, Math.max(4, (average / 12) * (idx + 1) * 0.7));
+              bar.style.height = `${h}px`;
+            });
+          }
           requestAnimationFrame(updateMeter);
-        } else if (meter) {
-          meter.querySelectorAll('.room-voice-bar').forEach(b => b.style.height = '4px');
+        } else {
+          setRemoteAudioDucking(false);
+          if (meter) {
+            meter.querySelectorAll('.room-voice-bar').forEach(b => b.style.height = '4px');
+          }
         }
       }
       updateMeter();
@@ -2248,11 +2400,7 @@
     try {
       if (!state.stream) {
         state.stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          }
+          audio: AUDIO_CONSTRAINTS
         });
       }
 
@@ -2470,6 +2618,12 @@
           <div class="zalo-pip-badge" id="zalo-my-name-badge">Bạn</div>
         </div>
 
+        <!-- Anti-Feedback / Proximity Audio Tip Banner -->
+        <div id="zalo-anti-feedback-banner" class="zalo-feedback-banner">
+          <span>🛡️ Đang bật Chống Hú (Echo Shield). Nếu 2 máy ngồi cạnh nhau, nên dùng tai nghe để âm thanh tốt nhất.</span>
+          <button type="button" onclick="document.getElementById('zalo-anti-feedback-banner')?.classList.add('hidden')" class="ml-1 opacity-70 hover:opacity-100">✕</button>
+        </div>
+
         <!-- Floating PiP Expand Hint (Visible when minimized) -->
         <div class="zalo-pip-expand-hint" onclick="toggleZaloVideoCallPiP()">
           <span>👆 Chạm mở to</span>
@@ -2484,6 +2638,14 @@
             <span id="zalo-mic-icon">🎙️</span>
           </button>
           <span class="zalo-btn-label" id="zalo-mic-label">Mic</span>
+        </div>
+
+        <!-- Anti-Howling / Echo Shield Toggle -->
+        <div class="zalo-action-btn-group">
+          <button type="button" id="btn-zalo-shield" onclick="toggleZaloEchoShield()" class="zalo-action-btn btn-gray active-shield" title="Chế độ Chống Hú / Khử Echo khi 2 máy ở gần nhau">
+            <span id="zalo-shield-icon">🛡️</span>
+          </button>
+          <span class="zalo-btn-label" id="zalo-shield-label">Chống Hú</span>
         </div>
 
         <!-- Camera Toggle -->
@@ -2890,17 +3052,14 @@
             frameRate: { ideal: 24, max: 30 },
             facingMode: zaloFacingMode
           },
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          }
+          audio: AUDIO_CONSTRAINTS
         });
 
         if (localVideo) {
           localVideo.srcObject = zaloMediaStream;
           localVideo.play().catch(() => {});
         }
+        setupAudioVisualizer(zaloMediaStream);
       }
     } catch (err) {
       console.warn('[ZaloVideoCall] Camera not accessible, activating simulated Zen stream:', err);
@@ -2970,9 +3129,45 @@
     if (localVideo) localVideo.srcObject = null;
     if (remoteVideo) remoteVideo.srcObject = null;
 
+    // Reset audio ducking & clean up DSP chains
+    setRemoteAudioDucking(false);
+    remoteAudioNodes.forEach(({ source }) => {
+      try { if (source) source.disconnect(); } catch (_) {}
+    });
+    remoteAudioNodes.clear();
+
     // Gentle call end chime
     if (window.AudioEngine && window.AudioEngine.playWoodenFish) {
       window.AudioEngine.playWoodenFish(1);
+    }
+  }
+
+  function toggleZaloEchoShield() {
+    echoShieldEnabled = !echoShieldEnabled;
+    const btn = document.getElementById('btn-zalo-shield');
+    const label = document.getElementById('zalo-shield-label');
+    if (btn) btn.classList.toggle('active-shield', echoShieldEnabled);
+    if (label) label.textContent = echoShieldEnabled ? 'Chống Hú' : 'Tiêu Chuẩn';
+
+    remoteAudioNodes.forEach(({ gainNode, notch, audioCtx }) => {
+      try {
+        if (notch) {
+          notch.Q.value = echoShieldEnabled ? 2.5 : 0.001;
+        }
+        if (gainNode && audioCtx && audioCtx.state !== 'closed') {
+          gainNode.gain.setValueAtTime(echoShieldEnabled ? 0.95 : 1.0, audioCtx.currentTime);
+        }
+      } catch (_) {}
+    });
+
+    const banner = document.getElementById('zalo-anti-feedback-banner');
+    if (banner) {
+      if (echoShieldEnabled) {
+        banner.classList.remove('hidden');
+        banner.querySelector('span').textContent = '🛡️ Đang bật Chống Hú (Echo Shield). Nếu 2 máy ngồi cạnh nhau, nên dùng tai nghe để âm thanh tốt nhất.';
+      } else {
+        banner.classList.add('hidden');
+      }
     }
   }
 
@@ -3063,6 +3258,7 @@
   window.declineIncomingVideoCall = declineIncomingVideoCall;
   window.endZaloVideoCall = endZaloVideoCall;
   window.toggleZaloVideoCallMic = toggleZaloVideoCallMic;
+  window.toggleZaloEchoShield = toggleZaloEchoShield;
   window.toggleZaloVideoCallCam = toggleZaloVideoCallCam;
   window.switchZaloVideoCamera = switchZaloVideoCamera;
   window.toggleZaloVideoCallPiP = toggleZaloVideoCallPiP;
