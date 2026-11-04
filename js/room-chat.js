@@ -112,10 +112,68 @@
       cursor: pointer;
       box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
       transition: all 0.2s ease;
+      white-space: nowrap;
     }
     .room-header-video-btn:hover {
       background: #10b981;
       transform: scale(1.04);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.6);
+    }
+    .room-member-call-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: 1px solid #6ee7b7;
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      margin-left: 6px;
+    }
+    
+    .room-sidebar-actions-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+    @media screen and (orientation: landscape) and (max-height: 560px), screen and (max-width: 768px) and (orientation: landscape) {
+      .room-chat-grid.show-members .room-chat-sidebar {
+        max-width: 520px !important;
+        margin: 0 auto !important;
+        padding: 6px 16px !important;
+      }
+      .room-chat-grid.show-members .room-sidebar-actions-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+      }
+      .room-chat-grid.show-members .room-sidebar-actions-grid .room-video-call-btn,
+      .room-chat-grid.show-members .room-sidebar-actions-grid .room-mic-button {
+        margin: 0 !important;
+        height: 38px !important;
+      }
+      .room-chat-grid.show-members .room-secondary-action {
+        height: 36px !important;
+        margin-top: 6px !important;
+      }
+      .room-chat-grid.show-members .room-join-row {
+        margin-top: 4px !important;
+      }
+      .room-chat-grid.show-members .room-qr-card {
+        display: none !important;
+      }
+    }
+  
+    .room-member-call-btn:hover {
+      transform: scale(1.1);
+      background: #059669;
     }
 
     /* Zalo Video Call Modal & Stage */
@@ -1316,6 +1374,7 @@
         </div>
       </div>
       <div class="room-member-state">${!state.muted ? '🟢 Đang nói' : 'Tịnh niệm'}</div>
+      <button type="button" onclick="startZaloVideoCall()" class="room-member-call-btn" title="Gọi video đạo tràng">📹</button>
     `;
     list.appendChild(selfRow);
 
@@ -1336,6 +1395,7 @@
           </div>
         </div>
         <div class="room-member-state">${member.speaking ? '🟢 Đang nói' : 'Tịnh niệm'}</div>
+        <button type="button" onclick="startZaloVideoCall('${member.id}')" class="room-member-call-btn" title="Gọi video cùng ${devName}">📹</button>
       `;
       list.appendChild(row);
     });
@@ -2451,6 +2511,10 @@
           </div>
 
           <div class="room-header-right">
+            <!-- Header Quick Video Call Toggle -->
+            <button type="button" id="room-header-video-btn" onclick="startZaloVideoCall()" class="room-header-video-btn" title="Gọi Video Đạo Tràng (Zalo HD)">
+              <span>📹</span><span>Gọi Video</span>
+            </button>
             <!-- Header Quick Mic Toggle -->
             <button type="button" id="room-header-mic-btn" onclick="toggleRoomMic()" class="room-header-mic-btn" title="Bật/Tắt Micro Đàm Thoại">
               <span>🎙️</span><span>Bật Mic</span>
@@ -2510,6 +2574,13 @@
             <div id="room-members-list"></div>
 
             <!-- Mic Control in Sidebar with Animated Waveform -->
+            <div class="room-sidebar-actions-grid">
+            <!-- Video Call Action in Sidebar -->
+            <button type="button" id="room-video-call-btn" onclick="startZaloVideoCall()" class="room-video-call-btn" title="Gọi Video Đạo Tràng (Zalo HD)">
+              <span>📹</span><span>Gọi video</span><span class="room-video-live-pill">HD</span>
+            </button>
+
+            <!-- Mic Control in Sidebar with Animated Waveform -->
             <button type="button" id="room-mic-button" onclick="toggleRoomMic()" class="room-mic-button">
               <span>🎙</span><span id="room-mic-label">Bật mic đàm thoại</span>
             </button>
@@ -2519,6 +2590,7 @@
               <span class="room-voice-bar"></span>
               <span class="room-voice-bar"></span>
               <span class="room-voice-bar"></span>
+            </div>
             </div>
 
             <button type="button" onclick="createRoomChat()" class="room-secondary-action">

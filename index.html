@@ -557,9 +557,11 @@
         transform: translateX(calc(100% + 40px)) !important;
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
       }
-      #panel-right-drawer.drawer-open,
-      #panel-right-drawer:not(.drawer-collapsed) {
+      #panel-right-drawer.drawer-open {
         transform: translateX(0) !important;
+      }
+      #panel-right-drawer:not(.drawer-open) {
+        transform: translateX(calc(100% + 40px)) !important;
       }
       #panel-right-drawer.drawer-collapsed {
         transform: translateX(calc(100% + 40px)) !important;
@@ -700,11 +702,11 @@
        -------------------------------------------------------------------------- */
     @media screen and (max-height: 560px) and (orientation: landscape), screen and (max-height: 560px) and (min-width: 576px) {
       header {
-        height: 34px !important;
+        height: auto !important;
         min-height: 34px !important;
-        margin-top: 4px !important;
-        padding-top: max(5px, env(safe-area-inset-top, 5px)) !important;
-        padding-bottom: 2px !important;
+        margin-top: clamp(6px, 1.8vh, 10px) !important;
+        padding-top: max(4px, env(safe-area-inset-top, 4px)) !important;
+        padding-bottom: 3px !important;
         padding-left: max(10px, env(safe-area-inset-left, 10px)) !important;
         padding-right: max(10px, env(safe-area-inset-right, 10px)) !important;
       }
@@ -1667,6 +1669,7 @@
       padding-left: 10px;
     }
   </style>
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
 
@@ -3550,43 +3553,88 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
            13. MODAL 8: SỚ CẦU AN & CẦU SIÊU (PRAYER SUTRA)
            ====================================================================== -->
       <div id="prayer-sutra-modal" class="hidden fixed inset-0 z-[100] bg-black/85 backdrop-blur-md items-center justify-center p-2 sm:p-4 overflow-y-auto">
-        <div class="temple-panel w-full max-w-[620px] max-h-[90dvh] overflow-y-auto merit-scroll rounded-2xl p-3 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative">
+        <div class="temple-panel w-full max-w-[680px] max-h-[94dvh] overflow-y-auto merit-scroll rounded-2xl p-3.5 sm:p-5 border-2 border-amber-300/65 text-amber-50 relative bg-gradient-to-b from-[#2a170b] via-[#1c0d05] to-[#120702] shadow-[0_20px_50px_rgba(0,0,0,0.9)]">
+          
+          <!-- Top Title & Close -->
           <div class="flex items-center justify-between border-b border-amber-300/25 pb-2">
             <div>
-              <div class="text-[9.5px] tracking-[0.2em] text-amber-300 uppercase font-bold">✦ LÒNG THÀNH TÂM NGUYỆN · DÂNG LÊN TAM BẢO ✦</div>
-              <h3 class="font-serif-title text-xl sm:text-2xl font-bold text-amber-100 title-glow">
+              <div class="text-[9.5px] tracking-[0.2em] text-amber-300 uppercase font-bold flex items-center gap-1.5">
+                <span>✦</span><span>LÒNG THÀNH TÂM NGUYỆN · DÂNG LÊN TAM BẢO</span><span>✦</span>
+              </div>
+              <h3 class="font-serif-title text-lg sm:text-2xl font-bold text-amber-100 title-glow mt-0.5">
                 Sớ Cầu An & Cầu Siêu Đạo Tràng
               </h3>
             </div>
-            <button onclick="closePrayerSutraModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-200">
+            <button onclick="closePrayerSutraModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-200 transition active:scale-90" title="Đóng">
               ✕
             </button>
           </div>
 
-          <div class="flex border-b border-amber-300/20 my-2 gap-2 text-xs">
-            <button type="button" onclick="switchSutraTab('an')" id="tab-sutra-an" class="pb-1 px-3 border-b-2 border-amber-400 font-bold text-amber-300">
-              🌸 Sớ Cầu An (Phúc Thọ)
+          <!-- Sutra Tabs -->
+          <div class="flex border-b border-amber-300/20 my-2.5 gap-2 text-xs">
+            <button type="button" onclick="switchSutraTab('an')" id="tab-sutra-an" class="pb-1.5 px-3 border-b-2 border-amber-400 font-bold text-amber-300 flex items-center gap-1.5">
+              <span>🌸</span><span>Sớ Cầu An (Phúc Thọ)</span>
             </button>
-            <button type="button" onclick="switchSutraTab('sieu')" id="tab-sutra-sieu" class="pb-1 px-3 text-amber-200/60 font-semibold hover:text-amber-200">
-              🕊️ Sớ Cầu Siêu (Hương Linh)
+            <button type="button" onclick="switchSutraTab('sieu')" id="tab-sutra-sieu" class="pb-1.5 px-3 text-amber-200/60 font-semibold hover:text-amber-200 flex items-center gap-1.5">
+              <span>🕊️</span><span>Sớ Cầu Siêu (Hương Linh)</span>
             </button>
           </div>
 
-          <form onsubmit="submitPrayerSutra(event)" class="space-y-2 text-xs">
-            <div>
-              <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px]">Danh sách người cầu nguyện (hoặc Hương linh):</label>
-              <textarea id="sutra-names-input" rows="3" required placeholder="Ghi họ tên, năm sinh hoặc danh tánh hương linh..."
-                class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-amber-300/40 text-amber-50 text-xs focus:outline-none focus:border-amber-300"></textarea>
+          <!-- Sutra Structured Form (2 Columns in Landscape) -->
+          <form onsubmit="submitPrayerSutra(event)" class="text-xs space-y-2.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
+              
+              <!-- Column 1: Thông tin đối tượng cầu nguyện -->
+              <div class="space-y-2 bg-black/40 p-2.5 rounded-xl border border-amber-400/25">
+                <div>
+                  <label id="sutra-label-names" class="block text-amber-200 font-bold mb-1 text-[11px] flex items-center gap-1">
+                    <span>👤</span><span>Họ tên, Năm sinh (Người cầu An):</span>
+                  </label>
+                  <input id="sutra-names-input" required placeholder="Ví dụ: Nguyễn Văn An, 1985 (Ất Sửu)..."
+                    class="w-full px-2.5 py-1.5 rounded-lg bg-black/70 border border-amber-300/40 text-amber-50 text-xs focus:outline-none focus:border-amber-300">
+                </div>
+                <div>
+                  <label class="block text-amber-200/90 font-medium mb-1 text-[10.5px] flex items-center gap-1">
+                    <span>📍</span><span>Địa chỉ / Bản quán / Tỉnh thành:</span>
+                  </label>
+                  <input id="sutra-address-input" placeholder="Ví dụ: Thái Bình / Hà Nội..."
+                    class="w-full px-2.5 py-1.5 rounded-lg bg-black/70 border border-amber-300/35 text-amber-100 text-xs focus:outline-none focus:border-amber-300">
+                </div>
+              </div>
+
+              <!-- Column 2: Tâm nguyện & Lời chúc an lành -->
+              <div class="space-y-2 bg-black/40 p-2.5 rounded-xl border border-amber-400/25 flex flex-col justify-between">
+                <div>
+                  <label class="block text-amber-200 font-bold mb-1 text-[11px] flex items-center gap-1">
+                    <span>✨</span><span>Tâm nguyện chí thành dâng sớ:</span>
+                  </label>
+                  <input id="sutra-wish-input" type="text" value="Nguyện chư Phật mười phương chứng minh gia hộ bình an cát tường, tật bệnh tiêu trừ"
+                    class="w-full px-2.5 py-1.5 rounded-lg bg-black/70 border border-amber-300/40 text-amber-50 text-xs focus:outline-none focus:border-amber-300">
+                </div>
+                
+                <!-- Quick Wishes Pills -->
+                <div>
+                  <span class="text-[9.5px] text-amber-300/80 font-bold uppercase tracking-wider block mb-1">Tâm nguyện nhanh:</span>
+                  <div id="sutra-quick-wishes" class="flex flex-wrap gap-1">
+                    <button type="button" onclick="selectQuickSutraWish('Nguyện bình an mạnh khỏe, tai qua nạn khỏi, thân tâm an tịnh')" class="px-2 py-0.5 rounded-full bg-amber-500/15 hover:bg-amber-500/30 border border-amber-400/30 text-[9.5px] text-amber-200 transition">🙏 Bình an</button>
+                    <button type="button" onclick="selectQuickSutraWish('Nguyện gia đạo hưng long, sở cầu như ý, con cháu thảo hiền')" class="px-2 py-0.5 rounded-full bg-amber-500/15 hover:bg-amber-500/30 border border-amber-400/30 text-[9.5px] text-amber-200 transition">🏡 Gia đạo</button>
+                    <button type="button" onclick="selectQuickSutraWish('Nguyện tiêu trừ nghiệp chướng, phước huệ trang nghiêm')" class="px-2 py-0.5 rounded-full bg-amber-500/15 hover:bg-amber-500/30 border border-amber-400/30 text-[9.5px] text-amber-200 transition">✨ Phước huệ</button>
+                    <button type="button" onclick="selectQuickSutraWish('Nguyện thi cử đỗ đạt, học hành tiến tới, vạn sự cát tường')" class="px-2 py-0.5 rounded-full bg-amber-500/15 hover:bg-amber-500/30 border border-amber-400/30 text-[9.5px] text-amber-200 transition">🎓 Thi cử</button>
+                  </div>
+                </div>
+              </div>
+
             </div>
-            <div>
-              <label class="block text-amber-200 font-semibold mb-0.5 text-[10.5px]">Tâm nguyện dâng sớ:</label>
-              <input id="sutra-wish-input" type="text" value="Nguyện chư Phật mười phương chứng minh gia hộ bình an cát tường"
-                class="w-full px-2.5 py-1.5 rounded-lg bg-black/60 border border-amber-300/40 text-amber-50 text-xs focus:outline-none focus:border-amber-300" />
-            </div>
-            <div class="pt-2 text-right">
+
+            <!-- Bottom Actions -->
+            <div class="pt-2 flex items-center justify-between border-t border-amber-300/20">
+              <div class="flex items-center gap-1.5 text-[10px] text-amber-300/90 font-medium">
+                <span class="w-2 h-2 rounded-full bg-amber-400 inline-block animate-pulse"></span>
+                <span>✦ Triện đỏ Chùa An Nhiên Chứng Minh ✦</span>
+              </div>
               <button type="submit"
-                class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-stone-950 font-bold text-xs shadow-md transition active:scale-95">
-                📜 DÂNG SỚ LÊN TAM BẢO (+25 CÔNG ĐỨC)
+                class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:brightness-110 text-stone-950 font-extrabold text-xs shadow-lg flex items-center gap-1.5 transition active:scale-95">
+                <span>📜</span><span>DÂNG SỚ LÊN TAM BẢO (+25 CÔNG ĐỨC)</span>
               </button>
             </div>
           </form>
@@ -6218,12 +6266,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           if (row === 0) {
             const colXsRow0 = [15, 26, 37, 63, 74, 85];
             seatX = colXsRow0[col] !== undefined ? colXsRow0[col] : (15 + col * 14);
-            seatY = 62.5;
+            seatY = isMobileLandscape ? 65 : 64.5;
             seatScale = isMobileLandscape ? (seat.isUser ? 0.92 : 0.84) : (seat.isUser ? 0.90 : 0.82);
           } else if (row === 1) {
             const colXsRow1 = [12, 23.5, 35, 65, 76.5, 88];
             seatX = colXsRow1[col] !== undefined ? colXsRow1[col] : (12 + col * 15.2);
-            seatY = 76.5;
+            seatY = isMobileLandscape ? 79 : 78.5;
             seatScale = isMobileLandscape ? (seat.isUser ? 1.04 : 0.94) : (seat.isUser ? 1.02 : 0.92);
           } else {
             const extraRow = row - 1;
@@ -7392,6 +7440,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       modal.classList.remove('flex');
     }
 
+    
+    function selectQuickSutraWish(wish) {
+      const wishInput = document.getElementById('sutra-wish-input');
+      if (wishInput) wishInput.value = wish;
+    }
+    window.selectQuickSutraWish = selectQuickSutraWish;
+  
     function switchSutraTab(tab) {
       currentSutraTab = tab;
       const btnAn = document.getElementById('tab-sutra-an');
