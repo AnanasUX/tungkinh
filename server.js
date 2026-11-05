@@ -18,6 +18,39 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
+// Auto-load environment variables from .env.local or .env
+(function loadEnv() {
+  const envFiles = ['.env.local', '.env'];
+  for (const file of envFiles) {
+    const fullPath = path.join(__dirname, file);
+    if (fs.existsSync(fullPath)) {
+      try {
+        const content = fs.readFileSync(fullPath, 'utf8');
+        content.split(/\r?\n/).forEach(line => {
+          line = line.trim();
+          if (!line || line.startsWith('#')) return;
+          const eqIdx = line.indexOf('=');
+          if (eqIdx > 0) {
+            const key = line.substring(0, eqIdx).trim();
+            const val = line.substring(eqIdx + 1).trim().replace(/^['"](.*)['"]$/, '$1');
+            if (!process.env[key]) {
+              process.env[key] = val;
+            }
+          }
+        });
+      } catch (_) {}
+    }
+  }
+})();
+
+let AccessToken;
+try {
+  const livekitSDK = require('livekit-server-sdk');
+  AccessToken = livekitSDK.AccessToken;
+} catch (e) {
+  console.warn('[Server] Module "livekit-server-sdk" optional import notice:', e.message);
+}
+
 let WebSocketServer;
 try {
   WebSocketServer = require('ws').Server;
@@ -69,7 +102,9 @@ let sanctuaryDB = {
   },
   recentEvents: [],
   // Recent room messages are persisted so a new device can catch up.
-  chatHistory: []
+  chatHistory: [],
+  callRooms: {},
+  callInvitations: []
 };
 
 // Load existing DB if present
@@ -80,6 +115,8 @@ if (fs.existsSync(DB_FILE)) {
     if (parsed && Array.isArray(parsed.seats)) {
       sanctuaryDB = parsed;
       if (!Array.isArray(sanctuaryDB.chatHistory)) sanctuaryDB.chatHistory = [];
+      if (!sanctuaryDB.callRooms) sanctuaryDB.callRooms = {};
+      if (!Array.isArray(sanctuaryDB.callInvitations)) sanctuaryDB.callInvitations = [];
       // Reset active connections from previous process
       sanctuaryDB.devotees = {};
       sanctuaryDB.seats.forEach(s => {
@@ -574,6 +611,213 @@ const server = http.createServer((req, res) => {
   }
 
   // -------------------------------------------------------------
+  // REAL-TIME VIDEO & AUDIO CALLING API (LIVEKIT SFU + WEBRTC)
+  // -------------------------------------------------------------
+  if (pathname === '/api/calls/config') {
+    const livekitConfigured = Boolean(process.env.LIVEKIT_API_KEY && process.env.LIVEKIT_API_SECRET);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      success: true,
+      livekitAvailable: livekitConfigured,
+      livekitUrl: process.env.LIVEKIT_URL || '',
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' }
+      ]
+    }));
+    return;
+  }
+
+  if (req.method === 'POST' && (pathname === '/api/calls/token' || pathname === '/api/livekit/token')) {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const roomId = String(payload.roomId || 'GLOBAL-SANCTUARY').trim();
+        const userId = String(payload.userId || ('user_' + Math.random().toString(36).substring(2, 8))).trim();
+        const userName = String(payload.userName || 'Đồng Tu').trim();
+
+        const apiKey = process.env.LIVEKIT_API_KEY;
+        const apiSecret = process.env.LIVEKIT_API_SECRET;
+        const livekitUrl = process.env.LIVEKIT_URL;
+
+        if (AccessToken && apiKey && apiSecret && livekitUrl) {
+          const at = new AccessToken(apiKey, apiSecret, {
+            identity: userId,
+            name: userName,
+            ttl: 3600 // 1 hour token
+          });
+
+          at.addGrant({
+            roomJoin: true,
+            room: roomId,
+            canPublish: true,
+            canSubscribe: true,
+            canPublishData: true
+          });
+
+          const jwtToken = await at.toJwt();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: true,
+            engine: 'livekit',
+            token: jwtToken,
+            url: livekitUrl,
+            roomId: roomId,
+            userId: userId,
+            userName: userName
+          }));
+        } else {
+          // Graceful fallback to multi-peer WebRTC Mesh
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: false,
+            engine: 'webrtc_mesh',
+            fallback: true,
+            message: 'LiveKit server credentials not configured. Operating in Enhanced Multi-Peer WebRTC mode.',
+            roomId: roomId,
+            userId: userId,
+            userName: userName
+          }));
+        }
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/calls/room/create') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const roomId = payload.roomId || ('call_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
+        const room = {
+          id: roomId,
+          roomName: payload.roomName || 'Đạo Tràng Toàn Cầu',
+          createdBy: payload.createdBy || 'guest',
+          creatorName: payload.creatorName || 'Đồng Tu',
+          callType: payload.callType || 'video',
+          status: 'active',
+          participants: {
+            [payload.createdBy || 'guest']: {
+              userId: payload.createdBy || 'guest',
+              name: payload.creatorName || 'Đồng Tu',
+              role: 'host',
+              joinedAt: Date.now()
+            }
+          },
+          createdAt: Date.now()
+        };
+
+        sanctuaryDB.callRooms[roomId] = room;
+        saveDatabase();
+
+        broadcastEvent({
+          type: 'CALL_ROOM_CREATED',
+          roomId: roomId,
+          room: room,
+          senderId: payload.createdBy
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, room: room }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/calls/room/invite') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const invitation = {
+          id: 'inv_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+          roomId: payload.roomId,
+          senderId: payload.senderId,
+          callerName: payload.senderName || 'Đạo Hữu',
+          callerDharma: payload.senderDharma || 'Tịnh Tâm',
+          callerLocation: payload.senderLocation || 'Việt Nam',
+          receiverId: payload.receiverId || 'all',
+          status: 'pending',
+          createdAt: Date.now()
+        };
+
+        sanctuaryDB.callInvitations.push(invitation);
+        if (sanctuaryDB.callInvitations.length > 100) sanctuaryDB.callInvitations.shift();
+        saveDatabase();
+
+        broadcastEvent({
+          type: 'ROOM_VIDEO_CALL_OFFER',
+          callId: invitation.id,
+          roomId: invitation.roomId,
+          senderId: invitation.senderId,
+          callerName: invitation.callerName,
+          callerDharma: invitation.callerDharma,
+          callerLocation: invitation.callerLocation,
+          targetId: invitation.receiverId
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, invitation: invitation }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/calls/room/leave') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const roomId = payload.roomId;
+        const userId = payload.userId;
+
+        if (roomId && sanctuaryDB.callRooms[roomId]) {
+          const room = sanctuaryDB.callRooms[roomId];
+          if (room.participants && room.participants[userId]) {
+            delete room.participants[userId];
+          }
+          if (Object.keys(room.participants || {}).length === 0) {
+            room.status = 'ended';
+            room.endedAt = Date.now();
+          }
+          saveDatabase();
+        }
+
+        broadcastEvent({
+          type: 'ROOM_VIDEO_CALL_PARTICIPANT_LEFT',
+          roomId: roomId,
+          userId: userId,
+          name: payload.userName || 'Đạo Hữu'
+        });
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // -------------------------------------------------------------
   // STATIC FILE SERVING
   // -------------------------------------------------------------
   let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
@@ -592,7 +836,12 @@ const server = http.createServer((req, res) => {
         res.end('500 Server Error');
         return;
       }
-      res.writeHead(200, { 'Content-Type': contentType });
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
       res.end(content);
     });
   });
