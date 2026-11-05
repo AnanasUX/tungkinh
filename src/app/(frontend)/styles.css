@@ -1,10 +1,10 @@
 @import 'tailwindcss';
 
-/* Be Vietnam Pro is loaded by next/font in layout.tsx (--font-be-vietnam-pro). */
+/* Be Vietnam Pro Google Font for entire application */
 @theme inline {
-  --font-sans: var(--font-be-vietnam-pro), system-ui, sans-serif;
-  --font-serif: var(--font-be-vietnam-pro), system-ui, sans-serif;
-  --font-display: var(--font-be-vietnam-pro), system-ui, sans-serif;
+  --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+  --font-display: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
 }
 @theme {
   --text-3xs: 0.625rem;
@@ -12,8 +12,9 @@
 }
 
 :root {
+  --font-be-vietnam-pro: 'Be Vietnam Pro', system-ui, sans-serif;
   color: #f5efe5;
-  font-family: var(--font-sans);
+  font-family: 'Be Vietnam Pro', system-ui, sans-serif;
   font-synthesis: none;
   /* Type scale shared by all hand-written component styles. */
   --fs-3xs: 0.625rem; /* 10px · micro labels */
@@ -860,71 +861,6 @@
   color: #f2c766;
 }
 
-.channel-card {
-  position: absolute;
-  z-index: 7;
-  left: 14px;
-  bottom: 14px;
-  width: 238px;
-  border-radius: 12px;
-  padding: 7px 34px 7px 8px;
-}
-.channel-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.channel-title > div {
-  flex: 1;
-  min-width: 0;
-}
-.channel-logo {
-  width: 24px;
-  height: 24px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: 7px;
-  background: #e5332a;
-  color: #fff;
-}
-.channel-title strong {
-  display: block;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-}
-.channel-title p {
-  overflow: hidden;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: var(--fs-3xs);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.channel-title button {
-  height: 22px;
-  padding: 0 9px;
-  border-radius: 999px;
-  background: #e5332a;
-  color: #fff;
-  font-size: var(--fs-3xs);
-  font-weight: 700;
-}
-.channel-close {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  width: 20px;
-  height: 20px;
-  margin-top: -10px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: rgba(255, 255, 255, 0.7);
-}
-.channel-close:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
 .hud-chips {
   position: absolute;
   z-index: 8;
@@ -1077,7 +1013,6 @@
   .room-name,
   .online-dot,
   .quick-links,
-  .channel-card,
   .feedback-tab,
   .scene-label small {
     display: none;
@@ -2167,9 +2102,6 @@
     max-width: 95px;
     text-align: right;
   }
-  .channel-card {
-    display: none;
-  }
 }
 
 /* Illustrated chibi fallback (shown only without WebGL) */
@@ -2452,7 +2384,7 @@
   }
 }
 
-/* Practice dock: 14 rituals, horizontally scrollable when space is tight */
+/* Practice dock: 15 actions, horizontally scrollable when space is tight */
 .action-dock {
   display: block;
   height: auto;
@@ -2627,9 +2559,6 @@
 }
 
 @media (max-width: 1399px) {
-  .channel-card {
-    display: none;
-  }
   .action-dock {
     max-width: calc(100vw - 400px);
   }

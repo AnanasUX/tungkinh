@@ -5,6 +5,22 @@ import type { CalendarItem, PracticeItem } from './types'
 
 const defaultPractices: PracticeItem[] = [
   {
+    id: 'batnha',
+    title: 'Bát Nhã Tâm Kinh',
+    slug: 'bat-nha-tam-kinh',
+    kind: 'chant',
+    summary: 'Quán chiếu năm uẩn đều không, vượt qua mọi khổ ách.',
+    body: `Quán Tự Tại Bồ Tát, hành thâm Bát Nhã Ba La Mật Đa thời.
+Chiếu kiến ngũ uẩn giai không, độ nhất thiết khổ ách.
+Xá Lợi Tử, sắc bất dị không, không bất dị sắc, sắc tức thị không, không tức thị sắc.
+Thọ tưởng hành thức diệc phục như thị.
+Xá Lợi Tử, thị chư pháp không tướng, bất sanh bất diệt, bất cấu bất tịnh, bất tăng bất giảm.
+Cố tri Bát Nhã Ba La Mật Đa, thị đại thần chú, thị đại minh chú, thị vô thượng chú.
+Yết đế yết đế, ba la yết đế, ba la tăng yết đế, bồ đề tát bà ha.`,
+    durationMinutes: 8,
+    featured: true
+  },
+  {
     id: 'daibi',
     title: 'Chú Đại Bi (84 câu Chân Ngôn)',
     slug: 'chu-dai-bi',

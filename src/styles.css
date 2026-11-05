@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Be Vietnam Pro Google Font for entire sanctuary application */
+/* Be Vietnam Pro Google Font for entire application */
 @theme inline {
   --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
   --font-serif: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
@@ -11,20 +11,10 @@
   --text-2xs: 0.6875rem;
 }
 
-*,
-*::before,
-*::after,
-body,
-button,
-input,
-textarea,
-select {
-  font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
-}
-
 :root {
+  --font-be-vietnam-pro: 'Be Vietnam Pro', system-ui, sans-serif;
   color: #f5efe5;
-  font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+  font-family: 'Be Vietnam Pro', system-ui, sans-serif;
   font-synthesis: none;
   /* Type scale shared by all hand-written component styles. */
   --fs-3xs: 0.625rem; /* 10px · micro labels */
@@ -55,13 +45,7 @@ select {
     background: #17130e;
   }
   button {
-    background: transparent;
-    border: none;
-    color: inherit;
-    font: inherit;
     cursor: pointer;
-    padding: 0;
-    margin: 0;
   }
   button:focus-visible {
     outline: 2px solid var(--gold-light);
@@ -69,23 +53,9 @@ select {
   }
 }
 
-button {
-  background: transparent;
-  border: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-}
-
 .game-shell {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  max-height: 100dvh;
+  min-height: 100svh;
+  position: relative;
   overflow: hidden;
   isolation: isolate;
   background: #2d2418;
@@ -891,71 +861,6 @@ button {
   color: #f2c766;
 }
 
-.channel-card {
-  position: absolute;
-  z-index: 7;
-  left: 14px;
-  bottom: 14px;
-  width: 238px;
-  border-radius: 12px;
-  padding: 7px 34px 7px 8px;
-}
-.channel-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.channel-title > div {
-  flex: 1;
-  min-width: 0;
-}
-.channel-logo {
-  width: 24px;
-  height: 24px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: 7px;
-  background: #e5332a;
-  color: #fff;
-}
-.channel-title strong {
-  display: block;
-  font-size: var(--fs-xs);
-  font-weight: 700;
-}
-.channel-title p {
-  overflow: hidden;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: var(--fs-3xs);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.channel-title button {
-  height: 22px;
-  padding: 0 9px;
-  border-radius: 999px;
-  background: #e5332a;
-  color: #fff;
-  font-size: var(--fs-3xs);
-  font-weight: 700;
-}
-.channel-close {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  width: 20px;
-  height: 20px;
-  margin-top: -10px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: rgba(255, 255, 255, 0.7);
-}
-.channel-close:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
 .hud-chips {
   position: absolute;
   z-index: 8;
@@ -1108,7 +1013,6 @@ button {
   .room-name,
   .online-dot,
   .quick-links,
-  .channel-card,
   .feedback-tab,
   .scene-label small {
     display: none;
@@ -1335,7 +1239,7 @@ button {
   box-shadow: 0 0 0 3px rgba(215, 174, 92, 0.08);
 }
 .system-panel__body textarea {
-  min-height: 70px;
+  min-height: 120px;
   resize: vertical;
 }
 .field-label {
@@ -2198,9 +2102,6 @@ button {
     max-width: 95px;
     text-align: right;
   }
-  .channel-card {
-    display: none;
-  }
 }
 
 /* Illustrated chibi fallback (shown only without WebGL) */
@@ -2483,7 +2384,7 @@ button {
   }
 }
 
-/* Practice dock: 14 rituals, horizontally scrollable when space is tight */
+/* Practice dock: 15 actions, horizontally scrollable when space is tight */
 .action-dock {
   display: block;
   height: auto;
@@ -2658,9 +2559,6 @@ button {
 }
 
 @media (max-width: 1399px) {
-  .channel-card {
-    display: none;
-  }
   .action-dock {
     max-width: calc(100vw - 400px);
   }
@@ -2746,175 +2644,3 @@ button {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-
-/* Touch Joystick */
-.touch-joystick {
-  position: absolute;
-  left: 14px;
-  bottom: 136px;
-  z-index: 9;
-  width: 124px;
-  height: 124px;
-  touch-action: none;
-  user-select: none;
-  border-radius: 50%;
-  border: 1px solid rgba(246, 220, 160, 0.35);
-  background: radial-gradient(circle, rgba(40, 18, 8, 0.38), rgba(20, 10, 5, 0.22) 70%);
-  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.25), inset 0 0 0 6px rgba(255, 236, 190, 0.06);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  transition: opacity 0.2s;
-  opacity: 0.6;
-  display: none;
-}
-.touch-joystick.is-active {
-  opacity: 0.95;
-}
-@media (max-width: 950px), (max-height: 560px), (pointer: coarse) {
-  .touch-joystick {
-    display: block;
-  }
-}
-@media (max-height: 560px) {
-  .touch-joystick {
-    bottom: 84px;
-    width: 112px;
-    height: 112px;
-  }
-}
-.touch-joystick-arrow {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: rgba(251, 230, 180, 0.8);
-  stroke-width: 2.4;
-  pointer-events: none;
-}
-.touch-joystick-arrow.arrow-top {
-  left: 50%;
-  top: 6px;
-  margin-left: -9px;
-}
-.touch-joystick-arrow.arrow-right {
-  right: 6px;
-  top: 50%;
-  margin-top: -9px;
-}
-.touch-joystick-arrow.arrow-bottom {
-  left: 50%;
-  bottom: 6px;
-  margin-left: -9px;
-}
-.touch-joystick-arrow.arrow-left {
-  left: 6px;
-  top: 50%;
-  margin-top: -9px;
-}
-.touch-joystick-knob {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 231, 174, 0.7);
-  background: radial-gradient(circle at 35% 30%, rgba(255, 236, 190, 0.85), rgba(214, 160, 72, 0.75) 55%, rgba(130, 70, 24, 0.8));
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  pointer-events: none;
-}
-
-/* Modals & Overlays */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(12, 6, 2, 0.88);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-.registration-card {
-  width: min(440px, 100%);
-  background: #251d16;
-  border: 1px solid rgba(212, 175, 55, 0.6);
-  border-radius: 18px;
-  padding: 22px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-  color: #ffe09a;
-  font-size: 14px;
-}
-.registration-card h2 {
-  font-size: 20px;
-  font-weight: 700;
-  color: #f7cd67;
-  text-align: center;
-  margin-bottom: 4px;
-}
-.registration-card p.subtitle {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 12px;
-  margin-bottom: 16px;
-  line-height: 1.5;
-}
-.registration-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 10px;
-}
-.registration-form input {
-  height: 38px;
-  border-radius: 10px;
-  border: 1px solid rgba(226, 189, 110, 0.35);
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  padding: 0 12px;
-  font-size: 13px;
-  outline: none;
-}
-.registration-form input:focus {
-  border-color: #f2c766;
-}
-.registration-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.registration-btn {
-  margin-top: 14px;
-  height: 44px;
-  width: 100%;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #f4d27e, #d9a83f);
-  color: #2a1b0c;
-  font-weight: 800;
-  font-size: 14px;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(217, 168, 63, 0.35);
-  border: none;
-  transition: transform 0.15s, filter 0.15s;
-}
-.registration-btn:hover {
-  filter: brightness(1.08);
-}
-.registration-btn:active {
-  transform: scale(0.98);
-}
-.orientation-guard-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  max-width: 340px;
-  color: #ffe09a;
-}
-

@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState, useTransition } from 'react'
+'use client'
+
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { submitFeedback } from './actions'
 import type { CalendarItem, PracticeItem } from './types'
 import PracticeBody, {
@@ -51,7 +53,6 @@ type Props = {
   onPhrase: (phrase: string) => void
   onKnock: () => void
   practice: PracticeContext
-  onlineDevotees?: any[]
 }
 
 const panelTitles: Record<PanelId, string> = {
@@ -150,125 +151,20 @@ const phrases = [
   'Tâm bình, thế giới bình',
 ]
 
-export type OracleFortune = {
-  num: string
-  title: string
-  poem: string
-  career: string
-  family: string
-  health: string
-  advice: string
-}
+const fortunes: [string, string][] = [
+  ['Tâm tĩnh sáng trong', 'Việc đến tùy duyên, giữ lòng ngay thẳng thì điều lành tự hội tụ.'],
+  ['Sen nở giữa bùn', 'Khó khăn hôm nay là đất để trí tuệ và lòng từ lớn lên.'],
+  ['Một niệm quay về', 'Đừng tìm bình an quá xa. Hãy trở về với một hơi thở đang có.'],
+  ['Chậm mà vững', 'Không cần vội. Mỗi bước nhỏ được làm bằng chánh niệm đều đưa bạn tới nơi.'],
+  ['Gieo nhân lành', 'Một lời tử tế hôm nay có thể trở thành bóng mát cho người khác mai sau.'],
+]
 
-const sacredOracles: OracleFortune[] = [
-  {
-    num: "Quẻ Số 01 · Thượng Thượng Cát",
-    title: "Hoa Sen Nở Rộ Giữa Hồ Thu",
-    poem: "Tâm thành một nén hương trầm tỏa,\nPhúc lộc mười phương tự tìm về.\nGia đạo bình an thêm hưng thịnh,\nCông thành danh toại rạng tiền đồ.",
-    career: "Rất hanh thông, công việc làm ăn phát đạt, có quý nhân lớn nâng đỡ.",
-    family: "Gia đạo hòa thuận, con cháu hiếu thảo, đón hỷ sự bất ngờ.",
-    health: "Thân tâm khang kiện, bệnh cũ thuyên giảm, tinh thần thư thái.",
-    advice: "Mọi việc mong cầu đều đại cát. Giữ tâm khiêm hạ, năng làm việc thiện thì phúc trạch bền lâu muôn đời."
-  },
-  {
-    num: "Quẻ Số 02 · Đại Cát Khánh",
-    title: "Vầng Trăng Tròn Chiếu Đỉnh Non",
-    poem: "Trời thu gió mát trăng vằng vặc,\nChiếu rọi trần gian sáng diệu kỳ.\nĐường xa vạn dặm không ngăn ngại,\nCát tường như ý chẳng nghĩ suy.",
-    career: "Mọi dự định sắp tới đều đạt thành quả như ý, thi cử đỗ đạt cao.",
-    family: "Trong nhà thêm người thêm của, sum vầy ấm cúng.",
-    health: "Tràn đầy sinh lực, giấc ngủ an lành.",
-    advice: "Thời cơ chín muồi, hãy tự tin thực hiện các kế hoạch thiện lành đã ấp ủ."
-  },
-  {
-    num: "Quẻ Số 03 · Trung Cát",
-    title: "Nước Suối Trong Chảy Qua Khe Đá",
-    poem: "Dòng suối quanh co qua ghềnh đá,\nVẫn giữ lòng trong chảy về khơi.\nKiên trì bền chí ắt nên nghiệp,\nThanh nhàn vui thú chốn thảnh thơi.",
-    career: "Ban đầu hơi chậm, cần kiên nhẫn tích lũy kinh nghiệm, về sau đại phát.",
-    family: "Cần lắng nghe thấu hiểu nhau hơn, tránh nóng vội lời nói.",
-    health: "Chú ý dưỡng sinh, chớ thức khuya làm việc quá sức.",
-    advice: "Vạn sự khởi đầu nan, kiên tâm trì chí như nước chảy đá mòn ắt thành công."
-  },
-  {
-    num: "Quẻ Số 04 · Thượng Cát",
-    title: "Mầm Xanh Đón Nắng Sớm Mai",
-    poem: "Hạt giống lành gieo nơi đất tốt,\nGặp mưa xuân sớm trổ hoa tươi.\nTương lai xán lạn muôn điều hứa,\nPhúc đức tràn đầy khắp mọi nơi.",
-    career: "Công việc có hướng đi mới đầy triển vọng, gặp đối tác chân thành.",
-    family: "Có tin vui về con cái hoặc người thân phương xa trở về.",
-    health: "Bình an, năng vận động hít thở khí trời.",
-    advice: "Gieo nhân nào gặt quả nấy. Tiếp tục gieo duyên lành ắt bội thu quả ngọt."
-  },
-  {
-    num: "Quẻ Số 05 · Bình An Cát",
-    title: "Thuyền Nan Cập Bến An Nhiên",
-    poem: "Sóng gió qua rồi biển lặng yên,\nThuyền về bến đậu cảnh thanh nhàn.\nThân tâm buông xả muôn phiền lụy,\nMột thoáng an vui giữa thế gian.",
-    career: "Duy trì ổn định hiện tại, không nên đầu tư mạo hiểm quy mô lớn.",
-    family: "Êm ấm, các thành viên chia sẻ thấu hiểu nhau.",
-    health: "Huyết áp và tiêu hóa ổn định, duy trì ăn chay niệm Phật.",
-    advice: "Biết đủ là giàu, biết an là vui. Hãy trân quý những gì đang có."
-  },
-  {
-    num: "Quẻ Số 06 · Thượng Cát",
-    title: "Cây Tùng Đứng Vững Giữa Mùa Đông",
-    poem: "Gió sương tuy lạnh tùng xanh ngắt,\nBão táp không lay chí trượng phu.\nĐức hạnh sáng ngời xua bóng tối,\nTâm lành rạng rỡ ánh từ bi.",
-    career: "Vượt qua thử thách một cách vẻ vang, uy tín được khẳng định.",
-    family: "Chỗ dựa vững chắc cho gia đình và người thân.",
-    health: "Đề kháng tốt, thân thể dẻo dai.",
-    advice: "Chí kiên tâm vững thì mọi chướng ngại đều trở thành nấc thang bước lên đỉnh cao."
-  },
-  {
-    num: "Quẻ Số 07 · Tiểu Cát Hóa Đại",
-    title: "Mây Mù Tan Dần Thấy Ánh Dương",
-    poem: "U ám mây mờ rồi sẽ tan,\nTrời quang mây tạnh khắp non ngàn.\nGian nan vất vả qua rồi đó,\nĐón ánh bình minh phúc ngập tràn.",
-    career: "Những khúc mắc tồn đọng sắp được tháo gỡ hoàn toàn.",
-    family: "Hóa giải hiểu lầm cũ, không khí gia đình rộn rã trở lại.",
-    health: "Bệnh duyên tiêu trừ nhờ tâm an tịnh và thuốc thang đúng thầy.",
-    advice: "Không có đêm đen nào kéo dài mãi. Luôn giữ niềm tin và lòng hướng thiện."
-  },
-  {
-    num: "Quẻ Số 08 · Đại An Cát Khánh",
-    title: "Trăng Sáng Soi Đường Vạn Dặm Xa",
-    poem: "Mây tan trăng sáng chiếu muôn nơi,\nSức khỏe dồi dào nở nụ cười.\nSự nghiệp vững vàng như tùng bách,\nBình an hạnh phúc trọn niềm vui.",
-    career: "Có quý nhân phương xa chỉ dẫn, cơ hội mở rộng tầm nhìn và phát triển.",
-    family: "Gia môn hưng thịnh, trong ấm ngoài êm.",
-    health: "Tráng kiện, sắc diện hồng hào thanh thoát.",
-    advice: "Sống có trước có sau, nhớ ơn người giúp đỡ thì phúc phận càng dồi dào."
-  },
-  {
-    num: "Quẻ Số 09 · Cát Tường",
-    title: "Tiếng Chuông Chùa Ngân Lúc Hoàng Hôn",
-    poem: "Chuông chùa ngân vọng giữa thinh không,\nRũ sạch trần ai nhẹ cõi lòng.\nBát ngát từ bi soi lối bước,\nAn vui tự tại giữa muôn trùng.",
-    career: "Phù hợp các công việc nghiên cứu, sáng tạo, giáo dục và thiện nguyện.",
-    family: "Bình yên, có xu hướng hướng Phật cùng tu tập.",
-    health: "Giấc ngủ sâu, tinh thần thư thái nhẹ nhõm.",
-    advice: "Năng về chùa lễ Phật, nghe pháp thoại để trí tuệ khai mở."
-  },
-  {
-    num: "Quẻ Số 10 · Thượng Cát",
-    title: "Đóa Sen Hồng Trong Ánh Ban Mai",
-    poem: "Nhụy vàng cánh thắm ngát hương thơm,\nBùn lắng sen lên đẹp lạ thường.\nGiữ trọn lòng thanh trong cõi tục,\nTrời ban phúc lộc rạng quê hương.",
-    career: "Danh thơm tiếng tốt, được đồng nghiệp và cấp trên tin cậy yêu quý.",
-    family: "Thuận hòa, con cái đạt thành tích học tập vẻ vang.",
-    health: "Thân tâm an lạc, khí sắc rạng ngời.",
-    advice: "Gần bùn mà chẳng hôi tanh. Giữ vững phẩm hạnh cao đẹp giữa đời."
-  },
-  {
-    num: "Quẻ Số 11 · Đại Cát",
-    title: "Rồng Vẫy Đuôi Về Biển Lớn",
-    poem: "Vùng vẫy bao năm chốn bến bờ,\nHôm nay vươn tới cõi bao la.\nMênh mông sóng nước thỏa lòng ước,\nCông to nghiệp lớn rạng muôn nhà.",
-    career: "Mở rộng kinh doanh thành công, thi cử đỗ thủ khoa, chuyển đổi vị trí như ý.",
-    family: "Có sự kiện trọng đại vui vẻ (cưới hỏi, thăng chức, mua nhà).",
-    health: "Dồi dào năng lượng tích cực.",
-    advice: "Khi ở đỉnh cao càng cần khiêm nhường và giúp đỡ người yếm thế."
-  },
-  {
-    num: "Quẻ Số 12 · Viên Mãn Cát",
-    title: "Ngọc Quý Sáng Trong Lòng Núi",
-    poem: "Ngọc ẩn trong non trải tháng ngày,\nNay nhờ thợ khéo dũa mài hay.\nÁnh quang rạng rỡ soi mười hướng,\nPhúc báu tròn đầy tay nắm tay.",
-    career: "Tài năng được công nhận, gặt hái thành quả xứng đáng sau bao nỗ lực.",
-    family: "Viên mãn, phúc thọ song toàn, cháu con hiếu nghĩa.",
-    health: "Khang kiện trường thọ.",
-    advice: "Tâm chân thật quý hơn vàng ngọc. Hãy đem tâm ấy cống hiến cho đời."
-  }
+const people = [
+  ['Phúc An Nhiên', 'Cấp 9', 'Đang niệm Phật'],
+  ['Tâm An', 'Cấp 3', 'Đang lễ Phật'],
+  ['Diệu Minh', 'Cấp 7', 'Đang thiền'],
+  ['Thiện Đức', 'Cấp 5', 'Đang dạo bước'],
+  ['An Lạc', 'Cấp 2', 'Đang tụng kinh'],
 ]
 
 function PanelHeader({ panel, onClose }: { panel: PanelId; onClose: () => void }) {
@@ -333,8 +229,7 @@ export default function SystemPanel(props: Props) {
   const [secondsLeft, setSecondsLeft] = useState(5 * 60)
   const [timerRunning, setTimerRunning] = useState(false)
   const [wishText, setWishText] = useState('')
-  const [fortune, setFortune] = useState<OracleFortune | null>(null)
-  const [shaking, setShaking] = useState(false)
+  const [fortune, setFortune] = useState<[string, string] | null>(null)
   const [feedbackResult, setFeedbackResult] = useState('')
   const [isPending, startTransition] = useTransition()
 
@@ -389,20 +284,19 @@ export default function SystemPanel(props: Props) {
   }
 
   const issueFortune = () => {
-    if (shaking) return
-    setShaking(true)
-    onKnock()
-    const t1 = setTimeout(() => onKnock(), 300)
-    const t2 = setTimeout(() => onKnock(), 600)
-    setTimeout(() => {
-      setShaking(false)
-      const dayKey = new Date().toISOString().slice(0, 10)
-      const index = Math.floor(Math.random() * sacredOracles.length)
-      const pick = sacredOracles[index]
-      setFortune(pick)
-      window.localStorage.setItem('chua-sen-fortune', JSON.stringify({ day: dayKey, index }))
-      onMerit(15, `Đã xin ${pick.num}. +15 công đức`)
-    }, 900)
+    const dayKey = new Date().toISOString().slice(0, 10)
+    const stored = window.localStorage.getItem('chua-sen-fortune')
+    if (stored) {
+      const parsed = JSON.parse(stored) as { day: string; index: number }
+      if (parsed.day === dayKey) {
+        setFortune(fortunes[parsed.index])
+        return
+      }
+    }
+    const index = Math.floor(Math.random() * fortunes.length)
+    window.localStorage.setItem('chua-sen-fortune', JSON.stringify({ day: dayKey, index }))
+    setFortune(fortunes[index])
+    onMerit(5, 'Bạn đã xin quẻ hôm nay. +5 tịnh tâm')
   }
 
   return (
@@ -712,45 +606,27 @@ export default function SystemPanel(props: Props) {
           {panel === 'people' && (
             <div className="people-view">
               <div className="people-summary">
-                <strong>{onlineDevotees && onlineDevotees.length > 0 ? onlineDevotees.length : 1}</strong>
-                <span>người thật đang trực tuyến trong Chánh Điện</span>
+                <strong>{people.length + 1}</strong>
+                <span>người đang công phu trong Phòng {room}</span>
               </div>
               <article className="me">
                 <span className="avatar">{playerName.slice(0, 1)}</span>
                 <div>
-                  <strong>{playerName} (Bạn)</strong>
-                  <small>
-                    Pháp danh: {practice.dharmaName || 'Tịnh Tâm'} · Bồ đoàn #{practice.seat ?? 'Đang thiền hành'}
-                  </small>
-                  <p style={{ fontSize: '11px', color: '#f2c766', marginTop: '2px' }}>
-                    📍 {typeof window !== 'undefined' && (window as any).currentUserProfile?.hometown ? (window as any).currentUserProfile.hometown : 'Việt Nam'} · {merit} công đức
-                  </p>
+                  <strong>{playerName}</strong>
+                  <small>Bạn · {merit} tịnh tâm</small>
                 </div>
-                <em>Đang an tọa</em>
+                <em>Đang trực tuyến</em>
               </article>
-              {onlineDevotees && onlineDevotees.length > 0 ? (
-                onlineDevotees
-                  .filter((dev: any) => dev.fullName !== playerName)
-                  .map((dev: any, i: number) => (
-                    <article key={dev.clientId || dev.client_id || i}>
-                      <span className="avatar">{(dev.fullName || 'Đạo Hữu').slice(0, 1)}</span>
-                      <div>
-                        <strong>{dev.fullName || 'Đạo Hữu Đồng Tu'}</strong>
-                        <small>
-                          Pháp danh: {dev.dharmaName || 'Tịnh Tâm'} · Bồ đoàn #{dev.seatNo || (i + 1)}
-                        </small>
-                        <p style={{ fontSize: '11px', color: '#e2bd6e', marginTop: '2px' }}>
-                          📍 {dev.hometown || dev.clientIp || 'Việt Nam'} · {dev.meritScore || 50} công đức
-                        </p>
-                      </div>
-                      <em>Đang tu tập</em>
-                    </article>
-                  ))
-              ) : (
-                <p className="panel-intro" style={{ textAlign: 'center', marginTop: '10px' }}>
-                  Đang đồng bộ danh sách thiện hữu trực tuyến từ Supabase Realtime...
-                </p>
-              )}
+              {people.map((person) => (
+                <article key={person[0]}>
+                  <span className="avatar">{person[0].slice(0, 1)}</span>
+                  <div>
+                    <strong>{person[0]}</strong>
+                    <small>{person[1]}</small>
+                  </div>
+                  <em>{person[2]}</em>
+                </article>
+              ))}
             </div>
           )}
 
@@ -918,41 +794,24 @@ export default function SystemPanel(props: Props) {
 
           {panel === 'fortune' && (
             <div className="fortune-view">
-              <div className={`fortune-sticks ${shaking ? 'is-shaking animate-pulse' : ''}`} aria-hidden="true">
+              <div className="fortune-sticks" aria-hidden="true">
                 {Array.from({ length: 9 }).map((_, index) => (
-                  <i key={index} style={shaking ? { transform: `translateY(${Math.sin(index) * 12}px) rotate(${Math.cos(index) * 8}deg)` } : undefined} />
+                  <i key={index} />
                 ))}
               </div>
               {fortune ? (
-                <div className="fortune-card" style={{ maxWidth: '420px', textAlign: 'left', padding: '16px 20px' }}>
-                  <span style={{ color: '#f2c766', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    {fortune.num}
-                  </span>
-                  <strong style={{ fontSize: '18px', display: 'block', margin: '4px 0 8px', color: '#fff' }}>
-                    {fortune.title}
-                  </strong>
-                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 14px', borderRadius: '10px', fontStyle: 'italic', fontSize: '13px', lineHeight: 1.6, color: '#fdf6e9', whiteSpace: 'pre-line', border: '1px solid rgba(242,199,102,0.2)' }}>
-                    {fortune.poem}
-                  </div>
-                  <div style={{ marginTop: '12px', fontSize: '12px', lineHeight: 1.5, color: '#e2bd6e', display: 'grid', gap: '4px' }}>
-                    <p>💼 <b>Sự nghiệp:</b> {fortune.career}</p>
-                    <p>❤️ <b>Gia đạo:</b> {fortune.family}</p>
-                    <p>🌿 <b>Sức khỏe:</b> {fortune.health}</p>
-                    <p style={{ color: '#fff', marginTop: '4px' }}>✨ <b>Lời khuyên:</b> {fortune.advice}</p>
-                  </div>
+                <div className="fortune-card">
+                  <span>QUẺ LÀNH HÔM NAY</span>
+                  <strong>{fortune[0]}</strong>
+                  <p>{fortune[1]}</p>
                 </div>
               ) : (
                 <p className="panel-intro">
-                  Tĩnh tâm trong ba hơi thở, chí thành hướng về Đức Quán Thế Âm, rồi bấm lắc ống xăm để nhận lời chỉ dẫn cho ngày hôm nay.
+                  Tĩnh tâm trong ba hơi thở, rồi xin một lời gợi ý cho ngày hôm nay.
                 </p>
               )}
-              <button
-                className="primary-panel-button"
-                type="button"
-                disabled={shaking}
-                onClick={issueFortune}
-              >
-                {shaking ? '🎋 Đang lắc ống xăm…' : fortune ? '🎋 Lắc ống xin quẻ mới' : '🎋 Lắc ống xin quẻ'}
+              <button className="primary-panel-button" type="button" onClick={issueFortune}>
+                {fortune ? 'Xem lại quẻ hôm nay' : 'Xin một quẻ'}
               </button>
             </div>
           )}

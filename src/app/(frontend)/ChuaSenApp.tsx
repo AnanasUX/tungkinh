@@ -1,4 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+'use client'
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TempleScene, { type SceneApi } from './TempleScene'
 import SystemPanel, { type PanelId } from './SystemPanel'
 import TouchJoystick from './TouchJoystick'
@@ -29,7 +31,6 @@ type IconName =
   | 'trophy'
   | 'more'
   | 'message'
-  | 'play'
   | 'close'
   | 'check'
   | 'fish'
@@ -46,22 +47,9 @@ type IconName =
   | 'music'
   | 'seat'
   | 'video'
-  | 'telegram'
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, React.ReactNode> = {
-    video: (
-      <>
-        <path d="m16 10 5-3v10l-5-3v-4Z" />
-        <rect x="2" y="6" width="14" height="12" rx="2" />
-      </>
-    ),
-    telegram: (
-      <>
-        <path d="m22 2-7 20-4-9-9-4Z" />
-        <path d="M22 2 11 13" />
-      </>
-    ),
     lotus: (
       <>
         <path d="M12 21c-2.2-1.1-3.5-3-3.5-5.2 0-1.6.8-3 3.5-4.8 2.7 1.8 3.5 3.2 3.5 4.8 0 2.2-1.3 4.1-3.5 5.2Z" />
@@ -160,12 +148,6 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
       </>
     ),
     message: <path d="M21 12a8.5 8.5 0 0 1-9 8 10 10 0 0 1-4-.8L3 21l1.5-4A8 8 0 1 1 21 12Z" />,
-    play: (
-      <>
-        <rect x="3" y="5" width="18" height="14" rx="3" />
-        <path d="m10 9 5 3-5 3V9Z" />
-      </>
-    ),
     close: <path d="m7 7 10 10M17 7 7 17" />,
     check: <path d="m5 12 4 4L19 6" />,
     fish: (
@@ -228,6 +210,12 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
         <ellipse cx="12" cy="16" rx="8" ry="3.5" />
         <path d="M4 16v1.5C4 19.4 7.6 21 12 21s8-1.6 8-3.5V16" />
         <circle cx="12" cy="7" r="3" />
+      </>
+    ),
+    video: (
+      <>
+        <rect x="3" y="6" width="14" height="12" rx="3" />
+        <path d="m17 10 4-2v8l-4-2" />
       </>
     ),
   }
@@ -346,7 +334,6 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const [phrase, setPhrase] = useState('')
   const [seat, setSeat] = useState<number | null>(null)
   const [hydrated, setHydrated] = useState(false)
-  const [showChannel, setShowChannel] = useState(true)
   const sceneRef = useRef<SceneApi | null>(null)
   const moveScene = useCallback((x: number, y: number) => sceneRef.current?.setMove(x, y), [])
   const mutedRef = useRef(muted)
@@ -366,88 +353,13 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     return () => window.clearTimeout(timer)
   }, [toast])
 
-  const [onlineDevotees, setOnlineDevotees] = useState<any[]>([])
-  const [showRegistration, setShowRegistration] = useState(false)
-  const [isPortrait, setIsPortrait] = useState(false)
-
-  const [regFullName, setRegFullName] = useState('')
-  const [regDob, setRegDob] = useState('')
-  const [regDharma, setRegDharma] = useState('')
-  const [regHometown, setRegHometown] = useState('Việt Nam')
-  const [regError, setRegError] = useState('')
-
-  useEffect(() => {
-    // 1. Check existing user profile
-    try {
-      const savedProfile = window.localStorage.getItem('chua_an_nhien_user_profile')
-      if (savedProfile) {
-        const p = JSON.parse(savedProfile)
-        if (p.registered && p.fullName) {
-          setPlayerName(p.fullName)
-          if (p.dharmaName) setDharmaName(p.dharmaName)
-          if (p.hometown) setRegHometown(p.hometown)
-          if (typeof p.meritScore === 'number') setMerit(p.meritScore)
-          if (typeof window !== 'undefined') {
-            ;(window as any).currentUserProfile = Object.assign({}, (window as any).currentUserProfile || {}, p)
-          }
-        } else {
-          setShowRegistration(true)
-        }
-      } else {
-        setShowRegistration(true)
-      }
-    } catch (_) {
-      setShowRegistration(true)
-    }
-
-    // 2. Auto detect IP / Location
-    fetch('https://ipapi.co/json/')
-      .then((res) => res.json())
-      .then((data) => {
-        const loc = [data.city, data.country_name].filter(Boolean).join(', ')
-        if (loc) setRegHometown(loc)
-      })
-      .catch(() => {})
-
-    // 3. Orientation check for mobile/tablet
-    const checkOrientation = () => {
-      const isMobile =
-        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        (window.innerWidth <= 1024 && 'ontouchstart' in window)
-      setIsPortrait(Boolean(isMobile && window.innerHeight > window.innerWidth))
-    }
-    checkOrientation()
-    window.addEventListener('resize', checkOrientation)
-    window.addEventListener('orientationchange', checkOrientation)
-
-    // 4. Listen to Supabase Realtime Devotees
-    const syncDevotees = () => {
-      if ((window as any).SupabaseSanctuary && (window as any).SupabaseSanctuary.activeDevotees) {
-        const map = (window as any).SupabaseSanctuary.activeDevotees as Map<string, any>
-        setOnlineDevotees(Array.from(map.values()))
-      }
-    }
-    syncDevotees()
-    const syncTimer = window.setInterval(syncDevotees, 2500)
-    window.addEventListener('sanctuary_devotees_updated', syncDevotees)
-
-    return () => {
-      window.removeEventListener('resize', checkOrientation)
-      window.removeEventListener('orientationchange', checkOrientation)
-      window.clearInterval(syncTimer)
-      window.removeEventListener('sanctuary_devotees_updated', syncDevotees)
-    }
-  }, [])
-
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem('chua-sen-progress')
       if (raw) {
         const saved = JSON.parse(raw) as Partial<SavedProgress>
-        if (saved.playerName && !window.localStorage.getItem('chua_an_nhien_user_profile')) {
-          setPlayerName(saved.playerName)
-        }
-        if (typeof saved.dharmaName === 'string' && !dharmaName) setDharmaName(saved.dharmaName)
+        if (saved.playerName) setPlayerName(saved.playerName)
+        if (typeof saved.dharmaName === 'string') setDharmaName(saved.dharmaName)
         if (typeof saved.merit === 'number') setMerit(saved.merit)
         if (typeof saved.beads === 'number') setBeads(saved.beads)
         if (typeof saved.knocks === 'number') setKnocks(saved.knocks)
@@ -625,77 +537,6 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     if (count >= 27 && !done.beads) completeTask('beads', 27, 'Lần 27 hạt')
   }
 
-  const handleConfirmRegistration = async (e?: React.FormEvent) => {
-    e?.preventDefault()
-    if (!regFullName.trim() || regFullName.trim().length < 2) {
-      setRegError('Kính xin đạo hữu nhập đầy đủ họ và tên (ít nhất 2 ký tự).')
-      return
-    }
-    if (!regDob) {
-      setRegError('Kính xin đạo hữu nhập ngày tháng năm sinh.')
-      return
-    }
-
-    const finalDharma = regDharma.trim() || 'Tịnh Tâm'
-    const finalHometown = regHometown.trim() || 'Việt Nam'
-
-    const profileData = {
-      registered: true,
-      fullName: regFullName.trim(),
-      dob: regDob,
-      dharmaName: finalDharma,
-      hometown: finalHometown,
-      meritScore: Math.max(merit, 50),
-      assignedSeatNo: seat || 4,
-      avatarType: 'monk',
-      clientIp: '113.161.x.x',
-      wish: 'Cầu quốc thái dân an, gia đạo ấm êm và tâm hồn thanh tịnh'
-    }
-
-    try {
-      window.localStorage.setItem('chua_an_nhien_user_profile', JSON.stringify(profileData))
-    } catch (_) {}
-
-    if (typeof window !== 'undefined') {
-      ;(window as any).currentUserProfile = profileData
-    }
-
-    setPlayerName(profileData.fullName)
-    setDharmaName(finalDharma)
-    setShowRegistration(false)
-    setToast(`Nam mô A Di Đà Phật. Kính mừng Đạo hữu ${profileData.fullName} an tọa!`)
-
-    try {
-      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-        await document.documentElement.requestFullscreen()
-      }
-      if (screen.orientation && (screen.orientation as any).lock) {
-        await (screen.orientation as any).lock('landscape')
-      }
-    } catch (_) {}
-
-    if (
-      typeof window !== 'undefined' &&
-      (window as any).SupabaseSanctuary &&
-      (window as any).SupabaseSanctuary.trackUserPresence
-    ) {
-      try {
-        ;(window as any).SupabaseSanctuary.trackUserPresence()
-      } catch (_) {}
-    }
-  }
-
-  const handleForceLandscapeFullscreen = async () => {
-    try {
-      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-        await document.documentElement.requestFullscreen()
-      }
-      if (screen.orientation && (screen.orientation as any).lock) {
-        await (screen.orientation as any).lock('landscape')
-      }
-    } catch (_) {}
-  }
-
   const practiceContext: PracticeContext = {
     playerName,
     dharmaName,
@@ -704,7 +545,6 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     beads,
     seat,
     petitions,
-    onlineDevotees,
     onSeat: (no) => {
       sceneRef.current?.sit(no)
       setToast(`Đang đi tới bồ đoàn #${no}…`)
@@ -755,7 +595,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
               aria-label="Xem người trong chùa"
               onClick={() => setPanel('people')}
             >
-              <Icon name="users" size={16} /> {onlineDevotees && onlineDevotees.length > 0 ? onlineDevotees.length : 1}
+              <Icon name="users" size={16} /> 12
             </button>
             <span className="divider" />
             <button type="button" aria-label="Hồ sơ tu tập" onClick={() => setPanel('profile')}>
@@ -764,35 +604,12 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
             <button
               type="button"
               aria-label="Mở Đạo Tràng Chung"
-              title="Đạo Tràng Chung"
               onClick={() => {
                 setPanel(null)
                 setCommunityOpen(true)
               }}
             >
               <Icon name="message" size={16} />
-            </button>
-            <button
-              type="button"
-              aria-label="Gọi Video Đạo Tràng"
-              title="Gọi Video Đạo Tràng"
-              style={{ color: '#f2c766' }}
-              onClick={() => {
-                setPanel(null)
-                setCommunityOpen(false)
-                setCallOpen(true)
-              }}
-            >
-              <Icon name="video" size={16} />
-            </button>
-            <button
-              type="button"
-              aria-label="Telegram Bot (@botantigravity_pro_bot)"
-              title="Telegram Bot (@botantigravity_pro_bot)"
-              style={{ color: '#38bdf8' }}
-              onClick={() => window.open('https://t.me/botantigravity_pro_bot', '_blank')}
-            >
-              <Icon name="telegram" size={16} />
             </button>
             <button
               type="button"
@@ -1049,91 +866,8 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
           onPhrase={setPhrase}
           onKnock={knock}
           practice={practiceContext}
-          onlineDevotees={onlineDevotees}
         />
       )}
-
-      {showRegistration && (
-        <div className="modal-overlay">
-          <div className="registration-card">
-            <h2>🪷 CHÙA AN NHIÊN · GHI DANH</h2>
-            <p className="subtitle">
-              Kính xin thiện nam tín nữ nhập thông tin trước khi vào Chánh Điện an tọa bồ đoàn tu tập.
-            </p>
-            <form onSubmit={handleConfirmRegistration} className="registration-form">
-              <label>
-                Họ và tên <span style={{ color: '#f2c766' }}>*</span>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Nguyễn Văn An"
-                  value={regFullName}
-                  onChange={(e) => setRegFullName(e.target.value)}
-                />
-              </label>
-
-              <label>
-                Ngày tháng năm sinh <span style={{ color: '#f2c766' }}>*</span>
-                <input
-                  type="date"
-                  required
-                  value={regDob}
-                  onChange={(e) => setRegDob(e.target.value)}
-                />
-              </label>
-
-              <div className="registration-form-grid">
-                <label>
-                  Pháp danh (tùy chọn)
-                  <input
-                    type="text"
-                    placeholder="Tịnh Tâm"
-                    value={regDharma}
-                    onChange={(e) => setRegDharma(e.target.value)}
-                  />
-                </label>
-                <label>
-                  Địa phương / Tỉnh thành
-                  <input
-                    type="text"
-                    value={regHometown}
-                    onChange={(e) => setRegHometown(e.target.value)}
-                  />
-                </label>
-              </div>
-
-              {regError && <p style={{ color: '#ff9b8a', fontSize: '12px', margin: '6px 0' }}>{regError}</p>}
-
-              <button type="submit" className="registration-btn">
-                Xác Nhận & Vào Chánh Điện (Toàn Màn Hình)
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {isPortrait && (
-        <div className="modal-overlay" onClick={handleForceLandscapeFullscreen}>
-          <div className="orientation-guard-card">
-            <div style={{ fontSize: '42px', marginBottom: '12px' }}>📱</div>
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffe09a', marginBottom: '8px' }}>
-              ĐẠO TRÀNG THANH TỊNH
-            </h2>
-            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5, marginBottom: '16px' }}>
-              Hệ thống Chánh Điện được thiết kế chuẩn ngang 16:9. Kính xin đạo hữu xoay ngang điện thoại để trải nghiệm trọn vẹn không gian tu tập.
-            </p>
-            <button
-              type="button"
-              className="registration-btn"
-              style={{ width: 'auto', padding: '0 24px' }}
-              onClick={handleForceLandscapeFullscreen}
-            >
-              Xoay Ngang & Toàn Màn Hình
-            </button>
-          </div>
-        </div>
-      )}
-
       {toast && <div className="toast glass">{toast}</div>}
     </main>
   )
