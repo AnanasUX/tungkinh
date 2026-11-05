@@ -489,6 +489,21 @@
 
     }
 
+    /* Universal Floating Edge Drawer Tabs (Centered along screen edges) */
+    #btn-tab-drawer-left {
+      position: fixed !important;
+      left: 0 !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      z-index: 40 !important;
+    }
+    #btn-tab-drawer-right {
+      position: fixed !important;
+      right: 0 !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      z-index: 40 !important;
+    }
     /* ==========================================================================
        SIDEBAR RESPONSIVE BEHAVIOR
        Desktop >= 1400px: Docked with collapse button
@@ -620,20 +635,31 @@
        -------------------------------------------------------------------------- */
     @media screen and (min-width: 1024px) {
       footer {
-        padding: 4px 16px !important;
-        padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+        position: absolute !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 4px 12px !important;
+        padding-bottom: max(6px, env(safe-area-inset-bottom)) !important;
+        pointer-events: none !important;
+        box-sizing: border-box !important;
+        z-index: 30 !important;
       }
       #bottom-dock-scroll {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        justify-content: center !important;
+        justify-content: safe center !important;
         align-items: center !important;
-        gap: 6px !important;
-        width: auto !important;
+        gap: clamp(3px, 0.45vw, 6px) !important;
+        width: max-content !important;
         max-width: 98vw !important;
         margin: 0 auto !important;
-        padding: 6px 14px !important;
+        padding: 5px clamp(8px, 1vw, 16px) !important;
         background: linear-gradient(180deg, rgba(35, 18, 8, 0.94) 0%, rgba(15, 7, 2, 0.98) 100%) !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
@@ -642,29 +668,33 @@
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(245, 180, 60, 0.25) !important;
         overflow-x: auto !important;
         scrollbar-width: none !important;
+        pointer-events: auto !important;
+        box-sizing: border-box !important;
       }
       #bottom-dock-scroll::-webkit-scrollbar {
         display: none !important;
       }
       #bottom-dock-scroll > button {
-        height: 35px !important;
-        font-size: 11px !important;
-        padding: 3px 10px !important;
+        height: 33px !important;
+        font-size: clamp(9.5px, 0.75vw, 11px) !important;
+        padding: 2px clamp(6px, 0.6vw, 10px) !important;
         white-space: nowrap !important;
         border-radius: 9999px !important;
         flex-shrink: 0 !important;
         width: auto !important;
-        min-width: max-content !important;
+        min-width: 0 !important;
         justify-content: center !important;
+        font-weight: 700 !important;
       }
       #bottom-dock-scroll > button svg {
-        width: 14px !important;
-        height: 14px !important;
+        width: 13px !important;
+        height: 13px !important;
+        flex-shrink: 0 !important;
       }
-      /* Đẩy thông tin khoá tu xuống dưới trên Desktop để không đè lên header buttons */
+      /* Thông tin khóa tu trên Desktop: Nằm gọn gàng góc trên phải, không đè lên icon hay tab Mõ */
       #quest-floating-hud {
-        top: 72px !important;
-        right: 24px !important;
+        top: 54px !important;
+        right: 20px !important;
         z-index: 35 !important;
       }
     }
@@ -702,7 +732,7 @@
         height: 12px !important;
       }
       #quest-floating-hud {
-        top: 66px !important;
+        top: 52px !important;
         right: 16px !important;
         z-index: 35 !important;
       }
@@ -2386,14 +2416,14 @@
       <!-- MOBILE DRAWER BACKDROP -->
       <div id="mobile-drawer-backdrop" onclick="closeMobileDrawers()" class="hidden fixed inset-0 z-45 bg-black/60 backdrop-blur-xs 2xl:hidden pointer-events-auto"></div>
 
-      <!-- MOBILE & TABLET TOGGLE TABS -->
+      <!-- FLOATING SIDE DRAWER TABS -->
       <button onclick="toggleMobileDrawer('left')" id="btn-tab-drawer-left" title="Mở danh sách Quà & Lời Chúc"
-        class="2xl:hidden absolute left-0 top-1/2 -translate-y-1/2 z-30 px-2 py-1.5 rounded-r-xl bg-amber-950/90 border-y border-r border-amber-300/60 text-amber-200 text-[10px] font-bold shadow-xl backdrop-blur-md flex items-center gap-1 active:scale-95 transition pointer-events-auto">
+        class="2xl:hidden px-2 py-1.5 rounded-r-xl bg-amber-950/90 border-y border-r border-amber-300/60 text-amber-200 text-[10px] font-bold shadow-xl backdrop-blur-md flex items-center gap-1 active:scale-95 transition pointer-events-auto">
         <span>🎁 Lời Chúc</span>
       </button>
 
       <button onclick="toggleMobileDrawer('right')" id="btn-tab-drawer-right" title="Mở Gõ Mõ, Bảng Công Đức & Người Online"
-        class="absolute right-0 top-[calc(50%+22px)] -translate-y-1/2 z-30 px-2.5 py-1.5 rounded-l-xl bg-stone-950/95 border-y border-l border-amber-300/60 text-amber-200 hover:text-amber-100 text-[10px] font-bold shadow-2xl backdrop-blur-md flex items-center gap-1.5 active:scale-95 transition pointer-events-auto cursor-pointer">
+        class="px-2.5 py-1.5 rounded-l-xl bg-stone-950/95 border-y border-l border-amber-300/60 text-amber-200 hover:text-amber-100 text-[10px] font-bold shadow-2xl backdrop-blur-md flex items-center gap-1.5 active:scale-95 transition pointer-events-auto cursor-pointer">
         <span class="text-xs">🔔</span>
         <span class="hidden sm:inline">Mõ & Công Đức</span>
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -2729,7 +2759,7 @@
           <button onclick="DailyQuestEngine.openQuestModal()" title="Nhiệm Vụ Tu Học & Việc Tốt Trong Ngày"
             class="px-2 sm:px-2.5 py-1 rounded-full bg-gradient-to-r from-red-600 via-amber-600 to-yellow-500 hover:brightness-110 border border-amber-200 text-[10px] sm:text-[11.5px] font-extrabold text-white flex items-center justify-center gap-1 sm:gap-1.5 shadow-lg active:scale-95 transition shrink-0 whitespace-nowrap">
             <span class="text-xs shrink-0">📜</span>
-            <span>Việc Lành <span class="hidden lg:inline font-normal opacity-90">(Nhiệm Vụ)</span></span>
+            <span>Việc Lành</span>
           </button>
 
           <!-- 1. Gõ Mõ -->
@@ -2738,7 +2768,7 @@
             <svg class="w-3.5 h-3.5 text-stone-950 shrink-0" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 3C7 3 3 7 3 12c0 3.5 2 6.5 5 8h8c3-1.5 5-4.5 5-8 0-5-4-9-9-9zm0 3c3.5 0 6 2.5 6 6 0 1.2-.4 2.3-1 3.2-1.5-1.5-3.5-2.2-5-2.2-2 0-3.5 1-4.8 2.2C6.5 14.3 6 13.2 6 12c0-3.5 2.5-6 6-6z"/>
             </svg>
-            <span>Gõ Mõ <span class="hidden lg:inline font-normal opacity-75">(Space)</span></span>
+            <span>Gõ Mõ</span>
           </button>
 
           <!-- 2. Lễ Phật -->
@@ -2757,7 +2787,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v6m-4-3v3m8-3v3M6 14h12c1 0 2 1 2 2.5s-1 2.5-2 2.5H6c-1 0-2-1-2-2.5S5 14 6 14z" fill="rgba(249,115,22,0.2)"/>
               <path stroke-linecap="round" stroke-linejoin="round" d="M8 19l-1 3m9-3l1 3"/>
             </svg>
-            <span>Dâng Hương <span class="hidden lg:inline font-normal opacity-75">(+20Đ)</span></span>
+            <span>Dâng Hương</span>
           </button>
 
           <!-- 4. Xin Xăm Từ Bi -->
@@ -2768,14 +2798,14 @@
               <path d="M6 9h12v11a2 2 0 01-2 2H8a2 2 0 01-2-2V9z" fill="rgba(245,158,11,0.2)" />
               <circle cx="12" cy="15" r="2" fill="#fde047" stroke="none" />
             </svg>
-            <span>Xin Xăm <span class="hidden lg:inline font-normal opacity-75">Từ Bi</span></span>
+            <span>Xin Xăm</span>
           </button>
 
           <!-- 4B. Đồng Tụng Thời Gian Thực (Shared Room) -->
           <button onclick="openSharedChantingModal()" id="btn-shared-chanting-dock" title="Phòng Đồng Tụng Thời Gian Thực Cùng Đạo Tràng Toàn Cầu"
             class="px-2 sm:px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-950 via-teal-900 to-emerald-950 hover:brightness-125 border border-emerald-400/80 text-[10px] sm:text-[11.5px] font-bold text-emerald-200 flex items-center justify-center gap-1 sm:gap-1.5 shadow-lg active:scale-95 transition shrink-0 whitespace-nowrap ring-1 ring-emerald-400/40">
             <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-            <span>Đồng Tụng <span class="hidden lg:inline font-normal opacity-75">Chung (Shared)</span></span>
+            <span>Đồng Tụng</span>
           </button>
 
           <!-- 5. Kinh Thư Tụng Niệm -->
@@ -2784,7 +2814,7 @@
             <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.25v13.5m0-13.5C10.8 5.5 9.2 5 7.5 5S4.2 5.5 3 6.25v13.5C4.2 19 5.8 18.5 7.5 18.5s3.3.5 4.5 1.25m0-13.5c1.2-.75 2.8-1.25 4.5-1.25s3.3.5 4.5 1.25v13.5c-1.2-.75-2.8-1.25-4.5-1.25s-3.3.5-4.5 1.25" />
             </svg>
-            <span>Kinh Thư <span class="hidden lg:inline font-normal opacity-75">(Phím K)</span></span>
+            <span>Kinh Thư</span>
           </button>
 
           <!-- 6. Thả Hoa Đăng -->
@@ -2795,7 +2825,7 @@
               <path d="M12 9c-2 0-3.5 1-4.5 2.5 1 2 2.8 3.5 4.5 3.5s3.5-1.5 4.5-3.5C15.5 10 14 9 12 9z"/>
               <path d="M4 15.5C6.5 18 9 19 12 19s5.5-1 8-3.5c-2.5-.8-5.2-1.2-8-1.2s-5.5.4-8 1.2z" fill="#f59e0b"/>
             </svg>
-            <span><span class="hidden lg:inline">Thả </span>Hoa Đăng</span>
+            <span>Hoa Đăng</span>
           </button>
 
           <!-- 7. Thỉnh Chuông -->
@@ -2827,7 +2857,7 @@
               <circle cx="12" cy="12" r="2.5" fill="rgba(245,158,11,0.4)"/>
               <path d="M12 4v5.5m0 5V20M4 12h5.5m5 0H20"/>
             </svg>
-            <span>Lời Phật<span class="hidden lg:inline"> Dạy</span></span>
+            <span>Lời Phật</span>
           </button>
 
           <!-- 10. Phóng Sanh Tự Do -->
@@ -2836,7 +2866,7 @@
             <svg class="w-3.5 h-3.5 text-sky-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C8 2 4 6 4 10c0 4 3 7 7 8v4h2v-4c4-1 7-4 7-8 0-4-4-8-8-8zm-1 4a2 2 0 114 0 2 2 0 01-4 0z"/>
             </svg>
-            <span>Phóng Sanh <span class="hidden lg:inline font-normal opacity-75">(+15Đ)</span></span>
+            <span>Phóng Sanh</span>
           </button>
 
           <!-- 11. Sớ Cầu An & Cầu Siêu -->
@@ -2845,7 +2875,7 @@
             <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h4m4 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" fill="rgba(245,158,11,0.2)"/>
             </svg>
-            <span>Sớ Cầu An<span class="hidden lg:inline">/Siêu</span></span>
+            <span>Sớ Cầu An</span>
           </button>
 
           <!-- 12. Bằng Công Đức -->
@@ -2854,7 +2884,7 @@
             <svg class="w-3.5 h-3.5 text-stone-950 shrink-0" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2l2.4 4.8 5.3.8-3.8 3.7.9 5.3-4.8-2.5-4.8 2.5.9-5.3-3.8-3.7 5.3-.8L12 2z"/>
             </svg>
-            <span><span class="hidden lg:inline">Bằng </span>Công Đức</span>
+            <span>Công Đức</span>
           </button>
         </div>
       </footer>
