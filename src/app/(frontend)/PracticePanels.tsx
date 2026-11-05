@@ -57,11 +57,11 @@ export type PracticeContext = {
 
 const gold = 'text-[#f2c766]'
 const primaryButton =
-  'h-10 rounded-full bg-gradient-to-b from-[#f4d27e] to-[#d9a83f] px-5 text-sm font-bold text-[#2a1b0c] shadow-[0_6px_16px_rgba(217,168,63,.25)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50'
+  'primary-panel-button !h-10 !rounded-full !px-5 !text-sm !font-bold !text-[#2b1704] shadow-[0_6px_16px_rgba(217,168,63,.25)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50'
 const ghostButton =
-  'h-9 rounded-full border border-[#e2bd6e]/25 bg-[#e2bd6e]/[.06] px-4 text-xs font-semibold text-white/85 transition hover:bg-[#e2bd6e]/15'
+  'h-9 rounded-full border border-[#e2bd6e]/35 bg-[#e2bd6e]/10 px-4 text-xs font-semibold text-white/90 transition hover:bg-[#e2bd6e]/20 hover:border-[#f2c766]/60'
 const fieldClass =
-  'w-full rounded-xl border border-[#e2bd6e]/25 bg-black/25 px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#f2c766]/60'
+  'w-full rounded-xl border border-[#e2bd6e]/30 bg-black/35 px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/40 focus:border-[#f2c766]'
 
 function dailyCount(key: string) {
   const today = new Date().toISOString().slice(0, 10)
@@ -327,10 +327,10 @@ function TeachingView() {
             key={entry.mood}
             type="button"
             onClick={() => setIndex(i)}
-            className={`h-8 rounded-full border px-3.5 text-xs font-semibold transition ${
+            className={`h-8 rounded-full px-3.5 text-xs font-semibold transition ${
               i === index
-                ? 'border-[#f2c766]/70 bg-[#f2c766]/15 text-[#ffe09a]'
-                : 'border-[#e2bd6e]/25 bg-[#e2bd6e]/[.06] text-white/80 hover:bg-[#e2bd6e]/15'
+                ? 'border-2 border-[#f2c766] bg-[#f2c766]/20 text-[#ffe09a] shadow-[0_0_12px_rgba(242,199,102,0.25)]'
+                : 'border border-[#e2bd6e]/30 bg-[#e2bd6e]/10 text-white/85 hover:border-[#f2c766]/50 hover:bg-[#e2bd6e]/15'
             }`}
           >
             {entry.mood}
@@ -382,7 +382,7 @@ function PetitionView({ ctx }: { ctx: PracticeContext }) {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-2.5">
       <div className="grid grid-cols-2 gap-1 rounded-full bg-black/25 p-1">
         {(
           [
@@ -418,7 +418,8 @@ function PetitionView({ ctx }: { ctx: PracticeContext }) {
       <label className="grid gap-1.5 text-xs font-semibold text-white/75">
         Tâm nguyện chí thành
         <textarea
-          className={`${fieldClass} min-h-20 resize-none`}
+          className={`${fieldClass} min-h-14 resize-none`}
+          rows={2}
           value={wish}
           onChange={(e) => setWish(e.target.value)}
         />
@@ -428,7 +429,7 @@ function PetitionView({ ctx }: { ctx: PracticeContext }) {
           <button
             key={item}
             type="button"
-            className="h-7 rounded-full border border-[#e2bd6e]/25 bg-[#e2bd6e]/[.06] px-3 text-[13px] text-white/80 hover:bg-[#e2bd6e]/15"
+            className="h-7 rounded-full border border-[#e2bd6e]/30 bg-[#e2bd6e]/10 px-3 text-[13px] text-white/90 transition hover:border-[#f2c766]/60 hover:bg-[#e2bd6e]/20"
             onClick={() => setWish(item)}
           >
             {item}
@@ -664,9 +665,9 @@ function ProfileView({ ctx }: { ctx: PracticeContext }) {
       </div>
       <div className="grid grid-cols-4 gap-2">
         {stats.map(([label, value]) => (
-          <div key={label} className="rounded-xl bg-[#e2bd6e]/[.06] px-2 py-3 text-center">
+          <div key={label} className="rounded-xl border border-[#e2bd6e]/30 bg-[#e2bd6e]/10 px-2 py-3 text-center">
             <p className={`text-base font-bold ${gold}`}>{value}</p>
-            <p className="text-[12.5px] text-white/55">{label}</p>
+            <p className="text-[12.5px] text-white/70">{label}</p>
           </div>
         ))}
       </div>
@@ -799,10 +800,10 @@ function LanternView({ ctx }: { ctx: PracticeContext }) {
             key={item.name}
             type="button"
             onClick={() => setTier(index)}
-            className={`rounded-xl border px-2 py-3 text-center transition ${
+            className={`rounded-xl px-2 py-3 text-center transition ${
               index === tier
-                ? 'border-[#f2c766]/70 bg-[#f2c766]/12'
-                : 'border-[#e2bd6e]/25 bg-[#e2bd6e]/[.06] hover:bg-[#e2bd6e]/15'
+                ? 'border-2 border-[#f2c766] bg-[#f2c766]/20 shadow-[0_0_15px_rgba(242,199,102,0.25)]'
+                : 'border border-[#e2bd6e]/30 bg-[#e2bd6e]/10 hover:border-[#f2c766]/50 hover:bg-[#e2bd6e]/15'
             }`}
           >
             <p className="text-sm font-bold">{item.name}</p>
@@ -875,10 +876,10 @@ function ReleaseView({ ctx }: { ctx: PracticeContext }) {
             key={item.id}
             type="button"
             onClick={() => setChoice(index)}
-            className={`rounded-xl border px-2 py-3 text-sm font-semibold transition ${
+            className={`rounded-xl px-2 py-3 text-sm font-semibold transition ${
               index === choice
-                ? 'border-[#f2c766]/70 bg-[#f2c766]/12 text-[#ffe09a]'
-                : 'border-[#e2bd6e]/25 bg-[#e2bd6e]/[.06] text-white/85 hover:bg-[#e2bd6e]/15'
+                ? 'border-2 border-[#f2c766] bg-[#f2c766]/20 text-[#ffe09a] shadow-[0_0_15px_rgba(242,199,102,0.25)]'
+                : 'border border-[#e2bd6e]/30 bg-[#e2bd6e]/10 text-white/90 hover:border-[#f2c766]/50 hover:bg-[#e2bd6e]/15'
             }`}
           >
             {item.name}

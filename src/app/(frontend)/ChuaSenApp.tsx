@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TempleScene, { type SceneApi } from './TempleScene'
 import SystemPanel, { type PanelId } from './SystemPanel'
 import TouchJoystick from './TouchJoystick'
+import CommunityOverlay, { VideoCallOverlay } from './CommunityOverlay'
 import type { PracticeContext, Petition } from './PracticePanels'
 import { levelFor } from './temple-data'
 import { playChime, playTempleBell, playWoodblock, setAmbient } from './audio'
@@ -329,6 +330,8 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const [done, setDone] = useState<Record<string, number>>({})
   const [toast, setToast] = useState('')
   const [panel, setPanel] = useState<PanelId | null>(null)
+  const [communityOpen, setCommunityOpen] = useState(false)
+  const [callOpen, setCallOpen] = useState(false)
   const [playerName, setPlayerName] = useState('Tuệ Phúc')
   const [dharmaName, setDharmaName] = useState('')
   const [merit, setMerit] = useState(0)
@@ -604,13 +607,9 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     else if (id === 'incense') offerIncense()
     else if (id === 'bell') ringBell()
     else if (id === 'video') {
-      if (typeof window !== 'undefined' && (window as any).startZaloVideoCall) {
-        (window as any).startZaloVideoCall()
-      } else if (typeof window !== 'undefined' && (window as any).openRoomChat) {
-        (window as any).openRoomChat()
-      } else {
-        setToast('Đang kết nối LiveKit SFU Video Call…')
-      }
+      setPanel(null)
+      setCommunityOpen(false)
+      setCallOpen(true)
     } else setPanel(id)
   }
 
@@ -764,34 +763,27 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
             </button>
             <button
               type="button"
-              aria-label="Gọi Video Đạo Tràng (LiveKit SFU Zalo HD)"
-              title="Gọi Video Đạo Tràng"
-              style={{ color: '#f2c766' }}
+              aria-label="Mở Đạo Tràng Chung"
+              title="Đạo Tràng Chung"
               onClick={() => {
-                if (typeof window !== 'undefined' && (window as any).startZaloVideoCall) {
-                  (window as any).startZaloVideoCall()
-                } else if (typeof window !== 'undefined' && (window as any).openRoomChat) {
-                  (window as any).openRoomChat()
-                } else {
-                  setToast('Đang kết nối LiveKit SFU Video Call…')
-                }
-              }}
-            >
-              <Icon name="video" size={16} />
-            </button>
-            <button
-              type="button"
-              aria-label="Pháp thoại & Đàm luận"
-              title="Pháp thoại & Đàm luận"
-              onClick={() => {
-                if (typeof window !== 'undefined' && (window as any).openRoomChat) {
-                  (window as any).openRoomChat()
-                } else {
-                  setPanel('phrases')
-                }
+                setPanel(null)
+                setCommunityOpen(true)
               }}
             >
               <Icon name="message" size={16} />
+            </button>
+            <button
+              type="button"
+              aria-label="Gọi Video Đạo Tràng"
+              title="Gọi Video Đạo Tràng"
+              style={{ color: '#f2c766' }}
+              onClick={() => {
+                setPanel(null)
+                setCommunityOpen(false)
+                setCallOpen(true)
+              }}
+            >
+              <Icon name="video" size={16} />
             </button>
             <button
               type="button"
@@ -927,48 +919,21 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
         )}
       </aside>
 
-      {showChannel && (
-        <aside className="channel-card glass">
-          <div className="channel-title">
-            <span className="channel-logo">
-              <Icon name="play" size={15} />
-            </span>
-            <div>
-              <strong>Ben Piaz</strong>
-              <p>Kênh học AI · Người làm Chùa An Nhiên</p>
-            </div>
-            <button
-              type="button"
-              onClick={() =>
-                window.open(
-                  'https://www.youtube.com/@benpiaz?sub_confirmation=1',
-                  '_blank',
-                  'noopener,noreferrer',
-                )
-              }
-            >
-              Đăng ký
-            </button>
-          </div>
-          <button
-            type="button"
-            className="channel-close"
-            aria-label="Đóng"
-            onClick={() => setShowChannel(false)}
-          >
-            <Icon name="close" size={14} />
-          </button>
-        </aside>
-      )}
-
       <TouchJoystick onMove={moveScene} />
 
       <div className="hud-chips">
         <button type="button" className="hud-chip glass" onClick={toggleSeat}>
           <kbd>F</kbd> {seat !== null ? `Đứng dậy · #${seat}` : 'Chọn bồ đoàn'}
         </button>
-        <button type="button" className="hud-chip glass" onClick={() => setPanel('phrases')}>
-          <Icon name="message" size={14} /> Câu nói
+        <button
+          type="button"
+          className="hud-chip glass"
+          onClick={() => {
+            setPanel(null)
+            setCommunityOpen(true)
+          }}
+        >
+          <Icon name="message" size={14} /> Đạo tràng
         </button>
       </div>
 
@@ -1042,6 +1007,24 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
           </button>
         </div>
       )}
+      <CommunityOverlay
+        playerName={playerName}
+        open={communityOpen}
+        onClose={() => setCommunityOpen(false)}
+        onCall={() => {
+          setCommunityOpen(false)
+          setCallOpen(true)
+        }}
+      />
+      <VideoCallOverlay
+        playerName={playerName}
+        open={callOpen}
+        onClose={() => setCallOpen(false)}
+        onMinimize={() => {
+          setCallOpen(false)
+          setCommunityOpen(true)
+        }}
+      />
       {panel && (
         <SystemPanel
           panel={panel}
