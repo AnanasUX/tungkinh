@@ -2786,6 +2786,7 @@
       ctx.font = '14px system-ui, sans-serif';
       ctx.fillText('● Đang đàm thoại trực tuyến', 320, 395);
 
+      if (!isZaloCallActive) return;
       simulatedCanvasAnimId = requestAnimationFrame(draw);
     }
     draw();

@@ -2038,6 +2038,7 @@ class Temple3DEngine {
     const animate = (time) => {
       if (!this.active) return;
       this.animationFrameId = requestAnimationFrame(animate);
+      if (document.hidden) return; // Pause 3D computations when tab is backgrounded to save GPU & battery
 
       if (typeof window.TWEEN !== 'undefined') {
         window.TWEEN.update(time);

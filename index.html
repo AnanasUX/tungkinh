@@ -1482,6 +1482,34 @@
     .chibi-idle {
       transform-origin: center bottom;
       animation: chibiBreathe 3.2s ease-in-out infinite;
+      will-change: transform;
+    }
+    .chibi-bowing {
+      transform-origin: center bottom;
+      animation: chibiBowAnim 1.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      will-change: transform;
+    }
+    .chibi-walking-step {
+      transform-origin: center bottom;
+      animation: walkStepBob 0.42s linear infinite !important;
+      will-change: transform;
+    }
+    /* GPU Acceleration & Silky Smooth Touch Scrolling */
+    .temple-modal-box,
+    .merit-scroll,
+    #panel-left-drawer,
+    #panel-right-drawer,
+    #bottom-dock-scroll,
+    #room-chat-messages {
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    #sanctuary-floor-stage {
+      contain: layout style;
+    }
+    #atmosphere-canvas {
+      contain: strict;
+      will-change: transform;
     }
 
     @keyframes chibiBowAnim {
@@ -6280,7 +6308,22 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       </svg>`;
     }
 
+    let _renderFloorScheduled = false;
+    let _pendingSpotlightSeatNo = null;
+
     function renderSanctuaryFloor(spotlightSeatNo = null) {
+      if (spotlightSeatNo !== null) _pendingSpotlightSeatNo = spotlightSeatNo;
+      if (_renderFloorScheduled) return;
+      _renderFloorScheduled = true;
+      requestAnimationFrame(() => {
+        _renderFloorScheduled = false;
+        const targetSpotlight = _pendingSpotlightSeatNo;
+        _pendingSpotlightSeatNo = null;
+        _executeRenderSanctuaryFloor(targetSpotlight);
+      });
+    }
+
+    function _executeRenderSanctuaryFloor(spotlightSeatNo = null) {
       const container = document.getElementById('devotees-floor-layer');
       if (!container) return;
       container.innerHTML = '';
@@ -8753,6 +8796,20 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       }
     }
 
+    // Pre-rendered offscreen GPU sprite for incense smoke (100x faster than generating radial gradients on every frame)
+    const smokeSprite = document.createElement('canvas');
+    smokeSprite.width = 64;
+    smokeSprite.height = 64;
+    const sCtx = smokeSprite.getContext('2d');
+    const sGrad = sCtx.createRadialGradient(32, 32, 2, 32, 32, 32);
+    sGrad.addColorStop(0, 'rgba(255, 250, 240, 1)');
+    sGrad.addColorStop(0.5, 'rgba(235, 225, 215, 0.55)');
+    sGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    sCtx.fillStyle = sGrad;
+    sCtx.beginPath();
+    sCtx.arc(32, 32, 32, 0, Math.PI * 2);
+    sCtx.fill();
+
     function spawnSmokeParticle() {
       const burnerX = 800 + (Math.random() - 0.5) * 16;
       const burnerY = 385;
@@ -8786,10 +8843,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
 
     let frameCount = 0;
     function animateAtmosphere() {
+      if (document.hidden) {
+        requestAnimationFrame(animateAtmosphere);
+        return;
+      }
       ctx.clearRect(0, 0, CW, CH);
       frameCount++;
 
-      if (frameCount % Math.max(1, Math.floor(3 / incenseIntensity)) === 0) {
+      if (smokeParticles.length < 45 && frameCount % Math.max(1, Math.floor(3 / incenseIntensity)) === 0) {
         spawnSmokeParticle();
       }
 
@@ -8807,16 +8868,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
           continue;
         }
 
-        const grad = ctx.createRadialGradient(p.x, p.y, 1, p.x, p.y, currentSize);
-        grad.addColorStop(0, `rgba(255, 250, 240, ${currentAlpha})`);
-        grad.addColorStop(0.5, `rgba(235, 225, 215, ${currentAlpha * 0.55})`);
-        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.globalAlpha = Math.max(0, currentAlpha);
+        ctx.drawImage(smokeSprite, p.x - currentSize, p.y - currentSize, currentSize * 2, currentSize * 2);
       }
+      ctx.globalAlpha = 1.0;
 
       goldMotes.forEach(m => {
         m.x += m.vx;
@@ -9023,12 +9078,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         window.DailyQuestEngine.init();
       }
 
-      // 7. Lắng nghe thay đổi kích thước màn hình để tự căn chỉnh Bồ đoàn
-      window.addEventListener('resize', () => {
-        if (!is3DModeActive) {
-          renderSanctuaryFloor();
-        }
-      });
+      // 7. Căn chỉnh Bồ đoàn ban đầu (resize đã được xử lý tập trung)
+      if (!is3DModeActive) {
+        renderSanctuaryFloor();
+      }
 
       // 8. Khởi động nhạc thiền nền (mặc định 30% âm lượng, lặp vô tận) và nạp sẵn âm thanh chuông mõ MP3
       AudioEngine.preloadAssets();
