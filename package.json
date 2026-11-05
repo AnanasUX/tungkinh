@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "build": "esbuild src/app/(frontend)/entry.tsx --bundle --minify --outfile=dist/app.bundle.js --format=esm --target=es2022",
     "test": "node --check server.js && node --check js/realtime-sanctuary.js && node --check js/room-chat.js"
   },
   "repository": {
@@ -24,6 +25,12 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "livekit-server-sdk": "^2.19.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "^0.187.0",
     "ws": "^8.22.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }
