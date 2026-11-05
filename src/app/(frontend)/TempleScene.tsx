@@ -626,7 +626,7 @@ export default function TempleScene({
       ctx.font = `800 56px ${appFontFamily()}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('CHÙA YÊN PHÚC', 256, 60, 470)
+      ctx.fillText('CHÙA AN NHIÊN', 256, 60, 470)
     }
     const signTexture = canvasTexture(512, 116, drawSign)
     // Redraw once the web font is ready so the plaque never keeps a fallback face.

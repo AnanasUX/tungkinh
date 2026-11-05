@@ -1071,69 +1071,57 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       )}
 
       {showRegistration && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative w-full max-w-md rounded-3xl border-2 border-[#f2c766]/60 bg-gradient-to-b from-[#2a170c] to-[#120904] p-6 text-[#fdf6e9] shadow-[0_0_50px_rgba(242,199,102,0.3)]">
-            <div className="flex items-center justify-between border-b border-[#f2c766]/20 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🪷</span>
-                <h2 className="font-serif text-lg font-bold text-[#ffe09a]">CHÙA AN NHIÊN · GHI DANH</h2>
-              </div>
-            </div>
-            <p className="mt-2 text-xs text-white/70 leading-relaxed">
+        <div className="modal-overlay">
+          <div className="registration-card">
+            <h2>🪷 CHÙA AN NHIÊN · GHI DANH</h2>
+            <p className="subtitle">
               Kính xin thiện nam tín nữ nhập thông tin trước khi vào Chánh Điện an tọa bồ đoàn tu tập.
             </p>
-            <form onSubmit={handleConfirmRegistration} className="mt-4 grid gap-3">
-              <label className="grid gap-1 text-xs font-semibold text-white/80">
-                Họ và tên <span className="text-[#f2c766]">*</span>
+            <form onSubmit={handleConfirmRegistration} className="registration-form">
+              <label>
+                Họ và tên <span style={{ color: '#f2c766' }}>*</span>
                 <input
                   type="text"
                   required
                   placeholder="Ví dụ: Nguyễn Văn An"
                   value={regFullName}
                   onChange={(e) => setRegFullName(e.target.value)}
-                  className="w-full rounded-xl border border-[#e2bd6e]/30 bg-black/50 px-3 py-2 text-sm text-white outline-none focus:border-[#f2c766]"
                 />
               </label>
 
-              <label className="grid gap-1 text-xs font-semibold text-white/80">
-                Ngày tháng năm sinh <span className="text-[#f2c766]">*</span>
+              <label>
+                Ngày tháng năm sinh <span style={{ color: '#f2c766' }}>*</span>
                 <input
                   type="date"
                   required
                   value={regDob}
                   onChange={(e) => setRegDob(e.target.value)}
-                  className="w-full rounded-xl border border-[#e2bd6e]/30 bg-black/50 px-3 py-2 text-sm text-white outline-none focus:border-[#f2c766]"
                 />
               </label>
 
-              <div className="grid grid-cols-2 gap-2">
-                <label className="grid gap-1 text-xs font-semibold text-white/80">
+              <div className="registration-form-grid">
+                <label>
                   Pháp danh (tùy chọn)
                   <input
                     type="text"
                     placeholder="Tịnh Tâm"
                     value={regDharma}
                     onChange={(e) => setRegDharma(e.target.value)}
-                    className="w-full rounded-xl border border-[#e2bd6e]/30 bg-black/50 px-3 py-2 text-sm text-white outline-none focus:border-[#f2c766]"
                   />
                 </label>
-                <label className="grid gap-1 text-xs font-semibold text-white/80">
+                <label>
                   Địa phương / Tỉnh thành
                   <input
                     type="text"
                     value={regHometown}
                     onChange={(e) => setRegHometown(e.target.value)}
-                    className="w-full rounded-xl border border-[#e2bd6e]/30 bg-black/50 px-3 py-2 text-sm text-white outline-none focus:border-[#f2c766]"
                   />
                 </label>
               </div>
 
-              {regError && <p className="text-xs text-[#ff9b8a]">{regError}</p>}
+              {regError && <p style={{ color: '#ff9b8a', fontSize: '12px', margin: '6px 0' }}>{regError}</p>}
 
-              <button
-                type="submit"
-                className="mt-2 h-11 w-full rounded-full bg-gradient-to-r from-[#f4d27e] to-[#d9a83f] font-bold text-[#2a1b0c] shadow-[0_4px_16px_rgba(217,168,63,0.35)] transition hover:brightness-105 active:scale-98"
-              >
+              <button type="submit" className="registration-btn">
                 Xác Nhận & Vào Chánh Điện (Toàn Màn Hình)
               </button>
             </form>
@@ -1142,26 +1130,24 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       )}
 
       {isPortrait && (
-        <div
-          className="fixed inset-0 z-[100000] flex flex-col items-center justify-center p-6 text-center select-none bg-[#0c0602]/95 backdrop-blur-xl"
-          onClick={handleForceLandscapeFullscreen}
-        >
-          <div className="w-16 h-16 rounded-full bg-[#f2c766]/20 border border-[#f2c766]/50 flex items-center justify-center animate-bounce text-2xl">
-            📱
+        <div className="modal-overlay" onClick={handleForceLandscapeFullscreen}>
+          <div className="orientation-guard-card">
+            <div style={{ fontSize: '42px', marginBottom: '12px' }}>📱</div>
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffe09a', marginBottom: '8px' }}>
+              ĐẠO TRÀNG THANH TỊNH
+            </h2>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5, marginBottom: '16px' }}>
+              Hệ thống Chánh Điện được thiết kế chuẩn ngang 16:9. Kính xin đạo hữu xoay ngang điện thoại để trải nghiệm trọn vẹn không gian tu tập.
+            </p>
+            <button
+              type="button"
+              className="registration-btn"
+              style={{ width: 'auto', padding: '0 24px' }}
+              onClick={handleForceLandscapeFullscreen}
+            >
+              Xoay Ngang & Toàn Màn Hình
+            </button>
           </div>
-          <h2 className="mt-4 font-serif text-lg font-bold text-[#ffe09a]">
-            ĐẠO TRÀNG THANH TỊNH
-          </h2>
-          <p className="mt-1 max-w-xs text-xs text-white/75 leading-relaxed">
-            Hệ thống Chánh Điện được thiết kế chuẩn ngang 16:9. Kính xin đạo hữu xoay ngang điện thoại để trải nghiệm trọn vẹn không gian tu tập.
-          </p>
-          <button
-            type="button"
-            className="mt-5 rounded-full bg-gradient-to-r from-[#f4d27e] to-[#d9a83f] px-6 py-2.5 text-xs font-bold text-[#2a1b0c] shadow-lg active:scale-95"
-            onClick={handleForceLandscapeFullscreen}
-          >
-            Xoay Ngang & Toàn Màn Hình
-          </button>
         </div>
       )}
 
