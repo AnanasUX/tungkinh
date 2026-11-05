@@ -427,6 +427,55 @@
               data: window.currentUserProfile
             });
           }
+        })
+        // LẮNG NGHE TẤT CẢ SỰ KIỆN GỌI VIDEO & ĐÀM THOẠI REALTIME QUA SUPABASE
+        .on('broadcast', { event: '*' }, ({ event, payload }) => {
+          if (!event || !payload) return;
+          if (payload.senderId === this.getClientId()) return;
+
+          if (event.startsWith('ROOM_') || event.startsWith('CALL_')) {
+            window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: event, ...payload } }));
+          }
+        })
+        .on('broadcast', { event: 'ROOM_VIDEO_CALL_OFFER' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_VIDEO_CALL_OFFER', ...payload } }));
+        })
+        .on('broadcast', { event: 'ROOM_VIDEO_CALL_ACCEPT' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_VIDEO_CALL_ACCEPT', ...payload } }));
+        })
+        .on('broadcast', { event: 'ROOM_VIDEO_CALL_DECLINE' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_VIDEO_CALL_DECLINE', ...payload } }));
+        })
+        .on('broadcast', { event: 'ROOM_VIDEO_CALL_END' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_VIDEO_CALL_END', ...payload } }));
+        })
+        .on('broadcast', { event: 'ROOM_VIDEO_CALL_PARTICIPANT_JOINED' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_VIDEO_CALL_PARTICIPANT_JOINED', ...payload } }));
+        })
+        .on('broadcast', { event: 'ROOM_VIDEO_CALL_PARTICIPANT_LEFT' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_VIDEO_CALL_PARTICIPANT_LEFT', ...payload } }));
+        })
+        .on('broadcast', { event: 'ROOM_VOICE_OFFER' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_VOICE_OFFER', ...payload } }));
+        })
+        .on('broadcast', { event: 'ROOM_VOICE_ANSWER' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_VOICE_ANSWER', ...payload } }));
+        })
+        .on('broadcast', { event: 'ROOM_VOICE_CANDIDATE' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_VOICE_CANDIDATE', ...payload } }));
+        })
+        .on('broadcast', { event: 'ROOM_CHAT' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_CHAT', ...payload } }));
         });
 
       // C. LẮNG NGHE POSTGRES CHANGES (Cập nhật tức thì khi có bản ghi mới trong bảng)

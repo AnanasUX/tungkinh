@@ -2495,8 +2495,9 @@
 
   async function receive(payload) {
     if (!payload || !payload.type) return;
+    const isCallMsg = payload.type.startsWith('ROOM_VIDEO_CALL_') || payload.type.startsWith('CALL_');
     const messageRoom = (payload.roomId || PUBLIC_ROOM_ID).trim().toUpperCase();
-    if (messageRoom !== state.roomId) return;
+    if (!isCallMsg && messageRoom !== state.roomId) return;
     if (payload.senderId === myId()) return;
 
     switch (payload.type) {
@@ -3118,12 +3119,16 @@
       // Attach video stream
       const vEl = document.getElementById(`zalo-video-${peerId}`);
       const aFallback = document.getElementById(`zalo-tile-avatar-${peerId}`);
-      if (vEl && p.stream && vEl.srcObject !== p.stream) {
-        vEl.srcObject = p.stream;
-        vEl.play().catch(() => {});
+      if (vEl) {
+        if (p.livekitTrack) {
+          try { p.livekitTrack.attach(vEl); } catch (_) { if (p.stream && vEl.srcObject !== p.stream) vEl.srcObject = p.stream; }
+        } else if (p.stream && vEl.srcObject !== p.stream) {
+          vEl.srcObject = p.stream;
+          vEl.play().catch(() => {});
+        }
       }
       if (aFallback) {
-        aFallback.classList.toggle('hidden', Boolean(p.hasVideo && p.stream));
+        aFallback.classList.toggle('hidden', Boolean(p.hasVideo && (p.stream || p.livekitTrack)));
       }
 
       // Update speaking indicator
@@ -3314,29 +3319,102 @@
   }
 
   // --------------------------------------------------------------------------
-  // LIVEKIT SFU CONNECTOR WITH WEBRTC FALLBACK
+  // LIVEKIT SFU CONNECTOR WITH WEBRTC FALLBACK & UNIVERSAL WEB CRYPTO AUTH
   // --------------------------------------------------------------------------
+  async function generateClientLiveKitToken(apiKey, apiSecret, roomId, userId, userName) {
+    function b64url(strOrBuffer) {
+      let base64;
+      if (typeof strOrBuffer === 'string') {
+        base64 = btoa(unescape(encodeURIComponent(strOrBuffer)));
+      } else {
+        const bytes = new Uint8Array(strOrBuffer);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        base64 = btoa(binary);
+      }
+      return base64.replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    }
+
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const now = Math.floor(Date.now() / 1000);
+    const payload = {
+      iss: apiKey,
+      sub: userId,
+      name: userName,
+      video: {
+        roomJoin: true,
+        room: roomId,
+        canPublish: true,
+        canSubscribe: true,
+        canPublishData: true
+      },
+      exp: now + 7200,
+      nbf: now
+    };
+
+    const headerB64 = b64url(JSON.stringify(header));
+    const payloadB64 = b64url(JSON.stringify(payload));
+    const signingInput = `${headerB64}.${payloadB64}`;
+
+    const enc = new TextEncoder();
+    const key = await window.crypto.subtle.importKey(
+      'raw',
+      enc.encode(apiSecret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+
+    const sig = await window.crypto.subtle.sign('HMAC', key, enc.encode(signingInput));
+    return `${signingInput}.${b64url(sig)}`;
+  }
+
   async function tryConnectLiveKit(roomId, userId, userName) {
     if (typeof window.LivekitClient === 'undefined') {
       console.log('[ZaloVideoCall] LivekitClient SDK not available, using WebRTC Mesh engine.');
       return false;
     }
 
+    let token = null;
+    let sfuUrl = 'wss://video-call-tungkinh-46gy0y3u.livekit.cloud';
+
+    // 1. Try server endpoint first
     try {
       const response = await fetch('/api/calls/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomId, userId, userName })
       });
-
-      if (!response.ok) return false;
-      const data = await response.json();
-      if (!data.success || data.engine !== 'livekit' || !data.token || !data.url) {
-        console.log('[ZaloVideoCall] LiveKit server unconfigured. Operating via WebRTC Mesh engine.');
-        return false;
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.token && data.url) {
+          token = data.token;
+          sfuUrl = data.url;
+        }
       }
+    } catch (_) {}
 
-      console.log('[ZaloVideoCall] Connecting to LiveKit SFU Server:', data.url);
+    // 2. If server token unavailable (e.g. static GitHub Pages), generate directly via Web Crypto API
+    if (!token && window.crypto && window.crypto.subtle) {
+      try {
+        const LK_KEY = 'APIqTixxehzdhr7';
+        const LK_SECRET = 'fpf8qXyZUnQdvECNxgGrVggMFZ42UKyT7OvybqXJrxt';
+        token = await generateClientLiveKitToken(LK_KEY, LK_SECRET, roomId, userId, userName);
+        console.log('[ZaloVideoCall] Generated LiveKit token via Web Crypto API.');
+      } catch (e) {
+        console.warn('[ZaloVideoCall] Client token generation notice:', e);
+      }
+    }
+
+    if (!token) {
+      console.log('[ZaloVideoCall] LiveKit server unconfigured. Operating via WebRTC Mesh engine.');
+      return false;
+    }
+
+    try {
+      console.log('[ZaloVideoCall] Connecting to LiveKit SFU Server:', sfuUrl);
       const { Room, RoomEvent } = window.LivekitClient;
       const room = new Room({
         adaptiveStream: true,
@@ -3345,7 +3423,7 @@
 
       room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
         console.log('[LiveKit] TrackSubscribed:', track.kind, participant.identity);
-        const peerStream = new MediaStream([track.mediaStreamTrack]);
+        const peerStream = new MediaStream([track.mediaStreamTrack || track]);
         if (track.kind === 'video') {
           addOrUpdateCallParticipant(participant.identity, {
             id: participant.identity,
@@ -3353,9 +3431,15 @@
             dharma: 'Đồng Tu',
             isLocal: false,
             stream: peerStream,
+            livekitTrack: track,
             hasVideo: true
           });
+          const remoteVideo = document.getElementById('zalo-remote-video');
+          if (remoteVideo) {
+            try { track.attach(remoteVideo); } catch (_) { remoteVideo.srcObject = peerStream; }
+          }
         } else if (track.kind === 'audio') {
+          try { track.attach(); } catch (_) {}
           playRemoteAudioStream(participant.identity, peerStream);
           addOrUpdateCallParticipant(participant.identity, {
             id: participant.identity,
@@ -3368,7 +3452,8 @@
 
       room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
         if (track.kind === 'video') {
-          addOrUpdateCallParticipant(participant.identity, { hasVideo: false });
+          try { track.detach(); } catch (_) {}
+          addOrUpdateCallParticipant(participant.identity, { hasVideo: false, livekitTrack: null });
         }
       });
 
@@ -3395,16 +3480,27 @@
         renderZaloVideoGrid();
       });
 
-      await room.connect(data.url, data.token);
+      await room.connect(sfuUrl, token);
       activeLiveKitRoom = room;
       activeCallEngine = 'livekit';
 
-      // Publish local media tracks if available
+      // Publish local media tracks
       if (zaloMediaStream) {
         const vTrack = zaloMediaStream.getVideoTracks()[0];
         const aTrack = zaloMediaStream.getAudioTracks()[0];
-        if (vTrack) await room.localParticipant.publishTrack(vTrack);
-        if (aTrack) await room.localParticipant.publishTrack(aTrack);
+        if (vTrack) {
+          try { await room.localParticipant.publishTrack(vTrack); } catch (_) {
+            await room.localParticipant.setCameraEnabled(true).catch(() => {});
+          }
+        }
+        if (aTrack) {
+          try { await room.localParticipant.publishTrack(aTrack); } catch (_) {
+            await room.localParticipant.setMicrophoneEnabled(true).catch(() => {});
+          }
+        }
+      } else {
+        await room.localParticipant.setCameraEnabled(true).catch(() => {});
+        await room.localParticipant.setMicrophoneEnabled(true).catch(() => {});
       }
 
       const engineBadge = document.getElementById('zalo-call-engine-badge');
@@ -3414,7 +3510,7 @@
       return true;
 
     } catch (err) {
-      console.warn('[ZaloVideoCall] tryConnectLiveKit failed, falling back to WebRTC:', err);
+      console.warn('[ZaloVideoCall] LiveKit connect error, falling back to WebRTC:', err);
       return false;
     }
   }
