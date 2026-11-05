@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/modern-ui.css?v=20261105_1700">
   <style>
     :root {
       --gold-light: #fff3c4;
@@ -2219,161 +2220,87 @@
       <div id="bell-ripple-layer" class="absolute inset-0 pointer-events-none z-20 overflow-hidden"></div>
 
       <!-- ======================================================================
-           2. TOP HEADER BAR
+           2. MODERN TOP HEADER BAR (CHÙA AN NHIÊN GLASSMORPHIC TOPBAR)
            ====================================================================== -->
-      <header class="relative z-30 pt-1.5 sm:pt-2 px-2 sm:px-5 flex items-center justify-between pointer-events-none">
-        
-        <!-- LEFT CONTROLS -->
-        <div class="flex items-center gap-1 sm:gap-2 pointer-events-auto shrink-0">
-          <!-- DEVOTEE VIBE PROFILE CAPSULE (CLICK ĐỂ MỞ HỒ SƠ TU TẬP 3D) -->
-          <button onclick="openPractitionerProfileModal()" id="btn-header-vibe-capsule" title="Xem & Tùy biến Hồ Sơ Tu Tập 3D"
-            class="pointer-events-auto flex items-center gap-1 sm:gap-2 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-stone-900/90 hover:bg-stone-850 border border-amber-300/40 backdrop-blur-md shadow-lg transition active:scale-95 group text-left cursor-pointer">
-            <div class="relative w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-tr from-[#c85a6e] to-[#e68395] border border-amber-300/70 p-0.5 shrink-0 flex items-center justify-center shadow overflow-hidden">
-              <span id="vibe-capsule-avatar-initial" class="text-[10px] sm:text-xs font-bold text-white uppercase">T</span>
-              <img id="vibe-capsule-avatar-img" class="hidden w-full h-full object-cover rounded-full" alt="Avatar">
-            </div>
-            <div class="min-w-0 pr-0.5">
-              <div class="flex items-center gap-1">
-                <span id="vibe-capsule-name" class="font-bold text-[10px] sm:text-xs text-amber-100 group-hover:text-amber-300 transition truncate max-w-[65px] sm:max-w-[95px]">Kim Tiền</span>
-                <span id="vibe-capsule-level" class="w-3.5 h-3.5 rounded-full bg-amber-500/80 border border-amber-300/60 text-[8px] font-bold text-stone-950 flex items-center justify-center shrink-0">2</span>
-              </div>
-              <div id="vibe-capsule-sub" class="text-[7.5px] sm:text-[9px] text-amber-200/75 truncate hidden xs:block">
-                Hạt sen · bậc 2 · 1
-              </div>
-            </div>
-            <svg class="w-2.5 h-2.5 text-amber-300/70 shrink-0 ml-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
+      <header class="topbar">
+        <!-- BRAND & ROOM PILL -->
+        <div class="flex items-center gap-2 pointer-events-auto">
+          <button class="brand glass cursor-pointer" onclick="openServerConfigModal()" title="Chùa An Nhiên — Chọn phòng tu tập">
+            <span class="lotus-mark">
+              <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21c-2.2-1.1-3.5-3-3.5-5.2 0-1.6.8-3 3.5-4.8 2.7 1.8 3.5 3.2 3.5 4.8 0 2.2-1.3 4.1-3.5 5.2Z"/><path d="M12 11c-1.8-1.2-2.7-2.6-2.7-4.2 0-1.5.9-3 2.7-4.8 1.8 1.8 2.7 3.3 2.7 4.8 0 1.6-.9 3-2.7 4.2ZM8.7 13.1C6.4 13 4.6 12.2 3.5 10.7c-.7-1-.9-2.2-.6-3.7 3.8.2 5.9 1.6 6.4 4.3M15.3 13.1c2.3-.1 4.1-.9 5.2-2.4.7-1 .9-2.2.6-3.7-3.8.2-5.9 1.6-6.4 4.3"/></svg>
+            </span>
+            <strong>Chùa An Nhiên</strong>
+            <span id="hud-realtime-status-dot" class="online-dot" title="Supabase & Port 443 Sync"></span>
+            <span class="room-name">Phòng 4</span>
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m8 10 4 4 4-4"/></svg>
           </button>
 
-          <button id="btn-audio-toggle" onclick="toggleAudio()" title="Bật / Tắt âm thanh Chánh Điện"
-            class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 backdrop-blur-md flex items-center justify-center text-amber-100 shadow-lg transition active:scale-90">
-            <svg id="icon-muted" class="w-3.5 h-3.5 hidden text-amber-200/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M22 9l-6 6M16 9l6 6" />
-            </svg>
-            <svg id="icon-unmuted" class="w-3.5 h-3.5 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14" />
-            </svg>
-          </button>
-
-          <!-- BGM CONTROLS (NHẠC THIỀN NỀN - TỰ ĐỘNG CHẠY, LẶP VÔ TẬN, MẶC ĐỊNH 30%, CÓ THANH CHỈNH ÂM LƯỢNG) -->
-          <div id="bgm-control-pill" class="flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:py-1 rounded-full bg-black/65 hover:bg-black/85 border border-amber-300/45 backdrop-blur-md shadow-lg transition" title="Nhạc thiền nền (Lặp vô tận · Mặc định 30%)">
-            <button id="btn-bgm-toggle" onclick="toggleBackgroundMusic()" class="flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-amber-200 hover:text-amber-100 transition active:scale-90" title="Bật / Tạm dừng nhạc thiền nền">
-              <span id="bgm-status-icon" class="text-[11px] sm:text-xs">🎶</span>
-              <span class="hidden lg:inline text-amber-200">Nhạc thiền</span>
-            </button>
-            <input id="bgm-volume-slider" type="range" min="0" max="100" value="30" oninput="changeBackgroundMusicVolume(this.value)" class="w-12 sm:w-16 md:w-20 h-1.5 accent-amber-400 cursor-pointer bg-amber-950/80 rounded-lg" title="Điều chỉnh âm lượng nhạc nền">
-            <span id="bgm-volume-label" class="font-mono text-[8.5px] sm:text-[10px] text-amber-300 font-bold w-5 sm:w-6 text-right select-none">30%</span>
-          </div>
-
-          <!-- 3D SANCTUARY TOGGLE BUTTON -->
+          <!-- 3D Toggle Button -->
           <button onclick="toggle3DMode()" id="btn-toggle-3d" title="Chuyển đổi Chánh Điện 3D Trực Quan / 2.5D Cổ Điển"
-            class="px-2 py-1 rounded-full bg-gradient-to-r from-amber-500/25 via-yellow-400/35 to-amber-500/25 hover:from-amber-500/40 hover:to-yellow-400/50 border border-amber-300/60 text-[9.5px] sm:text-[11px] text-amber-200 font-extrabold flex items-center gap-1 shadow-[0_0_12px_rgba(250,204,21,0.35)] transition active:scale-95">
-            <span class="text-amber-300 text-xs">🌌</span>
+            class="hidden md:flex mini-pill glass text-amber-200">
+            <span class="text-amber-300">🌌</span>
             <span id="label-3d-toggle">Chế Độ 3D</span>
           </button>
-
-          <button onclick="cycleSanctuaryAmbience()" id="btn-ambience-mode" title="Thời khắc"
-            class="hidden sm:flex px-2 py-1 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 text-[10px] sm:text-[11px] text-amber-200 font-semibold items-center gap-1 shadow-lg transition active:scale-95">
-            <span id="ambience-icon-slot" class="w-3.5 h-3.5 text-amber-300 flex items-center justify-center">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            </span>
-            <span id="ambience-label-text" class="hidden md:inline">Bình Minh</span>
-          </button>
-
-          <!-- REAL-TIME ACTIVE HUD BADGE -->
-          <button onclick="openServerConfigModal()" id="btn-realtime-server-badge" title="Xem Trạng Thái Máy Chủ & Luồng Lưu Trữ Chung (Supabase & Port 443 Sync)"
-            class="temple-panel hover:border-amber-300/80 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 flex items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] cursor-pointer transition active:scale-95 shadow">
-            <span id="hud-realtime-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Đang kết nối Máy Chủ & Supabase Realtime"></span>
-            <span class="text-amber-100 font-medium"><strong id="hud-online-count" class="text-amber-300 font-bold">1</strong>/<span id="hud-total-seats">12</span> người online</span>
-            <span class="text-[8.5px] text-emerald-300 hidden md:inline ml-0.5 font-mono">⚡ Supabase</span>
-          </button>
         </div>
 
-        <!-- CENTER TEMPLE TITLE -->
-        <div class="text-center flex flex-col items-center pointer-events-none px-1">
-          <h1 class="font-serif-title text-sm sm:text-2xl md:text-3xl leading-tight font-bold text-[#fff8e7] title-glow whitespace-nowrap">
-            Chùa An Nhiên
-          </h1>
-          <p class="hidden sm:block text-[8.5px] sm:text-[10px] text-amber-100/85 font-medium drop-shadow whitespace-nowrap">
-            Ghé chùa · Gửi một lời lành · Tĩnh tâm tu tập
-          </p>
-        </div>
+        <!-- RIGHT TOP ACTIONS -->
+        <div class="top-actions pointer-events-auto">
+          <div class="status-pill glass">
+            <!-- ONLINE VISITORS -->
+            <button class="visitor-count" type="button" onclick="toggleMobileDrawer('right')" title="Xem đồng tu trong chùa">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><path d="M3.5 20v-2a5.5 5.5 0 0 1 11 0v2M16 5.3a3 3 0 0 1 0 5.7M18 13.7c1.7.7 2.5 2.1 2.5 4.3v2"/></svg>
+              <span><strong id="hud-online-count">1</strong>/<span id="hud-total-seats">12</span></span>
+            </button>
+            <span class="divider"></span>
 
-        <!-- RIGHT CONTROLS -->
-        <div class="flex items-center gap-1 sm:gap-2 pointer-events-auto shrink-0 justify-end">
-          <!-- VIBE MERIT CAPSULE -->
-          <div id="vibe-merit-capsule" class="flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-stone-900/85 border border-amber-300/40 text-amber-200 text-[10px] sm:text-xs font-bold shadow-lg" title="Điểm Công Đức Tích Lũy">
-            <span class="text-pink-400">🌸</span>
-            <span id="vibe-header-merit-count">150</span>
+            <!-- DEVOTEE PROFILE -->
+            <button type="button" title="Hồ sơ tu tập" onclick="openPractitionerProfileModal()">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h11a3 3 0 0 1 3 3v1h-3M6 3a3 3 0 0 0-3 3v1h3M6 3v15a3 3 0 0 0 3 3h9a3 3 0 0 0 3-3v-1H9"/><path d="M10 8h6M10 12h6"/></svg>
+            </button>
+
+            <!-- GỌI VIDEO ĐẠO TRÀNG (LIVEKIT SFU / ZALO HD) -->
+            <button type="button" id="btn-header-call-video" title="Gọi Video Đạo Tràng (LiveKit SFU Zalo HD)" onclick="window.startZaloVideoCall ? window.startZaloVideoCall() : (window.openRoomChat && window.openRoomChat())" class="text-amber-300 hover:text-amber-100">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m16 10 5-3v10l-5-3v-4Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+            </button>
+
+            <!-- PHÁP THOẠI & ĐÀM LUẬN ROOM CHAT -->
+            <button type="button" id="room-chat-header-button" title="Pháp Thoại & Đàm Luận Đạo Tràng" onclick="window.openRoomChat && window.openRoomChat()">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 12a8.5 8.5 0 0 1-9 8 10 10 0 0 1-4-.8L3 21l1.5-4A8 8 0 1 1 21 12Z"/></svg>
+            </button>
+
+            <!-- AUDIO MUTE / UNMUTE -->
+            <button type="button" id="btn-audio-toggle" title="Âm thanh Chánh Điện" onclick="toggleAudio()">
+              <svg id="icon-muted" class="icon hidden text-amber-200/80" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 9H2v6h3l5 4V5L5 9Z"/><path d="m15 10 6 6m0-6-6 6"/></svg>
+              <svg id="icon-unmuted" class="icon text-amber-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 9H2v6h3l5 4V5L5 9Z"/><path d="M14 9.5a4 4 0 0 1 0 5M17 7a7.5 7.5 0 0 1 0 10"/></svg>
+            </button>
+
+            <!-- FULLSCREEN -->
+            <button type="button" title="Toàn màn hình" onclick="toggleFullscreenMode()">
+              <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/><path d="m3 8 5-5m8 0 5 5M3 16l5 5m8 0 5-5"/></svg>
+            </button>
+
+            <!-- TELEGRAM BOT ALERT (@botantigravity_pro_bot) -->
+            <button type="button" title="Kênh Telegram Bot Đạo Tràng (@botantigravity_pro_bot)" onclick="window.open('https://t.me/botantigravity_pro_bot', '_blank')" class="text-sky-300 hover:text-sky-100">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            </button>
+
+            <!-- SETTINGS / SERVER CONFIG -->
+            <button type="button" title="Cài đặt hệ thống" onclick="openServerConfigModal()">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+            </button>
           </div>
 
-          <!-- SỚ / KINH VĂN VỚI NOTIFICATION BADGE -->
-          <button onclick="openPrayerSutraModal()" class="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 flex items-center justify-center text-amber-200 shadow-lg transition active:scale-90" title="Sớ Cầu Nguyện & Tụng Kinh">
-            <span class="text-xs">📜</span>
-            <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[8px] font-bold flex items-center justify-center border border-white/60">1</span>
-          </button>
-
-          <!-- PHƯỚC LÀNH / TẶNG QUÀ VỚI NOTIFICATION BADGE -->
-          <button onclick="toggleMobileDrawer('left')" class="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 flex items-center justify-center text-amber-200 shadow-lg transition active:scale-90" title="Phước Lành & Tặng Quà Đạo Hữu">
-            <span class="text-xs">🎁</span>
-            <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-600 text-white text-[8px] font-bold flex items-center justify-center border border-white/60">1</span>
-          </button>
-
-          <!-- BẢNG VÀNG CÔNG ĐỨC & NGƯỜI ONLINE (QUICK TOGGLE) -->
-          <button onclick="toggleMobileDrawer('right')" class="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-emerald-400/50 flex items-center justify-center text-emerald-300 shadow-lg transition active:scale-90" title="Bảng Vàng Công Đức & Danh Sách Người Online">
-            <span class="text-xs">👥</span>
-            <span id="header-right-online-badge" class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-600 text-white text-[8px] font-bold flex items-center justify-center border border-white/60">1</span>
-          </button>
-
-          <button id="room-chat-header-button" onclick="window.openRoomChat && window.openRoomChat()" title="Pháp Thoại & Đàm Luận Đạo Tràng" aria-label="Pháp Thoại & Đàm Luận Đạo Tràng"
-            class="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-950/85 hover:bg-amber-900 border border-amber-300/60 backdrop-blur-md flex items-center justify-center text-amber-200 shadow-[0_0_12px_rgba(245,180,60,0.3)] transition active:scale-90 mr-1">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M7 18.5 4 21v-4.7A7.8 7.8 0 0 1 3 12c0-4.4 4-8 9-8s9 3.6 9 8-4 8-9 8c-1.8 0-3.5-.5-5-1.5Z"/>
-              <path stroke-linecap="round" d="M8 12h.01M12 12h.01M16 12h.01"/>
-            </svg>
-            <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-amber-200 shadow-sm animate-pulse"></span>
-          </button>
-
-          <button onclick="openSeatDirectoryModal()" title="Tra cứu sơ đồ 12 vị trí Bồ Đoàn"
-            class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 backdrop-blur-md flex items-center justify-center text-amber-200 shadow-lg transition active:scale-90">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="6" cy="6" r="2.2" opacity="0.85"/>
-              <circle cx="12" cy="6" r="2.2" opacity="0.85"/>
-              <circle cx="18" cy="6" r="2.2" opacity="0.85"/>
-              <circle cx="6" cy="12" r="2.2" opacity="0.85"/>
-              <circle cx="12" cy="12" r="3.2" fill="#fde047"/>
-              <circle cx="18" cy="12" r="2.2" opacity="0.85"/>
-              <circle cx="6" cy="18" r="2.2" opacity="0.85"/>
-              <circle cx="12" cy="18" r="2.2" opacity="0.85"/>
-              <circle cx="18" cy="18" r="2.2" opacity="0.85"/>
-            </svg>
-          </button>
-
-          <button onclick="openRegistrationModal(true)" id="btn-header-profile" title="Sớ ghi danh / Xem hồ sơ đã niêm phong"
-            class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 flex items-center justify-center text-amber-200 shadow-lg transition active:scale-90 relative">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h4m4 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" fill="rgba(245,158,11,0.2)"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 3v4a2 2 0 002 2h4"/>
-            </svg>
-            <span id="badge-header-lock" class="hidden absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white text-[7px] flex items-center justify-center font-bold text-stone-950">🔒</span>
-          </button>
-
-          <button onclick="toggleFullscreenMode()" id="btn-header-fullscreen" title="Toàn màn hình"
-            class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/65 hover:bg-amber-950/90 border border-amber-300/45 flex items-center justify-center text-amber-200 shadow-lg transition active:scale-90">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-          </button>
-
-          <!-- MOBILE ROTATE & FULLSCREEN BUTTON -->
-          <button onclick="toggleFullscreenMode()" id="btn-header-rotate-landscape" title="Toàn màn hình (Tối ưu Mobile)"
-            class="px-2 py-1 rounded-full bg-gradient-to-r from-amber-600/80 to-yellow-600/80 hover:brightness-110 border border-amber-300/60 text-[9px] sm:text-[10px] text-stone-950 font-bold flex items-center gap-1 shadow-lg transition active:scale-90">
-            <span>⛶</span>
-            <span class="hidden sm:inline">Toàn Màn Hình</span>
-          </button>
+          <!-- QUICK PILLS -->
+          <div class="quick-links">
+            <button type="button" id="btn-bgm-quick" class="mini-pill glass" onclick="toggleBackgroundMusic()" title="Nhạc thiền nền">
+              <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg>
+              <span id="bgm-volume-label-quick">Nhạc thiền 30%</span>
+            </button>
+            <button type="button" class="mini-pill glass" onclick="openSharedChantingModal()" title="Phòng đồng tụng chung">
+              <svg class="icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12h2m2-4v8m3-11v14m4-11v8m3-6v4m3-2h1"/></svg>
+              <span>Đồng tụng</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -2754,143 +2681,130 @@
       </div>
 
       <!-- ======================================================================
-           5. BOTTOM ACTION BAR & RITUAL DOCK
+           5. MODERN HUD CHIPS & ACTION DOCK (FROM CHÙA AN NHIÊN UI)
            ====================================================================== -->
-      <footer class="flex flex-col items-center gap-0.5">
-        <div id="bottom-dock-scroll" class="pointer-events-auto">
-          <!-- 0. Nhiệm Vụ & Việc Lành Mỗi Ngày -->
-          <button onclick="DailyQuestEngine.openQuestModal()" title="Nhiệm Vụ Tu Học & Việc Tốt Trong Ngày"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-gradient-to-r from-red-600 via-amber-600 to-yellow-500 hover:brightness-110 border border-amber-200 text-[10px] sm:text-[11.5px] font-extrabold text-white flex items-center justify-center gap-1 sm:gap-1.5 shadow-lg active:scale-95 transition shrink-0 whitespace-nowrap">
-            <span class="text-xs shrink-0">📜</span>
-            <span>Việc Lành</span>
+      <!-- FLOATING HUD CHIPS -->
+      <div class="hud-chips pointer-events-auto">
+        <button type="button" class="hud-chip glass" onclick="openSeatDirectoryModal()">
+          <kbd>F</kbd> <span id="hud-seat-label">Chọn bồ đoàn</span>
+        </button>
+        <button type="button" class="hud-chip glass" onclick="window.openRoomChat && window.openRoomChat()">
+          <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 12a8.5 8.5 0 0 1-9 8 10 10 0 0 1-4-.8L3 21l1.5-4A8 8 0 1 1 21 12Z"/></svg>
+          <span>Pháp thoại</span>
+        </button>
+      </div>
+
+      <!-- MODERN ACTION DOCK -->
+      <nav class="action-dock glass pointer-events-auto" aria-label="Pháp môn tu tập">
+        <div class="action-dock__scroll" id="bottom-dock-scroll">
+          <!-- 0. Việc Lành -->
+          <button type="button" onclick="DailyQuestEngine.openQuestModal()" title="Việc lành mỗi ngày">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>
+            <span>Việc lành</span>
           </button>
 
           <!-- 1. Gõ Mõ -->
-          <button onclick="performUserWoodenFishTap(event)" title="Gõ Mõ Tịnh Tâm (Phím Space)"
-            class="px-2 sm:px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 border border-amber-100 text-[10px] sm:text-[11.5px] font-bold text-stone-950 flex items-center justify-center gap-1 sm:gap-1.5 shadow-lg active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-stone-950 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 3C7 3 3 7 3 12c0 3.5 2 6.5 5 8h8c3-1.5 5-4.5 5-8 0-5-4-9-9-9zm0 3c3.5 0 6 2.5 6 6 0 1.2-.4 2.3-1 3.2-1.5-1.5-3.5-2.2-5-2.2-2 0-3.5 1-4.8 2.2C6.5 14.3 6 13.2 6 12c0-3.5 2.5-6 6-6z"/>
-            </svg>
-            <span>Gõ Mõ</span>
+          <button type="button" class="selected" onclick="performUserWoodenFishTap(event)" title="Gõ mõ tịnh tâm (Space)">
+            <svg class="icon text-amber-300" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 13.5C3.5 8.8 7.3 5 12 5s8.5 3.8 8.5 8.5c0 2.5-2 4.5-4.5 4.5H8c-2.5 0-4.5-2-4.5-4.5Z"/><path d="M7 12.5h7.5M16.5 9.5h.01M12 18v2M9 20h6"/></svg>
+            <span>Gõ mõ</span>
           </button>
 
           <!-- 2. Lễ Phật -->
-          <button onclick="performUserBow()" title="Đảnh Lễ Tam Bảo"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-amber-950/85 hover:bg-amber-900 border border-amber-300/45 text-[10px] sm:text-[11.5px] font-medium text-amber-100 flex items-center justify-center gap-1 sm:gap-1.5 shadow-md active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2c-.6 0-1.2.4-1.4 1l-2.2 6.5c-.2.5-.1 1.1.3 1.5l3.3 3.3v7.7c0 .6.4 1 1 1s1-.4 1-1v-7.7l3.3-3.3c.4-.4.5-1 .3-1.5L13.4 3c-.2-.6-.8-1-1.4-1z" opacity="0.95"/>
-            </svg>
+          <button type="button" onclick="performUserBow()" title="Đảnh Lễ Tam Bảo">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 11V7.5a1.5 1.5 0 0 1 3 0V10m0-4.5a1.5 1.5 0 0 1 3 0V10m0-3a1.5 1.5 0 0 1 3 0v4m0-2a1.5 1.5 0 0 1 3 0v5c0 4.5-2.8 7-7 7-3.3 0-5.1-1.7-7.4-5.3a1.6 1.6 0 0 1 .5-2.2c.7-.4 1.5-.2 2 .3L9 16"/></svg>
             <span>Lễ Phật</span>
           </button>
 
           <!-- 3. Dâng Hương -->
-          <button onclick="performWalkAndOfferIncense()" title="Dâng Nén Hương Lòng (+20 Công Đức)"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-amber-950/85 hover:bg-amber-900 border border-amber-300/45 text-[10px] sm:text-[11.5px] font-medium text-amber-100 flex items-center justify-center gap-1 sm:gap-1.5 shadow-md active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-orange-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v6m-4-3v3m8-3v3M6 14h12c1 0 2 1 2 2.5s-1 2.5-2 2.5H6c-1 0-2-1-2-2.5S5 14 6 14z" fill="rgba(249,115,22,0.2)"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8 19l-1 3m9-3l1 3"/>
-            </svg>
-            <span>Dâng Hương</span>
+          <button type="button" onclick="performWalkAndOfferIncense()" title="Dâng hương (+20D)">
+            <svg class="icon text-orange-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 21h14M7 21l1-5h8l1 5M9 16V8M12 16V6M15 16V8"/><path d="M9 5c-.8-.8-.8-1.7 0-2.5M12 3.5c-.8-.8-.8-1.7 0-2.5M15 5c-.8-.8-.8-1.7 0-2.5"/></svg>
+            <span>Dâng hương</span>
           </button>
 
-          <!-- 4. Xin Xăm Từ Bi -->
-          <button onclick="openOracleModal()" title="Xin Quẻ Xăm Quán Âm Đại Sĩ"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-rose-950/90 hover:bg-rose-900 border border-amber-300/55 text-[10px] sm:text-[11.5px] font-semibold text-amber-200 flex items-center justify-center gap-1 sm:gap-1.5 shadow-md active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M7 9l1-6m4 6V2m4 7l-1-6" />
-              <path d="M6 9h12v11a2 2 0 01-2 2H8a2 2 0 01-2-2V9z" fill="rgba(245,158,11,0.2)" />
-              <circle cx="12" cy="15" r="2" fill="#fde047" stroke="none" />
-            </svg>
-            <span>Xin Xăm</span>
+          <!-- 4. Kinh Thư -->
+          <button type="button" onclick="openScriptureModal()" title="Kinh thư (Phím K)">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15Z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 7h8M8 11h6"/></svg>
+            <span>Kinh thư</span>
           </button>
 
-          <!-- 4B. Đồng Tụng Thời Gian Thực (Shared Room) -->
-          <button onclick="openSharedChantingModal()" id="btn-shared-chanting-dock" title="Phòng Đồng Tụng Thời Gian Thực Cùng Đạo Tràng Toàn Cầu"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-950 via-teal-900 to-emerald-950 hover:brightness-125 border border-emerald-400/80 text-[10px] sm:text-[11.5px] font-bold text-emerald-200 flex items-center justify-center gap-1 sm:gap-1.5 shadow-lg active:scale-95 transition shrink-0 whitespace-nowrap ring-1 ring-emerald-400/40">
-            <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-            <span>Đồng Tụng</span>
+          <!-- 5. Thỉnh Chuông -->
+          <button type="button" onclick="ringTempleBellAction()" title="Thỉnh Đại Hồng Chung">
+            <svg class="icon text-amber-300" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg>
+            <span>Chuông</span>
           </button>
 
-          <!-- 5. Kinh Thư Tụng Niệm -->
-          <button onclick="openScriptureModal()" title="Kinh Điển Tụng Niệm (Phím K)"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-amber-950/85 hover:bg-amber-900 border border-amber-300/45 text-[10px] sm:text-[11.5px] font-medium text-amber-100 flex items-center justify-center gap-1 sm:gap-1.5 shadow-md active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.25v13.5m0-13.5C10.8 5.5 9.2 5 7.5 5S4.2 5.5 3 6.25v13.5C4.2 19 5.8 18.5 7.5 18.5s3.3.5 4.5 1.25m0-13.5c1.2-.75 2.8-1.25 4.5-1.25s3.3.5 4.5 1.25v13.5c-1.2-.75-2.8-1.25-4.5-1.25s-3.3.5-4.5 1.25" />
-            </svg>
-            <span>Kinh Thư</span>
+          <!-- 6. Xin Xăm -->
+          <button type="button" onclick="openOracleModal()" title="Xin xăm từ bi">
+            <svg class="icon text-rose-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 10h10l-1.5 11h-7L7 10Z"/><path d="M9.5 10 8 2.5M12 10V2M14.5 10l2-6.5"/></svg>
+            <span>Xin xăm</span>
           </button>
 
-          <!-- 6. Thả Hoa Đăng -->
-          <button onclick="releaseUserSkyLantern()" title="Thả Hoa Đăng Cầu Nguyện"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-amber-950/85 hover:bg-amber-900 border border-amber-300/45 text-[10px] sm:text-[11.5px] font-medium text-amber-100 flex items-center justify-center gap-1 sm:gap-1.5 shadow-md active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-yellow-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2c.8 1.5 1.5 3 1.5 4.5 0 1.2-.7 2-1.5 2s-1.5-.8-1.5-2C10.5 5 11.2 3.5 12 2z" fill="#ffedd5"/>
-              <path d="M12 9c-2 0-3.5 1-4.5 2.5 1 2 2.8 3.5 4.5 3.5s3.5-1.5 4.5-3.5C15.5 10 14 9 12 9z"/>
-              <path d="M4 15.5C6.5 18 9 19 12 19s5.5-1 8-3.5c-2.5-.8-5.2-1.2-8-1.2s-5.5.4-8 1.2z" fill="#f59e0b"/>
-            </svg>
-            <span>Hoa Đăng</span>
+          <!-- 7. Hoa Đăng -->
+          <button type="button" onclick="releaseUserSkyLantern()" title="Hoa đăng cầu an">
+            <svg class="icon text-yellow-300" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v2M8 4h8M7 7.5C7 5.6 9.2 4 12 4s5 1.6 5 3.5v7c0 1.9-2.2 3.5-5 3.5s-5-1.6-5-3.5v-7Z"/><path d="M10 18v2h4v-2M12 20v2M7 11h10"/></svg>
+            <span>Hoa đăng</span>
           </button>
 
-          <!-- 7. Thỉnh Chuông -->
-          <button onclick="ringTempleBellAction()" title="Thỉnh Đại Hồng Chung"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-amber-950/85 hover:bg-amber-900 border border-amber-300/45 text-[10px] sm:text-[11.5px] font-medium text-amber-100 flex items-center justify-center gap-1 sm:gap-1.5 shadow-md active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M18 9a6 6 0 00-12 0v5l-2 3h16l-2-3V9z" fill="rgba(245,158,11,0.2)"/>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10 20a2 2 0 004 0M12 3V2" />
-            </svg>
-            <span>Thỉnh Chuông</span>
+          <!-- 8. Phóng Sanh -->
+          <button type="button" onclick="releaseDovesAction()" title="Phóng sanh chim bồ câu (+15D)">
+            <svg class="icon text-sky-300" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 13c3 0 5-1.5 6.5-4C11 6.5 13 5 16 5c1.7 0 3 1 3.6 2.3L22 8l-2.2 1c-.3 4.7-4 8-8.8 8H8l-3 3v-4c-1.3-.7-2-1.8-2-3Z"/></svg>
+            <span>Phóng sanh</span>
           </button>
 
-          <!-- 8. Thiền Thở Chánh Niệm -->
-          <button onclick="openBreathingModal()" title="Thiền Thở Chánh Niệm 4-7-8"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-400/55 text-[10px] sm:text-[11.5px] font-semibold text-emerald-200 flex items-center justify-center gap-1 sm:gap-1.5 shadow-md active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-emerald-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/>
-              <circle cx="12" cy="12" r="4.5" fill="rgba(52,211,153,0.3)"/>
-              <circle cx="12" cy="12" r="1.5" fill="#34d399"/>
-            </svg>
-            <span>Thiền Thở</span>
+          <!-- 9. Thiền Thở -->
+          <button type="button" onclick="openBreathingModal()" title="Thiền thở chánh niệm 4-2-6">
+            <svg class="icon text-emerald-300" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8a2.5 2.5 0 1 1-2.5 2.5"/></svg>
+            <span>Thiền thở</span>
           </button>
 
-          <!-- 9. Lời Phật Dạy Tâm Trạng -->
-          <button onclick="openDharmaWisdomModal()" title="Lời Phật Dạy Theo Tâm Trạng"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-amber-950/85 hover:bg-amber-900 border border-amber-300/45 text-[10px] sm:text-[11.5px] font-medium text-amber-100 flex items-center justify-center gap-1 sm:gap-1.5 shadow-md active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <circle cx="12" cy="12" r="8" />
-              <circle cx="12" cy="12" r="2.5" fill="rgba(245,158,11,0.4)"/>
-              <path d="M12 4v5.5m0 5V20M4 12h5.5m5 0H20"/>
-            </svg>
-            <span>Lời Phật</span>
+          <!-- 10. Pháp Cú -->
+          <button type="button" onclick="openDharmaWisdomModal()" title="Lời Phật dạy">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 7h4v4c0 3-1.5 5-4 6M14 7h4v4c0 3-1.5 5-4 6M7 11h4M14 11h4"/></svg>
+            <span>Pháp cú</span>
           </button>
 
-          <!-- 10. Phóng Sanh Tự Do -->
-          <button onclick="releaseDovesAction()" title="Phóng Sanh Chim Bồ Câu (+15 Công Đức)"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-sky-950/90 hover:bg-sky-900 border border-sky-400/55 text-[10px] sm:text-[11.5px] font-semibold text-sky-200 flex items-center justify-center gap-1 sm:gap-1.5 shadow-md active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-sky-300 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C8 2 4 6 4 10c0 4 3 7 7 8v4h2v-4c4-1 7-4 7-8 0-4-4-8-8-8zm-1 4a2 2 0 114 0 2 2 0 01-4 0z"/>
-            </svg>
-            <span>Phóng Sanh</span>
+          <!-- 11. Dâng Sớ -->
+          <button onclick="openPrayerSutraModal()" title="Dâng sớ cầu an / cầu siêu">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h11a3 3 0 0 1 3 3v1h-3M6 3a3 3 0 0 0-3 3v1h3M6 3v15a3 3 0 0 0 3 3h9a3 3 0 0 0 3-3v-1H9"/><path d="M10 8h6M10 12h6"/></svg>
+            <span>Dâng sớ</span>
           </button>
 
-          <!-- 11. Sớ Cầu An & Cầu Siêu -->
-          <button onclick="openPrayerSutraModal()" title="Viết Sớ Cầu An & Cầu Siêu"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-amber-950/85 hover:bg-amber-900 border border-amber-300/45 text-[10px] sm:text-[11.5px] font-medium text-amber-100 flex items-center justify-center gap-1 sm:gap-1.5 shadow-md active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h4m4 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" fill="rgba(245,158,11,0.2)"/>
-            </svg>
-            <span>Sớ Cầu An</span>
+          <!-- 12. Công Đức -->
+          <button type="button" onclick="openSessionTimerModal()" title="Bằng công đức tu học">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 8 5-3 5 3-1.5-8M12 6.5v5M9.5 9h5"/></svg>
+            <span>Công đức</span>
           </button>
 
-          <!-- 12. Bằng Công Đức -->
-          <button onclick="openSessionTimerModal()" title="Bằng Công Đức & Huân Tu"
-            class="px-2 sm:px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-600 to-yellow-600 hover:brightness-110 border border-amber-300 text-[10px] sm:text-[11.5px] font-bold text-stone-950 flex items-center justify-center gap-1 sm:gap-1.5 shadow-md active:scale-95 transition shrink-0 whitespace-nowrap">
-            <svg class="w-3.5 h-3.5 text-stone-950 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2l2.4 4.8 5.3.8-3.8 3.7.9 5.3-4.8-2.5-4.8 2.5.9-5.3-3.8-3.7 5.3-.8L12 2z"/>
-            </svg>
-            <span>Công Đức</span>
+          <!-- 13. GỌI VIDEO ĐẠO TRÀNG (LIVEKIT SFU / ZALO HD) -->
+          <button type="button" onclick="window.startZaloVideoCall ? window.startZaloVideoCall() : (window.openRoomChat && window.openRoomChat())" title="Gọi Video Đạo Tràng (LiveKit SFU Zalo HD)" class="call-video-btn-glow">
+            <svg class="icon text-amber-300" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m16 10 5-3v10l-5-3v-4Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+            <span class="text-amber-200">Gọi Video</span>
+          </button>
+
+          <!-- 14. Thêm / Menu mở rộng -->
+          <button type="button" onclick="toggleMobileDrawer('left')" title="Khám phá thêm">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/></svg>
+            <span>Thêm</span>
           </button>
         </div>
-      </footer>
+      </nav>
+
+      <!-- FLOATING MÕ & CÔNG ĐỨC WIDGET (CHÙA AN NHIÊN UI) -->
+      <aside class="mo-widget glass pointer-events-auto" aria-label="Mõ tụng kinh">
+        <button type="button" class="mo-widget__fish" aria-label="Gõ mõ (phím Space)" onclick="performUserWoodenFishTap(event)">
+          <span id="right-mo-body">
+            <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 13.5C3.5 8.8 7.3 5 12 5s8.5 3.8 8.5 8.5c0 2.5-2 4.5-4.5 4.5H8c-2.5 0-4.5-2-4.5-4.5Z"/><path d="M7 12.5h7.5M16.5 9.5h.01M12 18v2M9 20h6"/></svg>
+          </span>
+          <em id="mo-widget-plus-one" class="hidden">+1</em>
+        </button>
+        <div class="mo-widget__stats">
+          <strong>Mõ <b id="mo-tap-count">0</b></strong>
+          <small id="mo-widget-beads">Tràng hạt <span id="mala-bead-count">0</span>/108</small>
+          <button type="button" id="mo-widget-autoknock" onclick="window.toggleAutoKnock ? window.toggleAutoKnock() : null">
+            Tự gõ: Tắt
+          </button>
+        </div>
+      </aside>
 
       <!-- ======================================================================
            6. MODAL 1: CỔNG TAM QUAN — SỚ GHI DANH THÔNG MINH
@@ -6624,6 +6538,19 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
         void moBody.offsetWidth;
         moBody.classList.add('mo-hit-bounce');
       }
+      const widgetFish = document.getElementById('right-mo-body');
+      if (widgetFish) {
+        widgetFish.classList.remove('is-knocked');
+        void widgetFish.offsetWidth;
+        widgetFish.classList.add('is-knocked');
+      }
+      const plusOne = document.getElementById('mo-widget-plus-one');
+      if (plusOne) {
+        plusOne.classList.remove('hidden');
+        plusOne.textContent = multiplier > 1 ? `+${multiplier}` : '+1';
+        void plusOne.offsetWidth;
+        setTimeout(() => plusOne.classList.add('hidden'), 700);
+      }
       if (moMallet) {
         moMallet.classList.remove('mallet-strike-anim');
         void moMallet.offsetWidth;
@@ -6786,16 +6713,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;</pre>
       isAutoChanting = !isAutoChanting;
       const dot = document.getElementById('auto-practice-dot');
       const label = document.getElementById('auto-practice-label');
-      if (isAutoChanting) {
-        dot.classList.remove('bg-stone-500');
-        dot.classList.add('bg-emerald-400', 'animate-pulse');
-        label.textContent = 'Tự động tụng: BẬT';
-      } else {
-        dot.classList.remove('bg-emerald-400', 'animate-pulse');
-        dot.classList.add('bg-stone-500');
-        label.textContent = 'Tự động tụng: TẮT';
+      if (dot) {
+        if (isAutoChanting) {
+          dot.classList.remove('bg-stone-500');
+          dot.classList.add('bg-emerald-400', 'animate-pulse');
+        } else {
+          dot.classList.remove('bg-emerald-400', 'animate-pulse');
+          dot.classList.add('bg-stone-500');
+        }
+      }
+      if (label) {
+        label.textContent = `Tự động tụng: ${isAutoChanting ? 'BẬT' : 'TẮT'}`;
+      }
+      const moBtn = document.getElementById('mo-widget-autoknock');
+      if (moBtn) {
+        moBtn.textContent = `Tự gõ: ${isAutoChanting ? 'Bật' : 'Tắt'}`;
+        moBtn.classList.toggle('on', isAutoChanting);
       }
     }
+    function toggleAutoKnock() {
+      toggleAutoChanting();
+    }
+    window.toggleAutoKnock = toggleAutoKnock;
 
     setInterval(() => {
       if (!currentUserProfile.registered || currentUserProfile.isWalking) return;

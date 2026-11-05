@@ -67,6 +67,99 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
+// -------------------------------------------------------------
+// TELEGRAM BOT NOTIFICATION SERVICE (@botantigravity_pro_bot)
+// -------------------------------------------------------------
+const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '9219372256:AAFAHzCoPD1JsDydh0j4sMrjzBiaql3g63E';
+const TELEGRAM_SUBSCRIBERS_FILE = path.join(DATA_DIR, 'telegram_subscribers.json');
+let telegramSubscribers = new Set();
+
+try {
+  if (fs.existsSync(TELEGRAM_SUBSCRIBERS_FILE)) {
+    const raw = fs.readFileSync(TELEGRAM_SUBSCRIBERS_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) parsed.forEach(id => telegramSubscribers.add(id));
+  }
+} catch (_) {}
+
+function saveTelegramSubscribers() {
+  try {
+    fs.writeFileSync(TELEGRAM_SUBSCRIBERS_FILE, JSON.stringify(Array.from(telegramSubscribers)), 'utf8');
+  } catch (_) {}
+}
+
+async function sendTelegramMessage(chatId, text, replyMarkup) {
+  if (!TELEGRAM_TOKEN) return;
+  try {
+    const payload = {
+      chat_id: chatId,
+      text: text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: false
+    };
+    if (replyMarkup) payload.reply_markup = replyMarkup;
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    console.warn('[Telegram] Send error:', err.message);
+  }
+}
+
+async function broadcastTelegramNotification(text, replyMarkup) {
+  if (!TELEGRAM_TOKEN || telegramSubscribers.size === 0) return;
+  for (const chatId of telegramSubscribers) {
+    await sendTelegramMessage(chatId, text, replyMarkup);
+  }
+}
+
+// Telegram Long Polling to register users when they type /start or /help
+let telegramUpdateOffset = 0;
+async function pollTelegramUpdates() {
+  if (!TELEGRAM_TOKEN) return;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/getUpdates?offset=${telegramUpdateOffset}&timeout=20`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.result)) {
+        for (const update of data.result) {
+          telegramUpdateOffset = update.update_id + 1;
+          const msg = update.message;
+          if (msg && msg.chat && msg.chat.id) {
+            const chatId = msg.chat.id;
+            const text = (msg.text || '').trim();
+            if (!telegramSubscribers.has(chatId)) {
+              telegramSubscribers.add(chatId);
+              saveTelegramSubscribers();
+              console.log('[Telegram] New subscriber registered:', chatId, msg.from?.username || msg.from?.first_name);
+            }
+            if (text.startsWith('/start') || text.startsWith('/help')) {
+              await sendTelegramMessage(chatId, 
+                `🪷 <b>Nam Mô A Di Đà Phật!</b>\n\nChào mừng quý Phật tử <b>${msg.from?.first_name || 'Đồng Tu'}</b> đã kết nối với Hệ Thống Tu Học & Đạo Tràng Trực Tuyến <b>Chùa An Nhiên</b> (@botantigravity_pro_bot).\n\n✨ <i>Hệ thống tự động thông báo cho quý vị:</i>\n• Cuộc gọi Video Đạo Tràng (LiveKit SFU Zalo HD)\n• Khóa Lễ Tụng Kinh (Đồng Tụng Chung Thời Gian Thực)\n• Sớ Cầu An, Cầu Siêu từ quý Phật tử\n\n🌐 Bấm để vào tu tập: <a href="https://tungkinh.pages.dev">Chùa An Nhiên Online</a>`
+              );
+            } else if (text.startsWith('/status')) {
+              await sendTelegramMessage(chatId,
+                `🏛 <b>Trạng Thái Chùa An Nhiên:</b>\n👥 Đang hiện diện: ${Object.keys(sanctuaryDB.devotees).length} Phật tử\n📿 Khóa lễ tụng kinh: ${sanctuaryDB.communalChant.isActive ? 'Đang diễn ra (' + sanctuaryDB.communalChant.scriptureTitle + ')' : 'Chưa diễn ra'}\n🌐 Phòng tu tập: Phòng 4`
+              );
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    // network retry
+  }
+  setTimeout(pollTelegramUpdates, 3000);
+}
+
+if (TELEGRAM_TOKEN) {
+  pollTelegramUpdates();
+  console.log('[Server] Telegram Bot service active (@botantigravity_pro_bot)');
+}
+
+
 // Initial default sanctuary seats (12 cushions)
 const DEFAULT_SEATS = [
   { seatNo: 1,  id: 'seat-1',  x: 19,   y: 8,  scale: 0.86, occupied: true,  isUser: false, isDummy: true,  remoteClientId: null, name: 'Bình An',   dharma: 'Tịnh An',  age: 24, hometown: 'Huế',       type: 'female', points: 40, ip: '113.161.45.12' },
@@ -302,6 +395,12 @@ function startServerChant(scriptureId, intervalMs, leaderId, leaderName) {
     totalVerses: verses.length,
     intervalMs: intervalMs
   });
+
+  try {
+    broadcastTelegramNotification(
+      `📿 <b>[Chùa An Nhiên] Bắt Đầu Khóa Lễ Tụng Kinh Cộng Đồng!</b>\n\n📖 Kinh văn: <b>${sanctuaryDB.communalChant.scriptureTitle}</b>\n👤 Chủ lễ: <b>${leaderName || 'Chủ Lễ Đạo Tràng'}</b>\n⏰ Lúc: ${new Date().toLocaleTimeString('vi-VN')}\n\n👉 <a href="https://tungkinh.pages.dev">Vào chánh điện đồng tụng cùng đại chúng</a>`
+    );
+  } catch (_) {}
 
   let curIdx = 0;
   communalChantTimer = setInterval(() => {
@@ -769,6 +868,12 @@ const server = http.createServer((req, res) => {
           targetId: invitation.receiverId
         });
 
+        try {
+          broadcastTelegramNotification(
+            `🔔 <b>[Chùa An Nhiên] Cuộc Gọi Video Đạo Tràng Mới!</b>\n\n👤 Người gọi: <b>${invitation.callerName}</b> (${invitation.callerDharma})\n📍 Nơi phát: ${invitation.callerLocation}\n🏷 Phòng gọi: <code>${invitation.roomId}</code>\n⏰ Lúc: ${new Date().toLocaleTimeString('vi-VN')}\n\n👉 <a href="https://tungkinh.pages.dev">Vào tham gia cuộc gọi video cùng đại chúng</a>`
+          );
+        } catch (_) {}
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, invitation: invitation }));
       } catch (e) {
@@ -814,6 +919,35 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: e.message }));
       }
     });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/telegram/notify') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const text = payload.text || 'Thông báo từ Chùa An Nhiên';
+        await broadcastTelegramNotification(text);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, subscribers: telegramSubscribers.size }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/telegram/status') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      success: true,
+      botUsername: 'botantigravity_pro_bot',
+      subscribersCount: telegramSubscribers.size,
+      botUrl: 'https://t.me/botantigravity_pro_bot'
+    }));
     return;
   }
 
