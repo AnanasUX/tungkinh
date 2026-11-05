@@ -9,8 +9,45 @@ const defaultPractices: PracticeItem[] = [
     title: 'Chú Đại Bi (84 câu Chân Ngôn)',
     slug: 'chu-dai-bi',
     kind: 'chant',
-    summary: 'Pháp môn tiêu trừ tai chướng, viên mãn tâm nguyện.',
-    body: 'Nam mô Đại Bi Hội Thượng Phật Bồ Tát (3 lần, 1 lạy)\nThiên thủ thiên nhãn vô ngại đại bi tâm đà la ni...',
+    summary: 'Pháp môn tiêu trừ tai chướng, viên mãn tâm nguyện của Bồ Tát Quán Thế Âm.',
+    body: `Nam mô Đại Bi Hội Thượng Phật Bồ Tát (3 lần)
+Thiên thủ thiên nhãn vô ngại đại bi tâm đà la ni
+Nam mô hắc ra đát na, đa ra dạ da
+Nam mô a rị da, bà lô kiết đế, thước bát ra da
+Bồ Đề tát đỏa bà da, ma ha tát đỏa bà da
+Ma ha ca lô ni ca da, án, tát bàn ra phạt duệ
+Số đát na đát tỏa, nam mô tất kiết lật đỏa y mông a rị da
+Bà lô kiết đế thất Phật ra lăng đà bà
+Nam mô na ra cẩn trì, hê rị ma ha bàn đa sa mế
+Tát bà a tha đậu du bằng, a thệ dựng
+Tát bà tát đa, na ma bà tát đa, na ma bà già
+Ma phạt đạt đậu, đát điệt tha: Án, a bà lô hê
+Lô ca đế, ca ra đế, di hê rị
+Ma ha bồ đề tát đỏa, tát bà tát bà
+Ma ra ma ra, ma hê ma hê, rị đà dựng
+Cu lô cu lô kiết mông, độ lô độ lô phạt xà da đế
+Ma ha phạt xà da đế, đà ra đà ra, địa rị ni
+Thất Phật ra da, giá ra giá ra, mạ mạ phạt ma ra
+Mục đế lệ, y hê y hê, thất na thất na
+A ra sâm Phật ra xá lợi, phạt sa phạt sâm
+Phật ra xá da, hô lô hô lô ma ra
+Hô lô hô lô hê rị, ta ra ta ra
+Tất rị tất rị, tô rô tô rô
+Bồ Đề dạ, bồ đề dạ, bồ đà dạ, bồ đà dạ
+Di đế rị dạ, na ra cẩn trì
+Địa rị sắc ni na, ba dạ ma na, ta bà ha
+Tất đà dạ, ta bà ha. Ma ha tất đà dạ, ta bà ha
+Tất đà dũ nghệ, thất bàn ra dạ, ta bà ha
+Na ra cẩn trì, ta bà ha. Ma ra na ra, ta bà ha
+Tất ra tăng a mục khê da, ta bà ha
+Ta bà ma ha, a tất đà dạ, ta bà ha
+Giả kiết ra a tất đà dạ, ta bà ha
+Ba đà ma yết thất đà dạ, ta bà ha
+Na ra cẩn trì bàn đà ra dạ, ta bà ha
+Ma bà lợi thắng kiết lật ra dạ, ta bà ha
+Nam mô hắc ra đát na, đa ra dạ da
+Nam mô a rị da, bà lô kiết đế, thước bàn ra dạ, ta bà ha
+Án, tất điện đô, mạn đa ra, bạt đà gia, ta bà ha`,
     durationMinutes: 15,
     featured: true
   },
@@ -19,8 +56,30 @@ const defaultPractices: PracticeItem[] = [
     title: 'Bát Nhã Ba La Mật Đa Tâm Kinh',
     slug: 'bat-nha-tam-kinh',
     kind: 'chant',
-    summary: 'Trí tuệ thâm sâu vượt bờ mê sanh tử.',
-    body: 'Khi Bồ Tát Quán Tự Tại hành sâu Bát Nhã Ba La Mật Đa, soi thấy năm uẩn đều Không...',
+    summary: 'Trí tuệ thấu suốt Tánh Không, vượt thoát mọi khổ ách trần gian.',
+    body: `Khi Bồ Tát Quán Tự Tại hành sâu Bát Nhã Ba La Mật Đa
+Soi thấy năm uẩn đều Không, liền qua hết thảy khổ ách
+Này Xá Lợi Tử! Sắc chẳng khác Không, Không chẳng khác Sắc
+Sắc tức là Không, Không tức là Sắc
+Thọ, tưởng, hành, thức cũng đều như thế
+Này Xá Lợi Tử! Tướng Không của các pháp
+Không sinh không diệt, không nhơ không sạch, không thêm không bớt
+Cho nên trong Tánh Không không có sắc, không thọ, tưởng, hành, thức
+Không mắt, tai, mũi, lưỡi, thân, ý; không sắc, thanh, hương, vị, xúc, pháp
+Không giới hạn của mắt, cho đến không giới hạn của ý thức
+Không vô minh, cũng không hết vô minh
+Cho đến không già chết, cũng không hết già chết
+Không khổ, tập, diệt, đạo; không trí huệ cũng không chứng đắc
+Vì không có chỗ đắc, Bồ Tát nương Bát Nhã Ba La Mật Đa
+Tâm không ngăn ngại, vì không ngăn ngại nên không sợ hãi
+Xa lìa điên đảo mộng tưởng, đạt cứu cánh Niết Bàn
+Chư Phật ba đời cũng nương Bát Nhã Ba La Mật Đa
+Mà chứng đắc Vô Thượng Chánh Đẳng Chánh Giác
+Nên biết Bát Nhã Ba La Mật Đa là đại thần chú, là đại minh chú
+Là vô thượng chú, là vô đẳng đẳng chú
+Trừ được hết thảy khổ, chân thật không hư dối
+Liền thuyết chú rằng:
+Yết đế yết đế, ba la yết đế, ba la tăng yết đế, bồ đề tát bà ha`,
     durationMinutes: 10,
     featured: true
   },
@@ -29,8 +88,12 @@ const defaultPractices: PracticeItem[] = [
     title: 'Dược Sư Quán Đảnh Chân Ngôn',
     slug: 'duoc-su-quan-danh',
     kind: 'recitation',
-    summary: 'Cầu an lành, tiêu trừ tật bệnh thân tâm.',
-    body: 'Nam mô Dược Sư Lưu Ly Quang Vương Như Lai (3 lần)...',
+    summary: 'Cầu an lành, tiêu trừ tật bệnh, thân tâm thanh tịnh khang kiện.',
+    body: `Nam mô Bạc Già Phạt Đế, Bệ Sát Xã, Lũ Lô Thích Lưu Ly
+Bát Lạt Bà, Hắt Ra Xà Dã, Đát Tha Yết Đa Da
+A Ra Ha Đế, Tam Miệu Tam Bột Đà Da, Đát Điệt Tha
+Án, Bệ Sát Thệ, Bệ Sát Thệ, Bệ Sát Xã
+Tam Một Yết Đế, Tát Bà Ha (21 lần)`,
     durationMinutes: 12,
     featured: false
   },
@@ -39,8 +102,17 @@ const defaultPractices: PracticeItem[] = [
     title: 'Kinh Sám Hối & Hồi Hướng',
     slug: 'sam-hoi-hoi-huong',
     kind: 'chant',
-    summary: 'Tịnh hóa nghiệp chướng nhiều đời.',
-    body: 'Đệ tử kính lạy Mười Phương Thường Trụ Tam Bảo...',
+    summary: 'Tịnh hóa nghiệp chướng nhiều đời, hồi hướng công đức khắp muôn loài.',
+    body: `Đệ tử kính lạy Mười Phương Thường Trụ Tam Bảo
+Con nay phát nguyện sám hối mọi lỗi lầm
+Từ vô thỉ kiếp do tham, sân, si
+Từ thân, miệng, ý phát sinh ra
+Tất cả con nay xin chí thành sám hối
+Nguyện đem công đức lành này
+Hồi hướng về khắp tất cả chúng sanh
+Gia đình hòa thuận, phước huệ trang nghiêm
+Quốc thái dân an, thế giới hòa bình
+Đồng sanh Cực Lạc, viên thành Phật đạo`,
     durationMinutes: 15,
     featured: false
   }

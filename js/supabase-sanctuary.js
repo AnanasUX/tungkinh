@@ -922,6 +922,12 @@
       if (el) el.textContent = count;
       const modalCount = document.getElementById('srv-online-count');
       if (modalCount) modalCount.textContent = `${count} đạo hữu`;
+
+      // Notify React / Global UI of updated online devotee list
+      if (typeof window !== 'undefined') {
+        const list = Array.from(this.activeDevotees.values());
+        window.dispatchEvent(new CustomEvent('sanctuary_devotees_updated', { detail: list }));
+      }
     },
 
     /**

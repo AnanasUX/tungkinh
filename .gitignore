@@ -7,5 +7,6 @@ Thumbs.db
 .env.local
 .env.*
 temp_new_ui/
+zip/
 *.zip
 *.old.*

@@ -47,22 +47,36 @@
 
   <!-- SANCTUARY CORE CLIENT PROFILE INITIALIZER -->
   <script>
-    window.SANCTUARY_CLIENT_ID = 'user_' + Math.random().toString(36).substring(2, 9);
-    window.currentUserProfile = {
-      registered: true,
-      fullName: 'Tuệ Phúc',
-      dharmaName: 'Minh Tâm',
-      clientIp: '113.161.45.12',
-      meritScore: 150,
-      assignedSeatNo: 4,
-      avatarType: 'monk',
-      wish: 'Cầu quốc thái dân an, gia đạo ấm êm và tâm hồn thanh tịnh'
-    };
+    window.SANCTUARY_CLIENT_ID = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('chua_an_nhien_cid'))
+      || ('user_' + Math.random().toString(36).substring(2, 9));
+    try {
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('chua_an_nhien_cid', window.SANCTUARY_CLIENT_ID);
+      const saved = localStorage.getItem('chua_an_nhien_user_profile');
+      if (saved) {
+        window.currentUserProfile = JSON.parse(saved);
+      }
+    } catch (_) {}
+    if (!window.currentUserProfile) {
+      window.currentUserProfile = {
+        registered: false,
+        fullName: 'Đạo Hữu',
+        dharmaName: 'Tịnh Tâm',
+        clientIp: '113.161.x.x',
+        hometown: 'Việt Nam',
+        meritScore: 50,
+        assignedSeatNo: 4,
+        avatarType: 'monk',
+        wish: 'Cầu quốc thái dân an, gia đạo ấm êm và tâm hồn thanh tịnh'
+      };
+    }
   </script>
 
+  <!-- DHARMA WISDOM & ORACLES -->
+  <script src="js/dharma-wisdom.js?v=20261105_2140"></script>
+
   <!-- REAL-TIME & WEBRTC CALLING ENGINE -->
-  <script src="js/supabase-sanctuary.js?v=20261105_1720"></script>
-  <script src="js/room-chat.js?v=20261105_1720"></script>
+  <script src="js/supabase-sanctuary.js?v=20261105_2140"></script>
+  <script src="js/room-chat.js?v=20261105_2140"></script>
 
   <!-- STANDALONE BUNDLE (THREE.JS 3D TEMPLE SCENE, DOCK, PANELS, AUDIO) -->
   <script type="module" src="dist/app.bundle.js?v=20261105_1720"></script>

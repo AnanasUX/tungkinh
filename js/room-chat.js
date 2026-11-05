@@ -2107,23 +2107,19 @@
       console.warn('[RoomVoice] Web Audio DSP fallback to HTMLAudio:', dspErr);
     }
 
-    // If Web Audio routed successfully, mute audioEl so we never double-play the audio stream
-    if (routedViaWebAudio) {
-      audioEl.muted = true;
-      audioEl.play().catch(() => {});
-    } else {
-      audioEl.muted = false;
-      audioEl.volume = 1.0;
-      audioEl.play().catch(() => {
-        const resume = () => {
-          audioEl.play().catch(() => {});
-          window.removeEventListener('click', resume);
-          window.removeEventListener('touchstart', resume);
-        };
-        window.addEventListener('click', resume, { once: true });
-        window.addEventListener('touchstart', resume, { once: true });
-      });
-    }
+    // Ensure remote audio plays cleanly through physical loudspeaker at maximum fidelity
+    audioEl.muted = false;
+    audioEl.volume = 1.0;
+    routeAudioToSpeaker(audioEl);
+    audioEl.play().catch(() => {
+      const unlockAudio = () => {
+        audioEl.play().catch(() => {});
+        window.removeEventListener('click', unlockAudio);
+        window.removeEventListener('touchstart', unlockAudio);
+      };
+      window.addEventListener('click', unlockAudio, { once: true });
+      window.addEventListener('touchstart', unlockAudio, { once: true });
+    });
 
     const member = state.members.get(peerId);
     if (member) {
@@ -3061,12 +3057,26 @@
       if (remotePeer) {
         if (devNameEl) devNameEl.textContent = remotePeer.name || 'Đạo Hữu Đồng Tu';
         if (devSubEl) devSubEl.textContent = `Pháp Danh: ${remotePeer.dharma || 'Tịnh Tâm'} • 📍 ${remotePeer.location || 'Việt Nam'}`;
-        if (remotePeer.stream && remoteVideo) {
-          if (remoteVideo.srcObject !== remotePeer.stream) {
+        const hasVideoTrack = Boolean(remotePeer.livekitTrack || (remotePeer.stream && (typeof remotePeer.stream.getVideoTracks === 'function' ? remotePeer.stream.getVideoTracks().length > 0 : true)));
+        if (remoteVideo && (remotePeer.livekitTrack || remotePeer.stream)) {
+          if (remotePeer.livekitTrack) {
+            try {
+              remotePeer.livekitTrack.attach(remoteVideo);
+            } catch (_) {
+              if (remotePeer.stream && remoteVideo.srcObject !== remotePeer.stream) {
+                remoteVideo.srcObject = remotePeer.stream;
+              }
+            }
+          } else if (remotePeer.stream && remoteVideo.srcObject !== remotePeer.stream) {
             remoteVideo.srcObject = remotePeer.stream;
-            remoteVideo.play().catch(() => {});
           }
-          if (avatarFallback) avatarFallback.classList.add('hidden');
+          remoteVideo.muted = true;
+          remoteVideo.setAttribute('playsinline', 'true');
+          remoteVideo.setAttribute('autoplay', 'true');
+          remoteVideo.play().catch(() => {});
+          if (avatarFallback) {
+            avatarFallback.classList.toggle('hidden', hasVideoTrack);
+          }
         } else {
           if (avatarFallback) avatarFallback.classList.remove('hidden');
         }

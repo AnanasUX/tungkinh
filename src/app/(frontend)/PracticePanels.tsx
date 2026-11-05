@@ -54,6 +54,7 @@ export type PracticeContext = {
   onWish: (wish: string) => void
   onNavigate: (panel: 'wardrobe' | 'meditate' | 'seats' | 'certificate') => void
   onClose: () => void
+  onlineDevotees?: any[]
 }
 
 const gold = 'text-[#f2c766]'
@@ -120,7 +121,8 @@ function SeatsView({ ctx }: { ctx: PracticeContext }) {
               </p>
               <div className="grid grid-cols-4 gap-1.5">
                 {SEATS.filter((seat) => (side === 'left' ? seat.x < 0 : seat.x > 0)).map((seat) => {
-                  const occupant = SEAT_OCCUPANTS[seat.no]
+                  const remoteDev = ctx.onlineDevotees?.find((d: any) => d.seatNo === seat.no)
+                  const occupant = remoteDev ? (remoteDev.fullName || remoteDev.name) : SEAT_OCCUPANTS[seat.no]
                   const mine = ctx.seat === seat.no
                   return (
                     <button
@@ -440,7 +442,7 @@ function PetitionView({ ctx }: { ctx: PracticeContext }) {
         Dâng sớ lên Tam Bảo · +25 công đức
       </button>
       {latest && (
-        <article className="relative overflow-hidden rounded-2xl border-2 border-[#a3261c]/60 bg-[#f4e6c6] p-5 text-[#3a2414]">
+        <article className="relative overflow-hidden rounded-2xl border-2 border-[#a3261c]/60 bg-[#f4e6c6] p-5 text-[#3a2414] shadow-lg">
           <p className="text-center font-serif text-sm font-bold tracking-wide text-[#9c2a1d]">
             {latest.kind === 'an' ? 'SỚ CẦU AN' : 'SỚ CẦU SIÊU'}
           </p>
@@ -449,10 +451,19 @@ function PetitionView({ ctx }: { ctx: PracticeContext }) {
             {latest.address && <> · {latest.address}</>}
           </p>
           <p className="mt-2 font-serif text-[15px] italic leading-relaxed">“{latest.wish}”</p>
-          <p className="mt-3 text-[13px] text-[#6b4a2c]">
-            Dâng ngày {new Date(latest.date).toLocaleDateString('vi-VN')}
-          </p>
-          <span className="absolute bottom-3 right-4 grid size-16 rotate-[-12deg] place-items-center rounded-full border-[3px] border-[#b3261e] text-center font-serif text-[11px] font-bold leading-tight text-[#b3261e]">
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-[13px] text-[#6b4a2c]">
+              Dâng ngày {new Date(latest.date).toLocaleDateString('vi-VN')}
+            </p>
+            <button
+              type="button"
+              className="rounded-full bg-[#9c2a1d] px-3 py-1 text-xs font-semibold text-white hover:bg-[#b3261e]"
+              onClick={() => window.print()}
+            >
+              In Bản Sớ
+            </button>
+          </div>
+          <span className="absolute bottom-3 right-24 grid size-16 rotate-[-12deg] place-items-center rounded-full border-[3px] border-[#b3261e] text-center font-serif text-[11px] font-bold leading-tight text-[#b3261e]">
             CHÙA
             <br />
             AN NHIÊN

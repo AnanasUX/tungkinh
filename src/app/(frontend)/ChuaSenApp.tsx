@@ -365,13 +365,88 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     return () => window.clearTimeout(timer)
   }, [toast])
 
+  const [onlineDevotees, setOnlineDevotees] = useState<any[]>([])
+  const [showRegistration, setShowRegistration] = useState(false)
+  const [isPortrait, setIsPortrait] = useState(false)
+
+  const [regFullName, setRegFullName] = useState('')
+  const [regDob, setRegDob] = useState('')
+  const [regDharma, setRegDharma] = useState('')
+  const [regHometown, setRegHometown] = useState('Việt Nam')
+  const [regError, setRegError] = useState('')
+
+  useEffect(() => {
+    // 1. Check existing user profile
+    try {
+      const savedProfile = window.localStorage.getItem('chua_an_nhien_user_profile')
+      if (savedProfile) {
+        const p = JSON.parse(savedProfile)
+        if (p.registered && p.fullName) {
+          setPlayerName(p.fullName)
+          if (p.dharmaName) setDharmaName(p.dharmaName)
+          if (p.hometown) setRegHometown(p.hometown)
+          if (typeof p.meritScore === 'number') setMerit(p.meritScore)
+          if (typeof window !== 'undefined') {
+            ;(window as any).currentUserProfile = Object.assign({}, (window as any).currentUserProfile || {}, p)
+          }
+        } else {
+          setShowRegistration(true)
+        }
+      } else {
+        setShowRegistration(true)
+      }
+    } catch (_) {
+      setShowRegistration(true)
+    }
+
+    // 2. Auto detect IP / Location
+    fetch('https://ipapi.co/json/')
+      .then((res) => res.json())
+      .then((data) => {
+        const loc = [data.city, data.country_name].filter(Boolean).join(', ')
+        if (loc) setRegHometown(loc)
+      })
+      .catch(() => {})
+
+    // 3. Orientation check for mobile/tablet
+    const checkOrientation = () => {
+      const isMobile =
+        /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        (window.innerWidth <= 1024 && 'ontouchstart' in window)
+      setIsPortrait(Boolean(isMobile && window.innerHeight > window.innerWidth))
+    }
+    checkOrientation()
+    window.addEventListener('resize', checkOrientation)
+    window.addEventListener('orientationchange', checkOrientation)
+
+    // 4. Listen to Supabase Realtime Devotees
+    const syncDevotees = () => {
+      if ((window as any).SupabaseSanctuary && (window as any).SupabaseSanctuary.activeDevotees) {
+        const map = (window as any).SupabaseSanctuary.activeDevotees as Map<string, any>
+        setOnlineDevotees(Array.from(map.values()))
+      }
+    }
+    syncDevotees()
+    const syncTimer = window.setInterval(syncDevotees, 2500)
+    window.addEventListener('sanctuary_devotees_updated', syncDevotees)
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation)
+      window.removeEventListener('orientationchange', checkOrientation)
+      window.clearInterval(syncTimer)
+      window.removeEventListener('sanctuary_devotees_updated', syncDevotees)
+    }
+  }, [])
+
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem('chua-sen-progress')
       if (raw) {
         const saved = JSON.parse(raw) as Partial<SavedProgress>
-        if (saved.playerName) setPlayerName(saved.playerName)
-        if (typeof saved.dharmaName === 'string') setDharmaName(saved.dharmaName)
+        if (saved.playerName && !window.localStorage.getItem('chua_an_nhien_user_profile')) {
+          setPlayerName(saved.playerName)
+        }
+        if (typeof saved.dharmaName === 'string' && !dharmaName) setDharmaName(saved.dharmaName)
         if (typeof saved.merit === 'number') setMerit(saved.merit)
         if (typeof saved.beads === 'number') setBeads(saved.beads)
         if (typeof saved.knocks === 'number') setKnocks(saved.knocks)
@@ -553,6 +628,77 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     if (count >= 27 && !done.beads) completeTask('beads', 27, 'Lần 27 hạt')
   }
 
+  const handleConfirmRegistration = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!regFullName.trim() || regFullName.trim().length < 2) {
+      setRegError('Kính xin đạo hữu nhập đầy đủ họ và tên (ít nhất 2 ký tự).')
+      return
+    }
+    if (!regDob) {
+      setRegError('Kính xin đạo hữu nhập ngày tháng năm sinh.')
+      return
+    }
+
+    const finalDharma = regDharma.trim() || 'Tịnh Tâm'
+    const finalHometown = regHometown.trim() || 'Việt Nam'
+
+    const profileData = {
+      registered: true,
+      fullName: regFullName.trim(),
+      dob: regDob,
+      dharmaName: finalDharma,
+      hometown: finalHometown,
+      meritScore: Math.max(merit, 50),
+      assignedSeatNo: seat || 4,
+      avatarType: 'monk',
+      clientIp: '113.161.x.x',
+      wish: 'Cầu quốc thái dân an, gia đạo ấm êm và tâm hồn thanh tịnh'
+    }
+
+    try {
+      window.localStorage.setItem('chua_an_nhien_user_profile', JSON.stringify(profileData))
+    } catch (_) {}
+
+    if (typeof window !== 'undefined') {
+      ;(window as any).currentUserProfile = profileData
+    }
+
+    setPlayerName(profileData.fullName)
+    setDharmaName(finalDharma)
+    setShowRegistration(false)
+    setToast(`Nam mô A Di Đà Phật. Kính mừng Đạo hữu ${profileData.fullName} an tọa!`)
+
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen()
+      }
+      if (screen.orientation && (screen.orientation as any).lock) {
+        await (screen.orientation as any).lock('landscape')
+      }
+    } catch (_) {}
+
+    if (
+      typeof window !== 'undefined' &&
+      (window as any).SupabaseSanctuary &&
+      (window as any).SupabaseSanctuary.trackUserPresence
+    ) {
+      try {
+        ;(window as any).SupabaseSanctuary.trackUserPresence()
+      } catch (_) {}
+    }
+  }
+
+  const handleForceLandscapeFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen()
+      }
+      if (screen.orientation && (screen.orientation as any).lock) {
+        await (screen.orientation as any).lock('landscape')
+      }
+    } catch (_) {}
+  }
+
   const practiceContext: PracticeContext = {
     playerName,
     dharmaName,
@@ -561,6 +707,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     beads,
     seat,
     petitions,
+    onlineDevotees,
     onSeat: (no) => {
       sceneRef.current?.sit(no)
       setToast(`Đang đi tới bồ đoàn #${no}…`)
@@ -611,7 +758,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
               aria-label="Xem người trong chùa"
               onClick={() => setPanel('people')}
             >
-              <Icon name="users" size={16} /> 12
+              <Icon name="users" size={16} /> {onlineDevotees && onlineDevotees.length > 0 ? onlineDevotees.length : 1}
             </button>
             <span className="divider" />
             <button type="button" aria-label="Hồ sơ tu tập" onClick={() => setPanel('profile')}>
@@ -921,8 +1068,105 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
           onPhrase={setPhrase}
           onKnock={knock}
           practice={practiceContext}
+          onlineDevotees={onlineDevotees}
         />
       )}
+
+      {showRegistration && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="relative w-full max-w-md rounded-3xl border-2 border-[#f2c766]/60 bg-gradient-to-b from-[#2a170c] to-[#120904] p-6 text-[#fdf6e9] shadow-[0_0_50px_rgba(242,199,102,0.3)]">
+            <div className="flex items-center justify-between border-b border-[#f2c766]/20 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🪷</span>
+                <h2 className="font-serif text-lg font-bold text-[#ffe09a]">CHÙA AN NHIÊN · GHI DANH</h2>
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-white/70 leading-relaxed">
+              Kính xin thiện nam tín nữ nhập thông tin trước khi vào Chánh Điện an tọa bồ đoàn tu tập.
+            </p>
+            <form onSubmit={handleConfirmRegistration} className="mt-4 grid gap-3">
+              <label className="grid gap-1 text-xs font-semibold text-white/80">
+                Họ và tên <span className="text-[#f2c766]">*</span>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ví dụ: Nguyễn Văn An"
+                  value={regFullName}
+                  onChange={(e) => setRegFullName(e.target.value)}
+                  className="w-full rounded-xl border border-[#e2bd6e]/30 bg-black/50 px-3 py-2 text-sm text-white outline-none focus:border-[#f2c766]"
+                />
+              </label>
+
+              <label className="grid gap-1 text-xs font-semibold text-white/80">
+                Ngày tháng năm sinh <span className="text-[#f2c766]">*</span>
+                <input
+                  type="date"
+                  required
+                  value={regDob}
+                  onChange={(e) => setRegDob(e.target.value)}
+                  className="w-full rounded-xl border border-[#e2bd6e]/30 bg-black/50 px-3 py-2 text-sm text-white outline-none focus:border-[#f2c766]"
+                />
+              </label>
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className="grid gap-1 text-xs font-semibold text-white/80">
+                  Pháp danh (tùy chọn)
+                  <input
+                    type="text"
+                    placeholder="Tịnh Tâm"
+                    value={regDharma}
+                    onChange={(e) => setRegDharma(e.target.value)}
+                    className="w-full rounded-xl border border-[#e2bd6e]/30 bg-black/50 px-3 py-2 text-sm text-white outline-none focus:border-[#f2c766]"
+                  />
+                </label>
+                <label className="grid gap-1 text-xs font-semibold text-white/80">
+                  Địa phương / Tỉnh thành
+                  <input
+                    type="text"
+                    value={regHometown}
+                    onChange={(e) => setRegHometown(e.target.value)}
+                    className="w-full rounded-xl border border-[#e2bd6e]/30 bg-black/50 px-3 py-2 text-sm text-white outline-none focus:border-[#f2c766]"
+                  />
+                </label>
+              </div>
+
+              {regError && <p className="text-xs text-[#ff9b8a]">{regError}</p>}
+
+              <button
+                type="submit"
+                className="mt-2 h-11 w-full rounded-full bg-gradient-to-r from-[#f4d27e] to-[#d9a83f] font-bold text-[#2a1b0c] shadow-[0_4px_16px_rgba(217,168,63,0.35)] transition hover:brightness-105 active:scale-98"
+              >
+                Xác Nhận & Vào Chánh Điện (Toàn Màn Hình)
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isPortrait && (
+        <div
+          className="fixed inset-0 z-[100000] flex flex-col items-center justify-center p-6 text-center select-none bg-[#0c0602]/95 backdrop-blur-xl"
+          onClick={handleForceLandscapeFullscreen}
+        >
+          <div className="w-16 h-16 rounded-full bg-[#f2c766]/20 border border-[#f2c766]/50 flex items-center justify-center animate-bounce text-2xl">
+            📱
+          </div>
+          <h2 className="mt-4 font-serif text-lg font-bold text-[#ffe09a]">
+            ĐẠO TRÀNG THANH TỊNH
+          </h2>
+          <p className="mt-1 max-w-xs text-xs text-white/75 leading-relaxed">
+            Hệ thống Chánh Điện được thiết kế chuẩn ngang 16:9. Kính xin đạo hữu xoay ngang điện thoại để trải nghiệm trọn vẹn không gian tu tập.
+          </p>
+          <button
+            type="button"
+            className="mt-5 rounded-full bg-gradient-to-r from-[#f4d27e] to-[#d9a83f] px-6 py-2.5 text-xs font-bold text-[#2a1b0c] shadow-lg active:scale-95"
+            onClick={handleForceLandscapeFullscreen}
+          >
+            Xoay Ngang & Toàn Màn Hình
+          </button>
+        </div>
+      )}
+
       {toast && <div className="toast glass">{toast}</div>}
     </main>
   )
