@@ -1,6 +1,4 @@
-'use client'
-
-import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import React, { useEffect, useRef, useState, type PointerEvent } from 'react'
 
 const RADIUS = 42
 

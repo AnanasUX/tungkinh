@@ -1,6 +1,4 @@
-'use client'
-
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { appFontFamily, whenAppFontReady } from './app-font'
 import { LEVELS, SEATS, SEAT_OCCUPANTS, levelFor } from './temple-data'
 

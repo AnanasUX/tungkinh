@@ -1,6 +1,4 @@
-'use client'
-
-import { useEffect, useRef, type MutableRefObject } from 'react'
+import React, { useEffect, useRef, type MutableRefObject } from 'react'
 import * as THREE from 'three'
 import { appFontFamily, whenAppFontReady } from './app-font'
 import { SEAT_AISLE, SEAT_LANE_Z, SEATS } from './temple-data'

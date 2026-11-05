@@ -1,6 +1,4 @@
-'use client'
-
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import React, { useEffect, useMemo, useState, useTransition } from 'react'
 import { submitFeedback } from './actions'
 import type { CalendarItem, PracticeItem } from './types'
 import PracticeBody, {
