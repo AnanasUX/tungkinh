@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
   <!-- MODERN UI DESIGN STYLESHEET (COMPILED WITH TAILWIND V4 & LANDSCAPE ENGINE) -->
-  <link rel="stylesheet" href="css/modern-ui.css?v=20261106_0858">
+  <link rel="stylesheet" href="css/modern-ui.css?v=20261106_1015">
 
   <!-- REALTIME & LIVEKIT SFU WEBRTC LIBRARIES -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -45,7 +45,7 @@
   <!-- REACT 19 MOUNT CONTAINER (100% NEW CHÙA AN NHIÊN UI) -->
   <div id="root"></div>
 
-  <!-- SANCTUARY CORE CLIENT PROFILE INITIALIZER -->
+  <!-- SANCTUARY CORE CLIENT PROFILE & SEATS INITIALIZER -->
   <script>
     window.SANCTUARY_CLIENT_ID = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('chua_an_nhien_cid'))
       || ('user_' + Math.random().toString(36).substring(2, 9));
@@ -56,30 +56,83 @@
         window.currentUserProfile = JSON.parse(saved);
       }
     } catch (_) {}
+
+    // Initialize 24 sanctuary seats (cushions) to sync with Supabase Realtime
+    window.sanctuarySeats = Array.from({ length: 24 }, function(_, i) {
+      return {
+        seatNo: i + 1,
+        id: 'seat-' + (i + 1),
+        occupied: false,
+        isUser: false,
+        isDummy: false,
+        remoteClientId: null,
+        name: '',
+        dharma: '',
+        age: 26,
+        hometown: 'Việt Nam',
+        type: (i % 2 === 0) ? 'monk' : 'female',
+        points: 20,
+        ip: ''
+      };
+    });
+
     if (!window.currentUserProfile) {
+      var SAMPLE_NAMES = [
+        { name: 'Tuệ Phúc', dharma: 'Minh Tâm', gender: 'monk' },
+        { name: 'Diệu Hoa', dharma: 'Diệu Hoa', gender: 'female' },
+        { name: 'Phúc Thiện', dharma: 'Phúc Thiện', gender: 'monk' },
+        { name: 'Tâm An', dharma: 'Tịnh Tâm', gender: 'monk' },
+        { name: 'Diệu Tâm', dharma: 'Diệu Tâm', gender: 'female' },
+        { name: 'Thiện Duyên', dharma: 'Thiện Duyên', gender: 'monk' },
+        { name: 'Tuệ Lâm', dharma: 'Tuệ Lâm', gender: 'female' },
+        { name: 'Đăng Quang', dharma: 'Chân Quang', gender: 'monk' }
+      ];
+      var sample = SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)];
+      var randomSeat = Math.floor(Math.random() * 20) + 1;
       window.currentUserProfile = {
         registered: true,
-        fullName: 'Đạo Hữu',
-        dharmaName: 'Tịnh Tâm',
+        fullName: sample.name,
+        dharmaName: sample.dharma,
         clientIp: '113.161.x.x',
         hometown: 'Việt Nam',
         meritScore: 165,
-        assignedSeatNo: 4,
-        avatarType: 'monk',
+        assignedSeatNo: randomSeat,
+        avatarType: sample.gender,
         wish: 'Cầu quốc thái dân an, gia đạo ấm êm và tâm hồn thanh tịnh'
       };
+      try {
+        localStorage.setItem('chua_an_nhien_user_profile', JSON.stringify(window.currentUserProfile));
+      } catch (_) {}
     }
+
+    if (window.currentUserProfile && window.currentUserProfile.assignedSeatNo) {
+      var initSeat = window.sanctuarySeats.find(function(s) { return s.seatNo === window.currentUserProfile.assignedSeatNo; });
+      if (initSeat) {
+        initSeat.isUser = true;
+        initSeat.occupied = true;
+        initSeat.name = window.currentUserProfile.fullName;
+        initSeat.dharma = window.currentUserProfile.dharmaName;
+      }
+    }
+
+    // Bridge callback for Supabase presence updates
+    window.renderSanctuaryFloor = function() {
+      if (typeof window !== 'undefined' && window.SupabaseSanctuary && window.SupabaseSanctuary.activeDevotees) {
+        var list = Array.from(window.SupabaseSanctuary.activeDevotees.values());
+        window.dispatchEvent(new CustomEvent('sanctuary_devotees_updated', { detail: list }));
+      }
+    };
   </script>
 
   <!-- DHARMA WISDOM & ORACLES -->
-  <script src="js/dharma-wisdom.js?v=20261106_0858"></script>
+  <script src="js/dharma-wisdom.js?v=20261106_1015"></script>
 
   <!-- REAL-TIME & WEBRTC CALLING ENGINE -->
-  <script src="js/supabase-sanctuary.js?v=20261106_0858"></script>
-  <script src="js/room-chat.js?v=20261106_0858"></script>
+  <script src="js/supabase-sanctuary.js?v=20261106_1015"></script>
+  <script src="js/room-chat.js?v=20261106_1015"></script>
 
   <!-- STANDALONE BUNDLE (THREE.JS 3D TEMPLE SCENE, DOCK, PANELS, AUDIO) -->
-  <script type="module" src="js/app.bundle.js?v=20261106_0858"></script>
+  <script type="module" src="js/app.bundle.js?v=20261106_1015"></script>
 
   <script>
     window.addEventListener('load', async () => {

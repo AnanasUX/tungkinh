@@ -149,6 +149,7 @@ export default function TempleScene({
 }) {
   const mountRef = useRef<HTMLDivElement>(null)
   const labelRefs = useRef<(HTMLDivElement | null)[]>([])
+  const labelsContainerRef = useRef<HTMLDivElement>(null)
   const needleRef = useRef<HTMLSpanElement>(null)
   const robeRef = useRef<((color: string) => void) | null>(null)
   const resetViewRef = useRef<(() => void) | null>(null)
@@ -1113,6 +1114,7 @@ export default function TempleScene({
       robe: THREE.MeshStandardMaterial
       pose: Pose
       phase: number
+      action?: { kind: 'bow' | 'knock'; start: number; duration: number }
     }
     const skin = std('#e2bb92', { roughness: 0.62 })
     const trim = std('#f3eee3')
@@ -1271,6 +1273,128 @@ export default function TempleScene({
       rigs.push(rig)
     })
     robeRef.current = (color) => player.robe.color.set(color)
+
+    // Remote devotees synchronization (Supabase Realtime Presence).
+    type RemoteDevoteeEntity = {
+      id: string
+      name: string
+      dharmaName: string
+      seatNo: number | null
+      rig: CharacterRig
+      label: HTMLDivElement
+    }
+    const remoteEntities = new Map<string, RemoteDevoteeEntity>()
+    const PALETTE = ['#3b72b8', '#7a4b33', '#c08a35', '#7a8288', '#9a3f33', '#b27a3c', '#5a6b7c', '#8c5e3d']
+
+    const syncRemoteDevotees = (devoteeList: any[]) => {
+      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
+      const currentIds = new Set<string>()
+
+      if (Array.isArray(devoteeList)) {
+        devoteeList.forEach((d) => {
+          const clientId = String(d.id || d.clientId || '')
+          if (!clientId || clientId === myId) return
+          currentIds.add(clientId)
+
+          const devoteeName = d.name || d.fullName || 'Đồng Tu'
+          const dharmaName = d.dharma || d.dharmaName || 'Tịnh Niệm'
+          const rawSeat = typeof d.seatNo === 'number' ? d.seatNo : d.assignedSeatNo
+          const seatNo = rawSeat ? Number(rawSeat) : null
+
+          if (remoteEntities.has(clientId)) {
+            const entity = remoteEntities.get(clientId)!
+            if (entity.seatNo !== seatNo) {
+              entity.seatNo = seatNo
+              if (seatNo && SEATS.find((s) => s.no === seatNo)) {
+                const s = SEATS.find((s) => s.no === seatNo)!
+                entity.rig.group.position.set(s.x, 0, s.z)
+                entity.rig.group.rotation.set(0, Math.PI, 0)
+                entity.rig.pose = 'sit'
+                entity.rig.leftLeg.visible = entity.rig.rightLeg.visible = false
+                entity.rig.body.position.y = -0.14
+              } else {
+                entity.rig.pose = 'stand'
+                entity.rig.leftLeg.visible = entity.rig.rightLeg.visible = true
+                entity.rig.body.position.y = 0
+              }
+              entity.label.innerHTML = `<strong>${devoteeName}<span class="scene-label__level">Bồ đoàn #${seatNo || 'Sân'}</span></strong><small>${dharmaName}</small>`
+            }
+          } else {
+            let x = 0
+            let z = 0
+            let pose: Pose = 'stand'
+            if (seatNo && SEATS.find((s) => s.no === seatNo)) {
+              const s = SEATS.find((s) => s.no === seatNo)!
+              x = s.x
+              z = s.z
+              pose = 'sit'
+            } else {
+              let hash = 0
+              for (let i = 0; i < clientId.length; i++) hash = (hash * 31 + clientId.charCodeAt(i)) & 0xfffff
+              x = ((hash % 11) - 5) * 1.6
+              z = 2 + (hash % 7) * 1.4
+            }
+            const colorIdx = Math.abs(clientId.split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0)) % PALETTE.length
+            const rig = character(x, z, PALETTE[colorIdx], pose, Math.random() * 2)
+            if (pose === 'sit') {
+              rig.group.rotation.set(0, Math.PI, 0)
+            } else {
+              rig.group.lookAt(x, 0, -20)
+            }
+            rigs.push(rig)
+
+            const label = document.createElement('div')
+            label.className = 'scene-label scene-label--remote'
+            label.innerHTML = `<strong>${devoteeName}<span class="scene-label__level">Bồ đoàn #${seatNo || 'Sân'}</span></strong><small>${dharmaName}</small>`
+            labelsContainerRef.current?.appendChild(label)
+
+            remoteEntities.set(clientId, {
+              id: clientId,
+              name: devoteeName,
+              dharmaName,
+              seatNo,
+              rig,
+              label,
+            })
+          }
+        })
+      }
+
+      remoteEntities.forEach((entity, clientId) => {
+        if (!currentIds.has(clientId)) {
+          world.remove(entity.rig.group)
+          const idx = rigs.indexOf(entity.rig)
+          if (idx !== -1) rigs.splice(idx, 1)
+          if (entity.label.parentNode) {
+            entity.label.parentNode.removeChild(entity.label)
+          }
+          remoteEntities.delete(clientId)
+        }
+      })
+    }
+
+    const triggerAction = (target: string | number | undefined, kind: 'bow' | 'knock') => {
+      if (!target) return
+      let targetSeat: number | null = null
+      let targetClientId: string | null = null
+      if (typeof target === 'number') {
+        targetSeat = target
+      } else if (typeof target === 'string') {
+        if (target.startsWith('seat-')) {
+          targetSeat = parseInt(target.replace('seat-', ''), 10)
+        } else {
+          targetClientId = target
+        }
+      }
+      remoteEntities.forEach((entity) => {
+        if ((targetClientId && entity.id === targetClientId) || (targetSeat && entity.seatNo === targetSeat)) {
+          entity.rig.action = { kind, start: clock.elapsedTime, duration: kind === 'bow' ? 2.6 : 1.0 }
+        }
+      })
+    }
+
+    ;(window as any).triggerDevoteeBow = (target?: string | number) => triggerAction(target, 'bow')
+    ;(window as any).triggerDevoteeKnock = (target?: string | number) => triggerAction(target, 'knock')
 
     // Incense smoke drifting up from the altar urn.
     const smokeTexture = canvasTexture(64, 64, (ctx) => {
@@ -1650,14 +1774,67 @@ export default function TempleScene({
           label.style.zIndex = String(1000 - Math.round(far * 10))
         }
       })
+
+      // Update remote entity label positions & custom actions
+      remoteEntities.forEach((entity) => {
+        const rig = entity.rig
+        const label = entity.label
+
+        if (rig.action) {
+          const t = (elapsed - rig.action.start) / rig.action.duration
+          if (t >= 1) {
+            rig.action = undefined
+          } else {
+            const k = Math.sin(t * Math.PI)
+            const raise = Math.min(1, k * 1.8)
+            rig.leftArm.rotation.set(-1.25 * raise, 0, -0.38 * raise - 0.16 * (1 - raise))
+            rig.rightArm.rotation.set(-1.25 * raise, 0, 0.38 * raise + 0.16 * (1 - raise))
+            rig.body.rotation.x = rig.action.kind === 'bow' ? 0.55 * k : 0.15 * k
+            rig.body.position.y = rig.pose === 'sit' ? -0.14 : 0
+            rig.head.rotation.set(rig.action.kind === 'bow' ? 0.2 * k : 0.1 * k, 0, 0)
+          }
+        }
+
+        projected.copy(rig.group.position)
+        projected.y += rig.pose === 'sit' ? 2.3 : 2.55
+        const far = camera.position.distanceTo(projected)
+        projected.project(camera)
+        const visible = projected.z < 1 && far < 42 && Math.abs(projected.x) < 1.1
+        label.style.opacity = visible ? String(THREE.MathUtils.clamp((42 - far) / 10, 0, 1)) : '0'
+        if (visible) {
+          const x = ((projected.x + 1) / 2) * width
+          const y = ((1 - projected.y) / 2) * height
+          label.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -100%)`
+          label.style.zIndex = String(1000 - Math.round(far * 10))
+        }
+      })
       if (needleRef.current) needleRef.current.style.transform = `rotate(${-yaw}rad)`
 
       renderer.render(scene, camera)
     }
     animate()
 
+    const onDevoteesUpdated = (event: any) => {
+      const list = event.detail || []
+      syncRemoteDevotees(list)
+    }
+    window.addEventListener('sanctuary_devotees_updated', onDevoteesUpdated)
+
+    if ((window as any).SupabaseSanctuary?.activeDevotees) {
+      const initialList = Array.from((window as any).SupabaseSanctuary.activeDevotees.values())
+      syncRemoteDevotees(initialList)
+    }
+
     return () => {
       cancelAnimationFrame(frame)
+      window.removeEventListener('sanctuary_devotees_updated', onDevoteesUpdated)
+      remoteEntities.forEach((entity) => {
+        if (entity.label.parentNode) entity.label.parentNode.removeChild(entity.label)
+        world.remove(entity.rig.group)
+      })
+      remoteEntities.clear()
+      delete (window as any).triggerDevoteeBow
+      delete (window as any).triggerDevoteeKnock
       robeRef.current = null
       resetViewRef.current = null
       if (apiHolderRef.current) apiHolderRef.current.current = null
@@ -1740,7 +1917,7 @@ export default function TempleScene({
         <Chibi variant="monk" />
       </div>
 
-      <div className="scene-labels" aria-hidden="true">
+      <div className="scene-labels" aria-hidden="true" ref={labelsContainerRef}>
         <div
           className="scene-label scene-label--self"
           ref={(element) => {

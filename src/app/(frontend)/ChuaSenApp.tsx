@@ -333,6 +333,8 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const [theme, setTheme] = useState('xanh')
   const [phrase, setPhrase] = useState('')
   const [seat, setSeat] = useState<number | null>(null)
+  const seatRef = useRef(seat)
+  seatRef.current = seat
   const [hydrated, setHydrated] = useState(false)
   const sceneRef = useRef<SceneApi | null>(null)
   const moveScene = useCallback((x: number, y: number) => sceneRef.current?.setMove(x, y), [])
@@ -342,6 +344,29 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   doneRef.current = done
   const knocksRef = useRef(knocks)
   knocksRef.current = knocks
+
+  useEffect(() => {
+    const prof = (window as any).currentUserProfile
+    if (prof) {
+      if (prof.fullName) setPlayerName(prof.fullName)
+      if (prof.dharmaName) setDharmaName(prof.dharmaName)
+      if (typeof prof.assignedSeatNo === 'number') {
+        const timer = setTimeout(() => {
+          sceneRef.current?.sit(prof.assignedSeatNo)
+        }, 1200)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const prof = (window as any).currentUserProfile
+    if (prof) {
+      prof.fullName = playerName
+      prof.dharmaName = dharmaName
+      ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
+    }
+  }, [playerName, dharmaName])
 
   const completed = useMemo(() => Object.values(done).filter(Boolean).length, [done])
   const rank = levelFor(merit)
@@ -435,6 +460,10 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       setMerit((current) => current + 10)
       setToast(`Đã gõ ${next} tiếng mõ · +10 công đức`)
     }
+    ;(window as any).SupabaseSanctuary?.broadcast?.('WOODEN_FISH', {
+      seatNo: seatRef.current,
+      phrase: 'Nam Mô A Di Đà Phật',
+    })
   }, [])
 
   useEffect(() => {
@@ -459,6 +488,9 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       addMerit(20, 'Đã dâng 3 nén tâm hương lên Tam Bảo · +20 công đức')
       completeTask('incense', 1, 'Dâng một nén hương')
     }
+    ;(window as any).SupabaseSanctuary?.broadcast?.('OFFER_INCENSE', {
+      seatNo: seatRef.current,
+    })
     if (scene) {
       setToast('Đang đi lên bàn thờ dâng hương…')
       scene.offerIncense(award)
@@ -468,6 +500,9 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const bow = useCallback(() => {
     sceneRef.current?.bow()
     if (!mutedRef.current) playTempleBell()
+    ;(window as any).SupabaseSanctuary?.broadcast?.('BOW_BUDDHA', {
+      seatNo: seatRef.current,
+    })
     addMerit(5, 'Thành kính đảnh lễ Tam Bảo · +5 công đức')
     completeTask('buddha', 1, 'Lạy Phật một lạy')
   }, [addMerit, completeTask])
@@ -475,6 +510,9 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const ringBell = useCallback(() => {
     sceneRef.current?.ringBell()
     if (!mutedRef.current) playTempleBell()
+    ;(window as any).SupabaseSanctuary?.broadcast?.('TEMPLE_BELL', {
+      seatNo: seatRef.current,
+    })
     addMerit(5, 'Tiếng chuông ngân xa, thân tâm an trú · +5 công đức')
   }, [addMerit])
 
@@ -575,7 +613,16 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
         apiRef={sceneRef}
         onSeatChange={(next) => {
           setSeat(next)
-          if (next !== null) setToast(`Đã an tọa bồ đoàn #${next}. Nam mô A Di Đà Phật`)
+          if ((window as any).currentUserProfile) {
+            ;(window as any).currentUserProfile.assignedSeatNo = next
+          }
+          if (next !== null) {
+            setToast(`Đã an tọa bồ đoàn #${next}. Nam mô A Di Đà Phật`)
+            ;(window as any).SupabaseSanctuary?.broadcast?.('SANCTUARY_SIT_DOWN', { seatNo: next })
+          } else {
+            ;(window as any).SupabaseSanctuary?.broadcast?.('SANCTUARY_STAND_UP', {})
+          }
+          ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
         }}
       />
       <div className="atmosphere" aria-hidden="true" />

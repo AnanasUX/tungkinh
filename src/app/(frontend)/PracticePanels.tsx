@@ -120,7 +120,12 @@ function SeatsView({ ctx }: { ctx: PracticeContext }) {
               </p>
               <div className="grid grid-cols-4 gap-1.5">
                 {SEATS.filter((seat) => (side === 'left' ? seat.x < 0 : seat.x > 0)).map((seat) => {
-                  const occupant = SEAT_OCCUPANTS[seat.no]
+                  const remoteDevotees = (window as any).sanctuarySeats || []
+                  const remoteSeat = remoteDevotees.find((s: any) => s.seatNo === seat.no)
+                  const remoteOccupant = (remoteSeat && remoteSeat.occupied && !remoteSeat.isUser && remoteSeat.remoteClientId)
+                    ? (remoteSeat.name || 'Đồng Tu')
+                    : null
+                  const occupant = SEAT_OCCUPANTS[seat.no] || remoteOccupant
                   const mine = ctx.seat === seat.no
                   return (
                     <button

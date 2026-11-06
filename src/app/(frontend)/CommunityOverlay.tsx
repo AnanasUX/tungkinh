@@ -112,6 +112,19 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
   const [tab, setTab] = useState<'common' | 'private' | 'people'>('common')
   const [draft, setDraft] = useState('')
   const [micReady, setMicReady] = useState(false)
+  const [onlineDevotees, setOnlineDevotees] = useState<any[]>([])
+
+  useEffect(() => {
+    const updateList = (e?: any) => {
+      const list = e?.detail || ((window as any).SupabaseSanctuary?.activeDevotees
+        ? Array.from((window as any).SupabaseSanctuary.activeDevotees.values())
+        : [])
+      setOnlineDevotees(list)
+    }
+    window.addEventListener('sanctuary_devotees_updated', updateList)
+    updateList()
+    return () => window.removeEventListener('sanctuary_devotees_updated', updateList)
+  }, [])
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -194,8 +207,8 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
               <h2 id="community-title" className="font-display text-lg font-bold text-[#ffe5aa]">
                 Đạo Tràng Chung
               </h2>
-              <span className="rounded-full border border-[#e2bd6e]/30 bg-[#e2bd6e]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#e2bd6e]">
-                Phiên cá nhân
+              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                {1 + onlineDevotees.length} Đồng Tu Trực Tuyến
               </span>
             </div>
             <p className="truncate text-xs text-[#cbb28f]">Cùng niệm Phật · Cùng gieo lời lành</p>
@@ -338,26 +351,76 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
             )}
             {tab === 'people' && (
               <div className="grid content-start gap-2 overflow-y-auto p-4 sm:p-5">
-                {[['B', playerName, 'Bạn đang ở đây'], ...presentPeople].map(
-                  ([initial, name, status], index) => (
+                {/* Local user */}
+                <article className="flex items-center gap-3 rounded-2xl border border-[#e2bd6e]/40 bg-[#e2bd6e]/[.08] p-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/50 bg-[#7a3515] font-bold text-[#f4d17f]">
+                    {playerName.slice(0, 1).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <strong className="block truncate text-sm text-[#fff0ce]">{playerName}</strong>
+                    <p className="mt-0.5 text-xs text-[#a99474]">Đang tu tập tại chùa · Bản thân</p>
+                  </div>
+                  <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-bold text-emerald-300">
+                    <i className="size-1.5 rounded-full bg-emerald-400" /> Bạn
+                  </span>
+                </article>
+
+                {/* Remote live devotees */}
+                {onlineDevotees.map((devotee: any) => {
+                  const dName = devotee.name || devotee.fullName || 'Đồng Tu'
+                  const dDharma = devotee.dharma || devotee.dharmaName || 'Tịnh Niệm'
+                  const dSeat = devotee.seatNo || devotee.assignedSeatNo
+                  const dId = devotee.id || devotee.clientId
+                  return (
                     <article
-                      key={name}
-                      className="flex items-center gap-3 rounded-2xl border border-[#e2bd6e]/18 bg-[#e2bd6e]/[.05] p-3"
+                      key={dId || dName}
+                      className="flex items-center gap-3 rounded-2xl border border-[#e2bd6e]/18 bg-[#e2bd6e]/[.05] p-3 hover:bg-[#e2bd6e]/[.08]"
                     >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/30 bg-[#7a3515] font-bold text-[#f4d17f]">
-                        {initial}
+                      <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/30 bg-[#5c2810] font-bold text-[#f4d17f]">
+                        {dName.slice(0, 1).toUpperCase()}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <strong className="block truncate text-sm text-[#fff0ce]">{name}</strong>
-                        <p className="mt-0.5 text-xs text-[#a99474]">{status}</p>
+                        <strong className="block truncate text-sm text-[#fff0ce]">{dName}</strong>
+                        <p className="mt-0.5 text-xs text-[#a99474]">
+                          {dDharma ? `PD: ${dDharma} · ` : ''}
+                          {dSeat ? `Bồ đoàn #${dSeat}` : 'Sân Chùa'}
+                        </p>
                       </div>
-                      <span className="flex items-center gap-1.5 text-[11px] text-emerald-300">
-                        <i className="size-1.5 rounded-full bg-emerald-400" />{' '}
-                        {index ? 'Trong cảnh' : 'Bạn'}
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (typeof (window as any).startZaloVideoCall === 'function') {
+                            (window as any).startZaloVideoCall(dId)
+                          } else {
+                            onCall()
+                          }
+                        }}
+                        className="flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-600/75 px-3 py-1 text-xs font-bold text-white transition hover:bg-emerald-500"
+                        title={`Gọi video cùng ${dName}`}
+                      >
+                        <Glyph name="camera" size={13} />
+                        Gọi Video
+                      </button>
                     </article>
-                  ),
-                )}
+                  )
+                })}
+
+                {/* Resident monks */}
+                {presentPeople.map(([initial, name, status]) => (
+                  <article
+                    key={name}
+                    className="flex items-center gap-3 rounded-2xl border border-[#e2bd6e]/10 bg-black/20 p-3 opacity-75"
+                  >
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/20 bg-[#421c0b] text-xs font-bold text-[#d8b86d]">
+                      {initial}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <strong className="block truncate text-sm text-[#e8dcc4]">{name}</strong>
+                      <p className="mt-0.5 text-xs text-[#8a775d]">{status}</p>
+                    </div>
+                    <span className="text-[11px] text-amber-200/60">Tịnh tu</span>
+                  </article>
+                ))}
               </div>
             )}
           </div>
@@ -384,10 +447,16 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
             </div>
             <button
               type="button"
-              onClick={onCall}
-              className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-emerald-300/45 bg-emerald-600/75 text-xs font-extrabold text-white transition hover:bg-emerald-500"
+              onClick={() => {
+                if (typeof (window as any).startZaloVideoCall === 'function') {
+                  (window as any).startZaloVideoCall()
+                } else {
+                  onCall()
+                }
+              }}
+              className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-emerald-300/45 bg-emerald-600/75 text-xs font-extrabold text-white transition hover:bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,.35)]"
             >
-              <Glyph name="camera" size={15} /> Gọi Video
+              <Glyph name="camera" size={15} /> Gọi Video Đạo Tràng
             </button>
             <button
               type="button"
