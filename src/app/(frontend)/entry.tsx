@@ -161,11 +161,89 @@ const defaultCalendar: CalendarItem[] = [
   }
 ]
 
+
+class SanctuaryErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[SanctuaryErrorBoundary] Caught error:', error, errorInfo)
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: '#17130e',
+            color: '#fef3c7',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+            textAlign: 'center',
+            fontFamily: 'system-ui, sans-serif',
+            zIndex: 999999,
+          }}
+        >
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🌸</div>
+          <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '8px', color: '#f59e0b' }}>
+            Không Gian Tu Học Chùa An Nhiên
+          </h2>
+          <p
+            style={{
+              fontSize: '14px',
+              color: '#d6d3d1',
+              maxWidth: '420px',
+              marginBottom: '20px',
+              lineHeight: 1.6,
+            }}
+          >
+            Đang tải lại giao diện Chánh Điện. Quý đạo hữu vui lòng nhấn nút bên dưới để khôi phục không gian tu học.
+          </p>
+          <button
+            onClick={() => {
+              try {
+                localStorage.removeItem('chua_an_nhien_v1')
+                sessionStorage.clear()
+              } catch (_) {}
+              window.location.reload()
+            }}
+            style={{
+              padding: '12px 28px',
+              borderRadius: '9999px',
+              background: 'linear-gradient(135deg, #d97706, #b45309)',
+              color: '#fff',
+              border: 'none',
+              fontWeight: 600,
+              fontSize: '15px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 15px rgba(217,119,6,0.4)',
+            }}
+          >
+            Khôi phục & Tải lại Đạo Tràng
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 function init() {
   const container = document.getElementById('root')
   if (!container) return
   const root = createRoot(container)
-  root.render(<ChuaSenApp practices={defaultPractices} calendar={defaultCalendar} />)
+  root.render(<SanctuaryErrorBoundary><ChuaSenApp practices={defaultPractices} calendar={defaultCalendar} /></SanctuaryErrorBoundary>)
 }
 
 if (document.readyState === 'loading') {

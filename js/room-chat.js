@@ -1987,18 +1987,9 @@
      ========================================================================== */
 
   const AUDIO_CONSTRAINTS = {
-    echoCancellation: { ideal: true },
-    noiseSuppression: { ideal: true },
-    autoGainControl: { ideal: true },
-    channelCount: 1,
-    sampleRate: 48000,
-    // Google Chrome / Android hardware acoustic echo cancellation & noise suppression
-    googEchoCancellation: { ideal: true },
-    googAutoGainControl: { ideal: true },
-    googNoiseSuppression: { ideal: true },
-    googHighpassFilter: { ideal: true },
-    googAudioMirroring: { ideal: false },
-    googTypingNoiseDetection: { ideal: true }
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true
   };
 
   const remoteAudioNodes = new Map(); // peerId -> { gainNode, highpass, notch, source, audioCtx }
@@ -2157,29 +2148,56 @@
 
   function attachCurrentTracksToPC(pc) {
     if (!pc) return;
-    const senders = (typeof pc.getSenders === 'function') ? pc.getSenders() : [];
 
-    // Strictly send ONE active audio track (prefer video call mic if active, else voice chat mic)
     const activeStream = zaloMediaStream || state.stream;
     const audioTrack = activeStream ? activeStream.getAudioTracks()[0] : null;
+    const videoTrack = zaloMediaStream ? zaloMediaStream.getVideoTracks()[0] : null;
 
+    const transceivers = (typeof pc.getTransceivers === 'function') ? pc.getTransceivers() : [];
+
+    // 1. Audio track binding & transceiver direction
     if (audioTrack) {
-      const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
-      if (!audioSender) {
-        try { pc.addTrack(audioTrack, activeStream); } catch (_) {}
-      } else if (audioSender.track && audioSender.track.id !== audioTrack.id) {
-        try { audioSender.replaceTrack(audioTrack); } catch (_) {}
+      const audioTransceiver = transceivers.find(t =>
+        (t.sender && t.sender.track && t.sender.track.kind === 'audio') ||
+        (t.receiver && t.receiver.track && t.receiver.track.kind === 'audio')
+      );
+      if (audioTransceiver) {
+        if (audioTransceiver.direction !== 'sendrecv') {
+          try { audioTransceiver.direction = 'sendrecv'; } catch (_) {}
+        }
+        if (audioTransceiver.sender && audioTransceiver.sender.track !== audioTrack) {
+          try { audioTransceiver.sender.replaceTrack(audioTrack); } catch (_) {}
+        }
+      } else {
+        const senders = (typeof pc.getSenders === 'function') ? pc.getSenders() : [];
+        const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
+        if (!audioSender) {
+          try { pc.addTrack(audioTrack, activeStream); } catch (_) {}
+        } else if (audioSender.track !== audioTrack) {
+          try { audioSender.replaceTrack(audioTrack); } catch (_) {}
+        }
       }
     }
 
-    // Attach Video track from Zalo Video Call stream (if active)
-    if (zaloMediaStream) {
-      const videoTrack = zaloMediaStream.getVideoTracks()[0];
-      if (videoTrack) {
+    // 2. Video track binding & transceiver direction (CRUCIAL for bidirectional 2-way camera)
+    if (videoTrack) {
+      const videoTransceiver = transceivers.find(t =>
+        (t.sender && t.sender.track && t.sender.track.kind === 'video') ||
+        (t.receiver && t.receiver.track && t.receiver.track.kind === 'video')
+      );
+      if (videoTransceiver) {
+        if (videoTransceiver.direction !== 'sendrecv') {
+          try { videoTransceiver.direction = 'sendrecv'; } catch (_) {}
+        }
+        if (videoTransceiver.sender && videoTransceiver.sender.track !== videoTrack) {
+          try { videoTransceiver.sender.replaceTrack(videoTrack); } catch (_) {}
+        }
+      } else {
+        const senders = (typeof pc.getSenders === 'function') ? pc.getSenders() : [];
         const videoSender = senders.find(s => s.track && s.track.kind === 'video');
         if (!videoSender) {
           try { pc.addTrack(videoTrack, zaloMediaStream); } catch (_) {}
-        } else if (videoSender.track && videoSender.track.id !== videoTrack.id) {
+        } else if (videoSender.track !== videoTrack) {
           try { videoSender.replaceTrack(videoTrack); } catch (_) {}
         }
       }
@@ -2565,6 +2583,26 @@
       case 'ROOM_VOICE_OFFER':
         if (payload.targetId === myId() || payload.targetId === 'all') {
           try {
+            // Auto-acquire local camera if answering a video call offer and camera not active
+            if (payload.isVideoCall && (!zaloMediaStream || zaloMediaStream.getVideoTracks().length === 0)) {
+              try {
+                zaloMediaStream = await navigator.mediaDevices.getUserMedia({
+                  video: { facingMode: zaloFacingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+                  audio: AUDIO_CONSTRAINTS
+                });
+                const localVideo = document.getElementById('zalo-local-video');
+                if (localVideo) { localVideo.srcObject = zaloMediaStream; localVideo.play().catch(() => {}); }
+                addOrUpdateCallParticipant(myId(), { stream: zaloMediaStream, hasVideo: true });
+              } catch (_) {
+                try {
+                  zaloMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                  const localVideo = document.getElementById('zalo-local-video');
+                  if (localVideo) { localVideo.srcObject = zaloMediaStream; localVideo.play().catch(() => {}); }
+                  addOrUpdateCallParticipant(myId(), { stream: zaloMediaStream, hasVideo: true });
+                } catch (_) {}
+              }
+            }
+
             const pc = getOrCreatePeerConnection(payload.senderId);
             // In Unified Plan, MUST set remote description FIRST so transceivers match
             await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
@@ -2587,7 +2625,6 @@
           }
         }
         break;
-
       case 'ROOM_VOICE_ANSWER':
         if (payload.targetId === myId()) {
           try {
@@ -3917,26 +3954,36 @@
       window.AudioEngine.playGiftChime();
     }
 
-    // Capture Local Camera & Microphone (Real hardware stream, NO mock canvas)
+    // Capture Local Camera & Microphone (Real hardware stream with mobile 2-stage fallback)
     const localVideo = document.getElementById('zalo-local-video');
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        zaloMediaStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 640, max: 1280 },
-            height: { ideal: 480, max: 720 },
-            frameRate: { ideal: 24, max: 30 },
-            facingMode: zaloFacingMode
-          },
-          audio: AUDIO_CONSTRAINTS
-        });
+        try {
+          zaloMediaStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: zaloFacingMode,
+              width: { ideal: 640 },
+              height: { ideal: 480 }
+            },
+            audio: AUDIO_CONSTRAINTS
+          });
+        } catch (firstErr) {
+          console.warn('[ZaloVideoCall] Strict mobile camera constraints failed, trying permissive mode:', firstErr);
+          zaloMediaStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+          });
+        }
 
         if (localVideo) {
           localVideo.srcObject = zaloMediaStream;
           localVideo.play().catch(() => {});
         }
 
-        // Update local participant track state
+        isZaloCamOff = false;
+        const camBtn = document.getElementById('btn-zalo-cam');
+        if (camBtn) camBtn.classList.remove('is-muted-feature');
+
         addOrUpdateCallParticipant(myId(), {
           stream: zaloMediaStream,
           hasVideo: true,
@@ -3946,9 +3993,9 @@
         setupAudioVisualizer(zaloMediaStream);
       }
     } catch (err) {
-      console.warn('[ZaloVideoCall] Camera not accessible, trying audio-only fallback:', err);
+      console.warn('[ZaloVideoCall] Camera acquisition failed, falling back to audio:', err);
       try {
-        zaloMediaStream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS });
+        zaloMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         setupAudioVisualizer(zaloMediaStream);
         addOrUpdateCallParticipant(myId(), {
           stream: zaloMediaStream,
@@ -3959,7 +4006,7 @@
         const camBtn = document.getElementById('btn-zalo-cam');
         if (camBtn) camBtn.classList.add('is-muted-feature');
       } catch (audioErr) {
-        console.warn('[ZaloVideoCall] Media capture error:', audioErr);
+        console.warn('[ZaloVideoCall] Audio capture error:', audioErr);
       }
     }
 
@@ -4105,8 +4152,40 @@
     addOrUpdateCallParticipant(myId(), { isMuted: isZaloVideoMuted });
   }
 
-  function toggleZaloVideoCallCam() {
-    if (!zaloMediaStream) return;
+  async function toggleZaloVideoCallCam() {
+    const localVideo = document.getElementById('zalo-local-video');
+    const btn = document.getElementById('btn-zalo-cam');
+    const icon = document.getElementById('zalo-cam-icon');
+    const label = document.getElementById('zalo-cam-label');
+
+    // If stream has no video track yet, request camera now
+    if (!zaloMediaStream || zaloMediaStream.getVideoTracks().length === 0) {
+      try {
+        const camStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: zaloFacingMode }
+        });
+        const newTrack = camStream.getVideoTracks()[0];
+        if (newTrack) {
+          if (!zaloMediaStream) zaloMediaStream = new MediaStream();
+          zaloMediaStream.addTrack(newTrack);
+          if (localVideo) {
+            localVideo.srcObject = zaloMediaStream;
+            localVideo.play().catch(() => {});
+          }
+          isZaloCamOff = false;
+          if (btn) btn.classList.remove('is-muted-feature');
+          if (icon) icon.textContent = '📹';
+          if (label) label.textContent = 'Camera';
+          addOrUpdateCallParticipant(myId(), { hasVideo: true, stream: zaloMediaStream });
+          state.peerConnections.forEach(pc => attachCurrentTracksToPC(pc));
+          return;
+        }
+      } catch (camErr) {
+        console.warn('[ZaloVideoCall] Unable to activate camera:', camErr);
+        return;
+      }
+    }
+
     isZaloCamOff = !isZaloCamOff;
     zaloMediaStream.getVideoTracks().forEach(t => t.enabled = !isZaloCamOff);
 
@@ -4116,9 +4195,6 @@
       } catch (_) {}
     }
 
-    const btn = document.getElementById('btn-zalo-cam');
-    const icon = document.getElementById('zalo-cam-icon');
-    const label = document.getElementById('zalo-cam-label');
     if (btn) btn.classList.toggle('is-muted-feature', isZaloCamOff);
     if (icon) icon.textContent = isZaloCamOff ? '🚫' : '📹';
     if (label) label.textContent = isZaloCamOff ? 'Tắt Cam' : 'Camera';

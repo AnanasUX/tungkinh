@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Chùa An Nhiên — Không Gian Tu Học & Đạo Tràng Trực Tuyến</title>
+
+  <!-- TYPOGRAPHY FONTS: 100% BE VIETNAM PRO PRIMARY FOR SYSTEM -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+  <!-- MODERN UI DESIGN STYLESHEET (COMPILED WITH TAILWIND V4 & LANDSCAPE ENGINE) -->
+  <link rel="stylesheet" href="css/modern-ui.css?v=20261106_1550">
+
+  <!-- REALTIME & LIVEKIT SFU WEBRTC LIBRARIES -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+
+  <style>
+    /* Full viewport reset for React Game Shell */
+    html, body, #root {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #17130e;
+      font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Subtle pulse animation for Video Call button in dock */
+    .action-dock button[title*="Video"] {
+      border: 1px solid rgba(242, 199, 102, 0.4);
+      background: rgba(242, 199, 102, 0.12);
+    }
+  </style>
+</head>
+<body>
+  <!-- REACT 19 MOUNT CONTAINER (100% NEW CHÙA AN NHIÊN UI) -->
+  <div id="root"></div>
+
+  <!-- SANCTUARY CORE CLIENT PROFILE & SEATS INITIALIZER -->
+  <script>
+    window.SANCTUARY_CLIENT_ID = 'phattu_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36).slice(-4);
+    try {
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('chua_an_nhien_cid', window.SANCTUARY_CLIENT_ID);
+      var saved = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('chua_an_nhien_user_profile'));
+      if (saved) {
+        window.currentUserProfile = JSON.parse(saved);
+      }
+    } catch (_) {}
+
+    // Initialize 24 sanctuary seats (cushions) to sync with Supabase Realtime
+    window.sanctuarySeats = Array.from({ length: 24 }, function(_, i) {
+      return {
+        seatNo: i + 1,
+        id: 'seat-' + (i + 1),
+        occupied: false,
+        isUser: false,
+        isDummy: false,
+        remoteClientId: null,
+        name: '',
+        dharma: '',
+        age: 26,
+        hometown: 'Việt Nam',
+        type: (i % 2 === 0) ? 'monk' : 'female',
+        points: 20,
+        ip: ''
+      };
+    });
+
+    if (!window.currentUserProfile) {
+      var SAMPLE_NAMES = [
+        { name: 'Tuệ Phúc', dharma: 'Minh Tâm', gender: 'monk' },
+        { name: 'Diệu Hoa', dharma: 'Diệu Hoa', gender: 'female' },
+        { name: 'Phúc Thiện', dharma: 'Phúc Thiện', gender: 'monk' },
+        { name: 'Tâm An', dharma: 'Tịnh Tâm', gender: 'monk' },
+        { name: 'Diệu Tâm', dharma: 'Diệu Tâm', gender: 'female' },
+        { name: 'Thiện Duyên', dharma: 'Thiện Duyên', gender: 'monk' },
+        { name: 'Tuệ Lâm', dharma: 'Tuệ Lâm', gender: 'female' },
+        { name: 'Đăng Quang', dharma: 'Chân Quang', gender: 'monk' }
+      ];
+      var sample = SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)];
+      var AVAILABLE_INIT_SEATS = [1, 3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20];
+      var randomSeat = AVAILABLE_INIT_SEATS[Math.floor(Math.random() * AVAILABLE_INIT_SEATS.length)];
+      window.currentUserProfile = {
+        registered: true,
+        fullName: sample.name,
+        dharmaName: sample.dharma,
+        clientIp: '113.161.x.x',
+        hometown: 'Việt Nam',
+        meritScore: 165,
+        assignedSeatNo: randomSeat,
+        avatarType: sample.gender,
+        wish: 'Cầu quốc thái dân an, gia đạo ấm êm và tâm hồn thanh tịnh'
+      };
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('chua_an_nhien_user_profile', JSON.stringify(window.currentUserProfile));
+        }
+        localStorage.setItem('chua_an_nhien_user_profile', JSON.stringify(window.currentUserProfile));
+      } catch (_) {}
+    }
+
+    if (window.currentUserProfile && window.currentUserProfile.assignedSeatNo) {
+      var initSeat = window.sanctuarySeats.find(function(s) { return s.seatNo === window.currentUserProfile.assignedSeatNo; });
+      if (initSeat) {
+        initSeat.isUser = true;
+        initSeat.occupied = true;
+        initSeat.name = window.currentUserProfile.fullName;
+        initSeat.dharma = window.currentUserProfile.dharmaName;
+      }
+    }
+
+    window.pickBestAvailableSeat = function(preferSeatNo) {
+      if (!window.sanctuarySeats) return 1;
+      var RESIDENT_SEATS = [2, 7, 12];
+      if (preferSeatNo && RESIDENT_SEATS.indexOf(preferSeatNo) === -1) {
+        var pref = window.sanctuarySeats.find(function(s) { return s.seatNo === preferSeatNo; });
+        if (pref && !pref.occupied && !pref.isUser && (!pref.remoteClientId || pref.remoteClientId === window.SANCTUARY_CLIENT_ID)) {
+          return pref.seatNo;
+        }
+      }
+      var emptySeat = window.sanctuarySeats.find(function(s) {
+        return RESIDENT_SEATS.indexOf(s.seatNo) === -1 && !s.occupied && !s.isUser && !s.remoteClientId;
+      });
+      return emptySeat ? emptySeat.seatNo : null;
+    };
+
+    window.assignUserToSeat = function(seatNo) {
+      if (!window.sanctuarySeats) return;
+      window.sanctuarySeats.forEach(function(s) {
+        if (s.isUser || (s.remoteClientId && s.remoteClientId === window.SANCTUARY_CLIENT_ID)) {
+          s.isUser = false;
+          s.occupied = false;
+          s.remoteClientId = null;
+        }
+      });
+      var target = window.sanctuarySeats.find(function(s) { return s.seatNo === seatNo; });
+      if (target) {
+        target.isUser = true;
+        target.occupied = true;
+        target.remoteClientId = window.SANCTUARY_CLIENT_ID;
+        if (window.currentUserProfile) {
+          target.name = window.currentUserProfile.fullName;
+          target.dharma = window.currentUserProfile.dharmaName;
+        }
+      }
+      if (window.currentUserProfile) {
+        window.currentUserProfile.assignedSeatNo = seatNo;
+      }
+    };
+
+    // Bridge callback for Supabase presence updates
+    window.renderSanctuaryFloor = function() {
+      if (typeof window !== 'undefined' && window.SupabaseSanctuary && window.SupabaseSanctuary.activeDevotees) {
+        var list = Array.from(window.SupabaseSanctuary.activeDevotees.values());
+        window.dispatchEvent(new CustomEvent('sanctuary_devotees_updated', { detail: list }));
+      }
+    };
+  </script>
+
+  <!-- DHARMA WISDOM & ORACLES -->
+  <script src="js/dharma-wisdom.js?v=20261106_1550"></script>
+
+  <!-- REAL-TIME & WEBRTC CALLING ENGINE -->
+  <script src="js/supabase-sanctuary.js?v=20261106_1550"></script>
+  <script src="js/room-chat.js?v=20261106_1550"></script>
+
+  <!-- STANDALONE BUNDLE (THREE.JS 3D TEMPLE SCENE, DOCK, PANELS, AUDIO) -->
+  <script type="module" src="js/app.bundle.js?v=20261106_1550"></script>
+
+  <script>
+    window.addEventListener('load', async () => {
+      // Connect to Supabase Realtime Presence
+      if (window.SupabaseSanctuary) {
+        try {
+          await window.SupabaseSanctuary.init();
+          console.log('[Sanctuary] Supabase Realtime connected.');
+        } catch (e) {
+          console.warn('[Sanctuary] Supabase init warning:', e);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
