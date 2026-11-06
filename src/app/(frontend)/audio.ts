@@ -3,15 +3,31 @@
  * Tích hợp toàn diện 3 file âm thanh gốc trong thư mục "nhac/":
  * 1. nhac/tieng_go_mo.mp3       -> Tiếng gõ mõ thanh tịnh (Web Audio Buffer + Rapid HTML5 Audio Pool)
  * 2. nhac/tieng_chuong_chua.mp3 -> Tiếng chuông Đại Hồng Chung ngân vang sâu lắng
- * 3. nhac/nhac_thien_nen.mp3   -> Nhạc thiền nền tịnh tâm, tự động lặp vô tận, mở khóa tương tác trình duyệt
+ * 3. nhac/nhac_thien_nen.mp3   -> Nhạc thiền nền tịnh tâm, tự động bật khi vào trang, tự động dừng khi thoát/ẩn Chrome trên mobile
  *
  * Tự động có âm tổng hợp (synthesizer) làm phương án dự phòng (fallback) nếu mạng hoặc thiết bị gặp sự cố.
  */
 
+function resolveAssetUrl(relPath: string): string {
+  if (typeof window === 'undefined') return relPath
+  try {
+    const base = document.baseURI || window.location.href
+    return new URL(relPath, base).href
+  } catch (_) {
+    return relPath
+  }
+}
+
 const AUDIO_FILES = {
-  woodblock: 'nhac/tieng_go_mo.mp3',
-  templeBell: 'nhac/tieng_chuong_chua.mp3',
-  ambient: 'nhac/nhac_thien_nen.mp3',
+  get woodblock() {
+    return resolveAssetUrl('nhac/tieng_go_mo.mp3')
+  },
+  get templeBell() {
+    return resolveAssetUrl('nhac/tieng_chuong_chua.mp3')
+  },
+  get ambient() {
+    return resolveAssetUrl('nhac/nhac_thien_nen.mp3')
+  },
 }
 
 let context: AudioContext | null = null
@@ -30,8 +46,9 @@ let bellAudioFallback: HTMLAudioElement | null = null
 // Background ambient meditation music stream
 let ambientAudio: HTMLAudioElement | null = null
 let ambientTargetVolume = 0.3
-let ambientDesiredState = false
+let ambientDesiredState = true // Auto-start background meditation music by default
 let gestureUnlockAttached = false
+let lifecycleListenersAttached = false
 
 function getAudioContext(): { ctx: AudioContext; out: GainNode } | null {
   if (typeof window === 'undefined') return null
@@ -45,7 +62,7 @@ function getAudioContext(): { ctx: AudioContext; out: GainNode } | null {
     masterGain.gain.value = 0.95
     masterGain.connect(context.destination)
   }
-  if (context.state === 'suspended') {
+  if (context.state === 'suspended' && !document.hidden) {
     void context.resume().catch(() => {})
   }
   return { ctx: context, out: masterGain! }
@@ -93,6 +110,12 @@ function preloadAssets() {
 
   setupBuffers()
   attachGestureUnlock()
+  attachLifecycleListeners()
+
+  // Attempt auto-start ambient music on initial page entry
+  if (ambientDesiredState) {
+    startAmbientPlayback()
+  }
 }
 
 /**
@@ -103,18 +126,80 @@ function attachGestureUnlock() {
   gestureUnlockAttached = true
 
   const unlock = () => {
-    if (context && context.state === 'suspended') {
+    if (context && context.state === 'suspended' && !document.hidden) {
       void context.resume().catch(() => {})
     }
-    // If user requested ambient music before permission was granted, start it now
-    if (ambientDesiredState && ambientAudio && ambientAudio.paused) {
+    // If user requested ambient music or auto-start is pending, play it on first interaction
+    if (ambientDesiredState && ambientAudio && ambientAudio.paused && !document.hidden) {
       ambientAudio.play().catch(() => {})
     }
   }
 
-  ['pointerdown', 'touchstart', 'keydown', 'click'].forEach((event) => {
+  ;['pointerdown', 'touchstart', 'keydown', 'click'].forEach((event) => {
     window.addEventListener(event, unlock, { once: true, passive: true })
   })
+}
+
+/**
+ * Handle mobile backgrounding / Chrome tab switching / app exit.
+ * Yêu cầu: "nếu người dùng sử dụng mobile để truy cập vào thì khi người dùng chuyển
+ * hoặc thoát khỏi ứng dụng chrome trên mobile thì nhạc nền dừng. Không chạy ngầm trong ứng dụng."
+ */
+function attachLifecycleListeners() {
+  if (typeof document === 'undefined' || lifecycleListenersAttached) return
+  lifecycleListenersAttached = true
+
+  const handlePause = () => {
+    if (ambientAudio && !ambientAudio.paused) {
+      ambientAudio.pause()
+    }
+    if (context && context.state === 'running') {
+      void context.suspend().catch(() => {})
+    }
+  }
+
+  const handleResume = () => {
+    if (ambientDesiredState && ambientAudio && ambientAudio.paused) {
+      ambientAudio.play().catch(() => {})
+    }
+    if (context && context.state === 'suspended') {
+      void context.resume().catch(() => {})
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      handlePause()
+    } else {
+      handleResume()
+    }
+  })
+
+  window.addEventListener('pagehide', handlePause)
+  window.addEventListener('freeze', handlePause)
+}
+
+function startAmbientPlayback() {
+  if (!ambientAudio) {
+    try {
+      ambientAudio = new Audio(AUDIO_FILES.ambient)
+      ambientAudio.loop = true
+      ambientAudio.preload = 'metadata'
+    } catch (_) {}
+  }
+
+  if (!ambientAudio) return
+
+  ambientAudio.volume = ambientTargetVolume
+  if (!document.hidden) {
+    const playPromise = ambientAudio.play()
+    if (playPromise) {
+      playPromise.catch((_err) => {
+        // Browser blocked unprompted autoplay; attach gesture unlock
+        attachGestureUnlock()
+      })
+    }
+  }
 }
 
 // Auto-preload on file load in browser
@@ -275,6 +360,8 @@ export function playChime() {
 /**
  * Nhạc thiền nền tĩnh tâm (nhac/nhac_thien_nen.mp3):
  * - Tự động lặp vô tận (loop = true)
+ * - Tự động bật khi vào trang
+ * - Tự động tạm dừng khi chuyển tab hoặc ẩn trình duyệt Chrome mobile
  * - Mở khóa Autoplay thông minh khi người dùng chạm vào màn hình
  * - Tăng/giảm âm lượng êm dịu, không giật
  */
@@ -313,16 +400,18 @@ export function setAmbient(on: boolean, volume = 0.3) {
   }
 
   // Turn ON: Resume AudioContext and play ambient track
-  if (context && context.state === 'suspended') {
+  if (context && context.state === 'suspended' && !document.hidden) {
     void context.resume().catch(() => {})
   }
 
   ambientAudio.volume = volume
-  const playPromise = ambientAudio.play()
-  if (playPromise) {
-    playPromise.catch((_err) => {
-      // Browser blocked autoplay without user gesture yet; wait for gesture unlock
-      attachGestureUnlock()
-    })
+  if (!document.hidden) {
+    const playPromise = ambientAudio.play()
+    if (playPromise) {
+      playPromise.catch((_err) => {
+        // Browser blocked autoplay without user gesture yet; wait for gesture unlock
+        attachGestureUnlock()
+      })
+    }
   }
 }

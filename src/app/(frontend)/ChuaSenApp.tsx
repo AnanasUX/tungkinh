@@ -313,7 +313,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const [collapsed, setCollapsed] = useState(true)
   const [muted, setMuted] = useState(false)
   const [meditating, setMeditating] = useState(false)
-  const [ambientOn, setAmbientOn] = useState(false)
+  const [ambientOn, setAmbientOn] = useState(true)
   const [activeAction, setActiveAction] = useState<ActionId>('knock')
   const [done, setDone] = useState<Record<string, number>>({})
   const [toast, setToast] = useState('')
@@ -413,7 +413,11 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       setAmbientOn(false)
     }
   }, [muted, ambientOn])
-  useEffect(() => () => setAmbient(false), [])
+  useEffect(() => {
+    // Tự động bật nhạc thiền nền khi vào trang
+    setAmbient(true, 0.3)
+    return () => setAmbient(false)
+  }, [])
 
   const addMerit = useCallback((amount: number, message: string) => {
     if (amount) setMerit((current) => current + amount)
