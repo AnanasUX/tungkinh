@@ -53,11 +53,13 @@ copyDir(path.join(srcDir, 'dist'), path.join(destDir, 'dist'));
 copyDir(path.join(srcDir, 'js'), path.join(destDir, 'js'));
 copyDir(path.join(srcDir, 'nhac'), path.join(destDir, 'nhac'));
 
-// 2. Prepare and copy index.html with base tag
+// 2. Prepare and copy index.html with base tag and cache-busting
 let html = fs.readFileSync(path.join(srcDir, 'index.html'), 'utf8');
 if (!html.includes('<base href="/tung-kinh/">')) {
   html = html.replace('<head>', '<head>\n  <base href="/tung-kinh/">');
 }
+const buildTimestamp = Date.now().toString(36);
+html = html.replace(/\?v=2026[0-9a-zA-Z_]+/g, '?v=' + buildTimestamp);
 fs.writeFileSync(path.join(destDir, 'index.html'), html, 'utf8');
 console.log('✓ Đã sao chép 100% dữ liệu sang:', destDir);
 

@@ -405,7 +405,20 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
         if (Array.isArray(saved.wishes)) setWishes(saved.wishes)
         if (Array.isArray(saved.petitions)) setPetitions(saved.petitions.slice(-20))
         if (typeof saved.room === 'number') setRoom(saved.room)
-        if (saved.theme) setTheme(saved.theme === 'nau' ? 'xanh' : saved.theme)
+        if (saved.theme) {
+          const t = saved.theme;
+          setTheme(t);
+          const col = ROBE_COLORS[t] || ROBE_COLORS.xanh;
+          if ((window as any).currentUserProfile) {
+            ;(window as any).currentUserProfile.robeTheme = t;
+            ;(window as any).currentUserProfile.robeColor = col;
+          }
+          ;(window as any).SupabaseSanctuary?.broadcast?.('CHANGE_ROBE', {
+            theme: t,
+            robeColor: col,
+          });
+          ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.();
+        }
         if (typeof saved.muted === 'boolean') setMuted(saved.muted)
       }
     } catch {

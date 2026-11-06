@@ -829,6 +829,7 @@ export default function SystemPanel(props: Props) {
                   ['vang', 'Vàng đất'],
                   ['xam', 'Lam xám'],
                   ['do', 'Đỏ trầm'],
+                  ['trang', 'Bạch y'],
                 ].map(([value, label]) => (
                   <button
                     className={theme === value ? 'active' : ''}

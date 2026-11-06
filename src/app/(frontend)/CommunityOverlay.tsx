@@ -158,8 +158,17 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
         ]
       })
     }
-    window.addEventListener('community_chat_message', onIncoming)
-    return () => window.removeEventListener('community_chat_message', onIncoming)
+    const onRoomRealtime = (e: any) => {
+      if (e.detail?.type === 'ROOM_CHAT') {
+        onIncoming(e);
+      }
+    };
+    window.addEventListener('community_chat_message', onIncoming);
+    window.addEventListener('room-realtime-message', onRoomRealtime);
+    return () => {
+      window.removeEventListener('community_chat_message', onIncoming);
+      window.removeEventListener('room-realtime-message', onRoomRealtime);
+    };
   }, [])
   const micRef = useRef<MediaStream | null>(null)
 
@@ -441,7 +450,12 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
                         type="button"
                         onClick={() => {
                           if (typeof (window as any).startZaloVideoCall === 'function') {
-                            (window as any).startZaloVideoCall(dId)
+                            (window as any).startZaloVideoCall({
+                              id: dId,
+                              name: dName,
+                              dharma: dDharma,
+                              location: 'Việt Nam'
+                            })
                           } else {
                             onCall()
                           }

@@ -31,7 +31,23 @@
       { urls: 'stun:stun2.l.google.com:19302' },
       { urls: 'stun:stun3.l.google.com:19302' },
       { urls: 'stun:stun4.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' }
+      { urls: 'stun:global.stun.twilio.com:3478' },
+      { urls: 'stun:stun.relay.metered.ca:80' },
+      {
+        urls: 'turn:standard.relay.metered.ca:80',
+        username: '006c71be68b5e4aa453a4e9b',
+        credential: 'k0V+V21o0x0xV7fW'
+      },
+      {
+        urls: 'turn:standard.relay.metered.ca:443',
+        username: '006c71be68b5e4aa453a4e9b',
+        credential: 'k0V+V21o0x0xV7fW'
+      },
+      {
+        urls: 'turn:standard.relay.metered.ca:443?transport=tcp',
+        username: '006c71be68b5e4aa453a4e9b',
+        credential: 'k0V+V21o0x0xV7fW'
+      }
     ],
     iceCandidatePoolSize: 10
   };
@@ -287,7 +303,7 @@
     .zalo-incoming-modal-backdrop {
       position: fixed;
       inset: 0;
-      z-index: 5000;
+      z-index: 999999;
       background: rgba(0, 0, 0, 0.78);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
@@ -450,7 +466,7 @@
     #zalo-video-call-modal {
       position: fixed;
       inset: 0;
-      z-index: 3000;
+      z-index: 999990;
       background: radial-gradient(circle at 50% 30%, #150c05 0%, #050201 100%);
       display: flex;
       flex-direction: column;
@@ -2506,6 +2522,7 @@
       case 'ROOM_CHAT':
         addMessage({ ...payload, self: false });
         renderMessages();
+        window.dispatchEvent(new CustomEvent('community_chat_message', { detail: payload }));
         break;
 
       case 'ROOM_PRESENCE':
@@ -2808,6 +2825,9 @@
     publish(message);
     if (input && !customText) input.value = '';
     renderMessages();
+
+    // Dispatch locally for 3D speech bubble and CommunityOverlay
+    window.dispatchEvent(new CustomEvent('community_chat_message', { detail: { ...message, isSelf: true } }));
   }
 
   function send() {
@@ -3500,7 +3520,10 @@
         renderZaloVideoGrid();
       });
 
-      await room.connect(sfuUrl, token);
+      await Promise.race([
+        room.connect(sfuUrl, token),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('LiveKit timeout')), 2500))
+      ]);
       activeLiveKitRoom = room;
       activeCallEngine = 'livekit';
 
@@ -3808,6 +3831,15 @@
   // START & END CALL WORKFLOWS
   // --------------------------------------------------------------------------
   async function startZaloVideoCall(targetDevotee = null, isInitiator = true) {
+    if (typeof targetDevotee === 'string') {
+      const member = state.members.get(targetDevotee);
+      targetDevotee = {
+        id: targetDevotee,
+        name: member ? member.name : 'Đạo Hữu',
+        dharma: member ? member.dharma : 'Tịnh Tâm',
+        location: member ? member.location : 'Việt Nam'
+      };
+    }
     const modal = ensureZaloCallModal();
     modal.classList.remove('hidden', 'pip-mode');
     isZaloPiPActive = false;

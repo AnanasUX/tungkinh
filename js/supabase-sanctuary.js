@@ -38,6 +38,7 @@
     lastSyncTime: null,
     reconnectTimer: null,
     myClientId: null,
+    pendingBroadcasts: [],
 
     getClientId() {
       if (this.myClientId) return this.myClientId;
@@ -594,6 +595,10 @@
             this.lastSyncTime = new Date();
             console.log('[SupabaseSanctuary] Realtime Channel đã SUBSCRIBED thành công!');
             await this.trackCurrentUserPresence();
+            if (this.pendingBroadcasts && this.pendingBroadcasts.length > 0) {
+              const pending = this.pendingBroadcasts.splice(0);
+              pending.forEach(p => this.broadcast(p.eventName, p.payload));
+            }
             this.broadcast('HELLO_SANCTUARY', {
               seatNo: window.currentUserProfile?.assignedSeatNo || null,
               senderId: this.getClientId(),
@@ -639,6 +644,21 @@
       const myClientId = this.getClientId();
 
       const defaultName = (typeof window.pickUniqueSampleDevotee === 'function') ? window.pickUniqueSampleDevotee().name : 'Phật Tử';
+      let currentRobeTheme = profile.robeTheme;
+      let currentRobeColor = profile.robeColor;
+      if (!currentRobeTheme) {
+        try {
+          const savedProgress = JSON.parse(localStorage.getItem('chua-sen-progress') || '{}');
+          if (savedProgress.theme) currentRobeTheme = savedProgress.theme;
+        } catch (_) {}
+      }
+      currentRobeTheme = currentRobeTheme || 'xanh';
+      const ROBE_MAP = {
+        xanh: '#3b72b8', nau: '#7a4b33', vang: '#c08a35',
+        xam: '#7a8288', do: '#9a3f33', trang: '#e6ebed', bach: '#e6ebed', lam: '#3b72b8'
+      };
+      currentRobeColor = currentRobeColor || ROBE_MAP[currentRobeTheme] || '#3b72b8';
+
       const payload = {
         id: myClientId,
         clientId: myClientId,
@@ -655,8 +675,8 @@
         clientIp: profile.clientIp || window.currentDetectedIP || '117.5.x.x',
         isLocked: !!profile.isLocked,
         onlineAt: profile.onlineAt || new Date().toISOString(),
-        robeTheme: profile.robeTheme || 'xanh',
-        robeColor: profile.robeColor || '#3b72b8',
+        robeTheme: currentRobeTheme,
+        robeColor: currentRobeColor,
         x: (typeof window !== 'undefined' && window.lastPlayerPos) ? window.lastPlayerPos.x : undefined,
         z: (typeof window !== 'undefined' && window.lastPlayerPos) ? window.lastPlayerPos.z : undefined,
         pose: (typeof window !== 'undefined' && window.lastPlayerPos) ? window.lastPlayerPos.pose : undefined
@@ -1037,7 +1057,10 @@
      * Phát sự kiện Realtime Broadcast qua Supabase
      */
     broadcast(eventName, payload = {}) {
-      if (!this.channel) return;
+      if (!this.channel || !this.isRealtimeActive) {
+        this.pendingBroadcasts.push({ eventName, payload });
+        return;
+      }
       try {
         this.channel.send({
           type: 'broadcast',

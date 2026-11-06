@@ -1993,6 +1993,14 @@
 .robe-do > i {
   background: #71372c;
 }
+.robe-trang > i {
+  background: #e6ebed;
+  box-shadow: inset 0 -7px #b8c1c7;
+}
+.robe-trang > i {
+  background: #e6ebed;
+  box-shadow: inset 0 -7px #b8c1c7;
+}
 .theme-options {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -2031,6 +2039,14 @@
 }
 .theme-options .swatch-do {
   background: #71372c;
+}
+.theme-options .swatch-trang {
+  background: #e6ebed;
+  box-shadow: inset 0 -4px #b8c1c7;
+}
+.theme-options .swatch-trang {
+  background: #e6ebed;
+  box-shadow: inset 0 -4px #b8c1c7;
 }
 
 .guide-view {

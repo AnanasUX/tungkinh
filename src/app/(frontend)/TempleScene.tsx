@@ -100,11 +100,24 @@ const RESIDENTS: Resident[] = [
 ]
 
 export const ROBE_COLORS: Record<string, string> = {
-  xanh: '#3b72b8',
-  nau: '#7a4b33',
-  vang: '#c08a35',
-  xam: '#7a8288',
-  do: '#9a3f33',
+  xanh: '#3b72b8', // Lam xanh
+  nau: '#7a4b33',  // Nâu thiền
+  vang: '#c08a35', // Vàng đất
+  xam: '#7a8288',  // Lam xám
+  do: '#9a3f33',   // Đỏ trầm
+  trang: '#e6ebed', // Bạch y (Trắng thanh tịnh)
+  bach: '#e6ebed',
+  lam: '#3b72b8',
+}
+
+export function resolveRobeColor(theme?: string, color?: string): string {
+  if (color && typeof color === 'string' && (color.startsWith('#') || color.startsWith('rgb'))) {
+    return color
+  }
+  if (theme && ROBE_COLORS[theme]) {
+    return ROBE_COLORS[theme]
+  }
+  return ROBE_COLORS.xanh
 }
 
 function seeded(seed: number) {
@@ -1421,7 +1434,7 @@ export default function TempleScene({
           const seatNo = rawSeat ? Number(rawSeat) : null
 
           const remoteTheme = d.robeTheme || d.theme || 'xanh'
-          const remoteColor = d.robeColor || ROBE_COLORS[remoteTheme] || ROBE_COLORS.xanh
+          const remoteColor = resolveRobeColor(remoteTheme, d.robeColor)
 
           if (remoteEntities.has(clientId)) {
             const entity = remoteEntities.get(clientId)!
@@ -1532,7 +1545,7 @@ export default function TempleScene({
         }
 
         const remoteTheme = payload.theme || payload.robeTheme || 'xanh'
-        const remoteColor = payload.robeColor || ROBE_COLORS[remoteTheme] || ROBE_COLORS.xanh
+        const remoteColor = resolveRobeColor(remoteTheme, payload.robeColor)
         const rig = character(spawnX, spawnZ, remoteColor, pose, Math.random() * 2)
         if (typeof payload.heading === 'number') {
           rig.group.rotation.set(0, payload.heading, 0)
@@ -1743,9 +1756,34 @@ export default function TempleScene({
       },
       bow: () => {
         if (route.length) return
-        heading = Math.PI
-        player.group.rotation.y = Math.PI
-        action = { kind: 'bow', start: clock.elapsedTime, duration: 2.6 }
+        const pos = player.group.position
+        // 1. Nếu đang ngồi bồ đoàn: luôn quay mặt về phía chánh điện (Math.PI) để đảnh lễ
+        if (seated !== null) {
+          heading = Math.PI
+          player.group.rotation.y = Math.PI
+          action = { kind: 'bow', start: clock.elapsedTime, duration: 2.6 }
+          return
+        }
+
+        // 2. Nếu đang đứng trước lư thắp hương [0, -5.0] (trong phạm vi 2.2m)
+        const distToIncense = Math.hypot(pos.x - 0, pos.z - (-5.0))
+        if (distToIncense < 2.2) {
+          heading = Math.PI
+          player.group.rotation.y = Math.PI
+          action = { kind: 'bow', start: clock.elapsedTime, duration: 2.6 }
+          return
+        }
+
+        // 3. Nếu đang đi đứng nơi khác: tự động điều hướng về bồ đoàn đã chỉ định để an tọa trang nghiêm và đảnh lễ
+        const targetSeat = (window as any).currentUserProfile?.assignedSeatNo || 1
+        sit(targetSeat)
+        const origOnArrive = onArrive
+        onArrive = () => {
+          if (origOnArrive) origOnArrive()
+          heading = Math.PI
+          player.group.rotation.y = Math.PI
+          action = { kind: 'bow', start: clock.elapsedTime, duration: 2.6 }
+        }
       },
       ringBell: () => {
         bellStart = clock.elapsedTime
@@ -1886,8 +1924,8 @@ export default function TempleScene({
       if (!cId || cId === myId) return
       const ent = remoteEntities.get(cId)
       if (ent) {
-        const col = p.robeColor || ROBE_COLORS[p.theme] || ROBE_COLORS.xanh
-        ent.robeTheme = p.theme
+        const col = resolveRobeColor(p.theme, p.robeColor)
+        ent.robeTheme = p.theme || 'xanh'
         ent.robeColor = col
         ent.rig.robe.color.set(col)
       }
@@ -2445,7 +2483,7 @@ export default function TempleScene({
           return
         }
         projected.copy(bubble.targetRig.group.position)
-        projected.y += bubble.targetRig.pose === 'sit' ? 2.85 : 3.2
+        projected.y += bubble.targetRig.pose === 'sit' ? 2.45 : 2.85
         const far = camera.position.distanceTo(projected)
         projected.project(camera)
         const visible = projected.z < 1 && far < 50 && Math.abs(projected.x) < 1.3 && Math.abs(projected.y) < 1.3
