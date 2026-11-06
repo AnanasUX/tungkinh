@@ -1764,8 +1764,14 @@
     };
   }
 
+  let cachedMyId = null;
   function myId() {
-    return window.RealtimeSanctuary?.clientId || 'guest-' + Math.random().toString(36).slice(2, 8);
+    if (cachedMyId) return cachedMyId;
+    cachedMyId = window.SANCTUARY_CLIENT_ID
+      || (window.SupabaseSanctuary && typeof window.SupabaseSanctuary.getClientId === 'function' && window.SupabaseSanctuary.getClientId())
+      || (window.RealtimeSanctuary && window.RealtimeSanctuary.clientId)
+      || ('phattu_' + Math.random().toString(36).slice(2, 8));
+    return cachedMyId;
   }
 
   function isPublicRoom() {
@@ -2625,8 +2631,12 @@
   }
 
   function publish(payload) {
-    if (window.RealtimeSanctuary) {
-      window.RealtimeSanctuary.publishMessage({ ...payload, roomId: state.roomId, senderId: myId() });
+    const fullPayload = { ...payload, roomId: state.roomId, senderId: myId() };
+    if (window.SupabaseSanctuary && typeof window.SupabaseSanctuary.broadcast === 'function') {
+      window.SupabaseSanctuary.broadcast(payload.type, fullPayload);
+    }
+    if (window.RealtimeSanctuary && typeof window.RealtimeSanctuary.publishMessage === 'function') {
+      window.RealtimeSanctuary.publishMessage(fullPayload);
     }
   }
 

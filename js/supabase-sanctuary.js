@@ -507,18 +507,12 @@
             this.isRealtimeActive = true;
             this.lastSyncTime = new Date();
             console.log('[SupabaseSanctuary] Realtime Channel đã SUBSCRIBED thành công!');
-            if (window.currentUserProfile && window.currentUserProfile.assignedSeatNo) {
-              await this.trackCurrentUserPresence();
-              this.broadcast('HELLO_SANCTUARY', {
-                seatNo: window.currentUserProfile.assignedSeatNo,
-                senderId: this.getClientId(),
-                data: window.currentUserProfile
-              });
-            } else {
-              this.broadcast('HELLO_SANCTUARY', {
-                senderId: this.getClientId()
-              });
-            }
+            await this.trackCurrentUserPresence();
+            this.broadcast('HELLO_SANCTUARY', {
+              seatNo: window.currentUserProfile?.assignedSeatNo || null,
+              senderId: this.getClientId(),
+              data: window.currentUserProfile
+            });
             this.updateHUDStatus(true);
             done(true);
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -553,19 +547,20 @@
       if (!this.channel || !this.isRealtimeActive) return;
 
       const profile = window.currentUserProfile || {};
-      const mySeatNo = profile.assignedSeatNo;
-      if (!mySeatNo) {
-        console.log('[SupabaseSanctuary] Chưa có assignedSeatNo, chờ xếp chỗ trước khi track presence.');
-        return;
-      }
+      const mySeatNo = (typeof profile.assignedSeatNo === 'number' && profile.assignedSeatNo > 0)
+        ? profile.assignedSeatNo
+        : null;
       const myClientId = this.getClientId();
 
       const defaultName = (typeof window.pickUniqueSampleDevotee === 'function') ? window.pickUniqueSampleDevotee().name : 'Phật Tử';
       const payload = {
+        id: myClientId,
         clientId: myClientId,
         seatNo: mySeatNo,
         fullName: profile.fullName || defaultName,
+        name: profile.fullName || defaultName,
         dharmaName: profile.dharmaName || 'Tịnh Tâm',
+        dharma: profile.dharmaName || 'Tịnh Tâm',
         avatarType: profile.avatarType || 'monk',
         age: profile.age || 28,
         hometown: profile.hometown || 'Việt Nam',
@@ -578,7 +573,7 @@
 
       try {
         await this.channel.track(payload);
-        console.log('[SupabaseSanctuary] Đã track presence thành công:', payload.fullName, `Bồ đoàn #${mySeatNo}`);
+        console.log('[SupabaseSanctuary] Đã track presence thành công:', payload.fullName, mySeatNo ? `Bồ đoàn #${mySeatNo}` : 'Sân Chùa');
       } catch (e) {
         console.warn('[SupabaseSanctuary] Lỗi khi track presence:', e);
       }
@@ -600,29 +595,54 @@
         const presences = presenceState[key];
         if (presences && presences.length > 0) {
           const dev = presences[presences.length - 1]; // Lấy trạng thái mới nhất
-          if (dev && dev.clientId !== myClientId) {
-            onlineDevotees.push(dev);
+          if (dev && (dev.clientId !== myClientId && dev.id !== myClientId)) {
+            onlineDevotees.push({
+              ...dev,
+              id: dev.clientId || key,
+              clientId: dev.clientId || key,
+              name: dev.fullName || dev.name || 'Đồng Tu',
+              fullName: dev.fullName || dev.name || 'Đồng Tu',
+              dharmaName: dev.dharmaName || dev.dharma || 'Tịnh Tâm',
+              dharma: dev.dharmaName || dev.dharma || 'Tịnh Tâm',
+              seatNo: dev.seatNo || null
+            });
           }
         }
       }
 
-      // 1. KIỂM TRA SỐ LƯỢNG NGƯỜI DÙNG: NẾU VƯỢT QUÁ SỐ CHỖ HIỆN TẠI -> TỰ ĐỘNG SINH HÀNG MỚI!
-      const totalParticipants = onlineDevotees.length + 1; // +1 cho bản thân
-      if (typeof window.ensureSeatCapacity === 'function') {
-        window.ensureSeatCapacity(totalParticipants + 2); // Luôn dư ít nhất 2 chỗ trống cho người tiếp theo
+      // 1. Dọn dẹp activeDevotees cho các client đã rời đi
+      const currentActiveKeys = new Set(onlineDevotees.map(d => d.clientId));
+      for (const existingId of Array.from(this.activeDevotees.keys())) {
+        if (!currentActiveKeys.has(existingId)) {
+          this.activeDevotees.delete(existingId);
+          if (window.sanctuarySeats) {
+            window.sanctuarySeats.forEach(s => {
+              if (s.remoteClientId === existingId) {
+                s.occupied = false;
+                s.remoteClientId = null;
+                s.name = '';
+                s.dharma = '';
+              }
+            });
+          }
+        }
       }
 
-      // 2. Phân bổ từng đồng tu vào đúng vị trí Bồ Đoàn trên giao diện
+      // 2. Thêm và cập nhật mọi đồng tu online vào activeDevotees và bồ đoàn
       onlineDevotees.forEach(dev => {
+        this.activeDevotees.set(dev.clientId, dev);
         this.applyPresenceDevoteeToSeat(dev);
       });
 
-      // 3. Cập nhật số người online trên HUD
+      const totalParticipants = onlineDevotees.length + 1;
       this.updateOnlineCountHUD(totalParticipants);
 
-      // 4. Render lại sàn Chánh Điện
       if (typeof window.renderSanctuaryFloor === 'function') {
         window.renderSanctuaryFloor();
+      }
+      if (typeof window !== 'undefined') {
+        const list = Array.from(this.activeDevotees.values());
+        window.dispatchEvent(new CustomEvent('sanctuary_devotees_updated', { detail: list }));
       }
     },
 
@@ -635,25 +655,20 @@
 
       newPresences.forEach(dev => {
         if (!dev || dev.clientId === myClientId) return;
-        console.log(`[SupabaseSanctuary] 🌟 Đồng tu mới vào Chánh Điện: ${dev.fullName} (Bồ đoàn #${dev.seatNo})`);
+        const normalized = {
+          ...dev,
+          id: dev.clientId || key,
+          clientId: dev.clientId || key,
+          name: dev.fullName || dev.name || 'Đồng Tu',
+          fullName: dev.fullName || dev.name || 'Đồng Tu',
+          dharmaName: dev.dharmaName || dev.dharma || 'Tịnh Tâm',
+          dharma: dev.dharmaName || dev.dharma || 'Tịnh Tâm',
+          seatNo: dev.seatNo || null
+        };
+        console.log(`[SupabaseSanctuary] 🌟 Đồng tu mới vào Chánh Điện: ${normalized.fullName} (${normalized.seatNo ? 'Bồ đoàn #' + normalized.seatNo : 'Sân Chùa'})`);
+        this.activeDevotees.set(normalized.clientId, normalized);
+        this.applyPresenceDevoteeToSeat(normalized);
 
-        // Đảm bảo đủ chỗ nếu seatNo lớn hơn số chỗ hiện tại
-        if (typeof window.ensureSeatCapacity === 'function' && dev.seatNo) {
-          window.ensureSeatCapacity(dev.seatNo);
-        }
-
-        this.applyPresenceDevoteeToSeat(dev);
-
-        // Hiển thị thông báo đón chào trên màn hình
-        if (typeof window.showLiveGiftBanner === 'function') {
-          window.showLiveGiftBanner(
-            'Đồng Tu Mới An Tọa',
-            `🙏 Đạo hữu ${dev.fullName} (PD: ${dev.dharmaName || 'Tịnh Tâm'}) vừa vào Chánh Điện (Bồ đoàn #${dev.seatNo})`,
-            'lotus'
-          );
-        }
-
-        // Ngân chuông chùa nhẹ nhàng
         if (window.AudioEngine && typeof window.AudioEngine.playGiftChime === 'function') {
           window.AudioEngine.playGiftChime();
         }
@@ -661,6 +676,11 @@
 
       if (typeof window.renderSanctuaryFloor === 'function') {
         window.renderSanctuaryFloor();
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('sanctuary_devotees_updated', {
+          detail: Array.from(this.activeDevotees.values())
+        }));
       }
     },
 
@@ -673,10 +693,11 @@
       console.log(`[SupabaseSanctuary] Đồng tu rời khỏi Chánh Điện:`, key);
 
       leftPresences.forEach(dev => {
+        const id = (dev && dev.clientId) || key;
         const seatNo = dev ? dev.seatNo : null;
         if (window.sanctuarySeats) {
           window.sanctuarySeats.forEach(s => {
-            if (!s.isUser && (s.remoteClientId === key || (seatNo && s.seatNo === seatNo && s.remoteClientId === key))) {
+            if (!s.isUser && (s.remoteClientId === id || (seatNo && s.seatNo === seatNo && s.remoteClientId === id))) {
               s.occupied = false;
               s.remoteClientId = null;
               s.name = '';
@@ -684,11 +705,17 @@
             }
           });
         }
-        this.activeDevotees.delete(key);
+        this.activeDevotees.delete(id);
       });
+      this.activeDevotees.delete(key);
 
       if (typeof window.renderSanctuaryFloor === 'function') {
         window.renderSanctuaryFloor();
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('sanctuary_devotees_updated', {
+          detail: Array.from(this.activeDevotees.values())
+        }));
       }
     },
 
@@ -761,6 +788,8 @@
         seat.points = dev.meritScore || 20;
         seat.ip = dev.clientIp || '117.5.x.x';
 
+        this.activeDevotees.set(dev.clientId, dev);
+      } else {
         this.activeDevotees.set(dev.clientId, dev);
       }
     },
