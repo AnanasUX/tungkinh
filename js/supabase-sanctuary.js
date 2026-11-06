@@ -541,6 +541,27 @@
         .on('broadcast', { event: 'ROOM_CHAT' }, ({ payload }) => {
           if (!payload || payload.senderId === this.getClientId()) return;
           window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_CHAT', ...payload } }));
+          window.dispatchEvent(new CustomEvent('community_chat_message', { detail: payload }));
+        })
+        .on('broadcast', { event: 'ROOM_VOICE_CHUNK' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_VOICE_CHUNK', ...payload } }));
+        })
+        .on('broadcast', { event: 'ROOM_VOICE_ANNOUNCE' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_VOICE_ANNOUNCE', ...payload } }));
+        })
+        .on('broadcast', { event: 'ROOM_PRESENCE' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_PRESENCE', ...payload } }));
+        })
+        .on('broadcast', { event: 'CALL_ROOM_CREATED' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'CALL_ROOM_CREATED', ...payload } }));
+        })
+        .on('broadcast', { event: 'CHANGE_ROBE' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          window.dispatchEvent(new CustomEvent('devotee_change_robe', { detail: payload }));
         });
 
       // C. LẮNG NGHE POSTGRES CHANGES (Cập nhật tức thì khi có bản ghi mới trong bảng)
@@ -634,6 +655,8 @@
         clientIp: profile.clientIp || window.currentDetectedIP || '117.5.x.x',
         isLocked: !!profile.isLocked,
         onlineAt: profile.onlineAt || new Date().toISOString(),
+        robeTheme: profile.robeTheme || 'xanh',
+        robeColor: profile.robeColor || '#3b72b8',
         x: (typeof window !== 'undefined' && window.lastPlayerPos) ? window.lastPlayerPos.x : undefined,
         z: (typeof window !== 'undefined' && window.lastPlayerPos) ? window.lastPlayerPos.z : undefined,
         pose: (typeof window !== 'undefined' && window.lastPlayerPos) ? window.lastPlayerPos.pose : undefined

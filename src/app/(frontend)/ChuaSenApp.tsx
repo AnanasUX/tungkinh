@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import TempleScene, { type SceneApi } from './TempleScene'
+import TempleScene, { type SceneApi, ROBE_COLORS } from './TempleScene'
 import SystemPanel, { type PanelId } from './SystemPanel'
 import TouchJoystick from './TouchJoystick'
 import CommunityOverlay, { VideoCallOverlay } from './CommunityOverlay'
@@ -576,7 +576,11 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     else if (id === 'video') {
       setPanel(null)
       setCommunityOpen(false)
-      setCallOpen(true)
+      if (typeof (window as any).startZaloVideoCall === 'function') {
+        ;(window as any).startZaloVideoCall()
+      } else {
+        setCallOpen(true)
+      }
     } else setPanel(id)
   }
 
@@ -925,7 +929,19 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
           onName={setPlayerName}
           onMuted={setMuted}
           onRoom={setRoom}
-          onTheme={setTheme}
+          onTheme={(newTheme) => {
+            setTheme(newTheme)
+            const color = ROBE_COLORS[newTheme] || ROBE_COLORS.xanh
+            if ((window as any).currentUserProfile) {
+              ;(window as any).currentUserProfile.robeTheme = newTheme
+              ;(window as any).currentUserProfile.robeColor = color
+            }
+            ;(window as any).SupabaseSanctuary?.broadcast?.('CHANGE_ROBE', {
+              theme: newTheme,
+              robeColor: color,
+            })
+            ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
+          }}
           onWish={(wish) => setWishes((current) => [...current, wish].slice(-20))}
           onPhrase={setPhrase}
           onKnock={knock}

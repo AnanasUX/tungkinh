@@ -99,7 +99,7 @@ const RESIDENTS: Resident[] = [
   },
 ]
 
-const ROBE_COLORS: Record<string, string> = {
+export const ROBE_COLORS: Record<string, string> = {
   xanh: '#3b72b8',
   nau: '#7a4b33',
   vang: '#c08a35',
@@ -1399,6 +1399,8 @@ export default function TempleScene({
       targetPose: Pose
       isWalking: boolean
       lastUpdate: number
+      robeTheme?: string
+      robeColor?: string
     }
     const remoteEntities = new Map<string, RemoteDevoteeEntity>()
     const PALETTE = ['#3b72b8', '#7a4b33', '#c08a35', '#7a8288', '#9a3f33', '#b27a3c', '#5a6b7c', '#8c5e3d']
@@ -1418,8 +1420,16 @@ export default function TempleScene({
           const rawSeat = typeof d.seatNo === 'number' ? d.seatNo : d.assignedSeatNo
           const seatNo = rawSeat ? Number(rawSeat) : null
 
+          const remoteTheme = d.robeTheme || d.theme || 'xanh'
+          const remoteColor = d.robeColor || ROBE_COLORS[remoteTheme] || ROBE_COLORS.xanh
+
           if (remoteEntities.has(clientId)) {
             const entity = remoteEntities.get(clientId)!
+            if (entity.robeColor !== remoteColor) {
+              entity.robeTheme = remoteTheme
+              entity.robeColor = remoteColor
+              entity.rig.robe.color.set(remoteColor)
+            }
             const isRecentLive = (performance.now() - entity.lastUpdate) < 6000 || entity.isWalking || entity.seatNo === null
             if (!isRecentLive && entity.seatNo !== seatNo && seatNo !== null) {
               entity.seatNo = seatNo
@@ -1451,8 +1461,7 @@ export default function TempleScene({
               x = ((hash % 11) - 5) * 1.6
               z = 2 + (hash % 7) * 1.4
             }
-            const colorIdx = Math.abs(clientId.split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0)) % PALETTE.length
-            const rig = character(x, z, PALETTE[colorIdx], pose, Math.random() * 2)
+            const rig = character(x, z, remoteColor, pose, Math.random() * 2)
             if (pose === 'sit') {
               rig.group.rotation.set(0, Math.PI, 0)
             } else {
@@ -1478,6 +1487,8 @@ export default function TempleScene({
               targetPose: pose,
               isWalking: false,
               lastUpdate: performance.now(),
+              robeTheme: remoteTheme,
+              robeColor: remoteColor,
             })
           }
         })
@@ -1520,8 +1531,9 @@ export default function TempleScene({
           spawnZ = s.z
         }
 
-        const colorIdx = Math.abs(clientId.split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0)) % PALETTE.length
-        const rig = character(spawnX, spawnZ, PALETTE[colorIdx], pose, Math.random() * 2)
+        const remoteTheme = payload.theme || payload.robeTheme || 'xanh'
+        const remoteColor = payload.robeColor || ROBE_COLORS[remoteTheme] || ROBE_COLORS.xanh
+        const rig = character(spawnX, spawnZ, remoteColor, pose, Math.random() * 2)
         if (typeof payload.heading === 'number') {
           rig.group.rotation.set(0, payload.heading, 0)
         } else if (pose === 'sit') {
@@ -1550,6 +1562,14 @@ export default function TempleScene({
         }
         remoteEntities.set(clientId, entity)
       } else {
+        if (payload.theme || payload.robeColor) {
+          const col = payload.robeColor || ROBE_COLORS[payload.theme] || ROBE_COLORS.xanh
+          if (entity.robeColor !== col) {
+            entity.robeTheme = payload.theme
+            entity.robeColor = col
+            entity.rig.robe.color.set(col)
+          }
+        }
         if (typeof payload.x === 'number') entity.targetX = payload.x
         if (typeof payload.z === 'number') entity.targetZ = payload.z
         if (typeof payload.heading === 'number') entity.targetHeading = payload.heading
@@ -1723,6 +1743,8 @@ export default function TempleScene({
       },
       bow: () => {
         if (route.length) return
+        heading = Math.PI
+        player.group.rotation.y = Math.PI
         action = { kind: 'bow', start: clock.elapsedTime, duration: 2.6 }
       },
       ringBell: () => {
@@ -1790,6 +1812,87 @@ export default function TempleScene({
     renderer.domElement.addEventListener('pointermove', onPointerMove)
     renderer.domElement.addEventListener('pointerup', onPointerUp)
     renderer.domElement.addEventListener('wheel', onWheel, { passive: true })
+
+    // 3D Speech bubbles system for communal chat messages
+    type SpeechBubble = {
+      id: string
+      targetRig: CharacterRig
+      element: HTMLDivElement
+      expiresAt: number
+    }
+    const speechBubbles = new Map<string, SpeechBubble>()
+
+    const showSpeechBubble = (targetRig: CharacterRig, authorName: string, text: string) => {
+      if (!labelsContainerRef.current) return
+      const key = String(targetRig.group.id)
+      let bubble = speechBubbles.get(key)
+      if (!bubble) {
+        const el = document.createElement('div')
+        el.className = 'scene-speech-bubble'
+        labelsContainerRef.current.appendChild(el)
+        bubble = {
+          id: key,
+          targetRig,
+          element: el,
+          expiresAt: clock.elapsedTime + 6.5,
+        }
+        speechBubbles.set(key, bubble)
+      }
+      bubble.expiresAt = clock.elapsedTime + 6.5
+      bubble.element.innerHTML = `<span class="bubble-tail"></span><strong class="bubble-author">${authorName}:</strong> <span>${text}</span>`
+      bubble.element.style.opacity = '1'
+    }
+
+    const onIncomingChatMessage = (event: any) => {
+      const msg = event.detail
+      if (!msg) return
+      const text = (msg.text || msg.body || '').trim()
+      if (!text) return
+      const senderId = String(msg.senderId || msg.clientId || '')
+      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
+      const authorName = msg.name || msg.author || msg.fullName || 'Đồng Tu'
+
+      if (msg.isSelf || senderId === myId || authorName === playerName) {
+        showSpeechBubble(player, playerName, text)
+      } else if (senderId && remoteEntities.has(senderId)) {
+        const ent = remoteEntities.get(senderId)!
+        showSpeechBubble(ent.rig, ent.name, text)
+      } else {
+        let found = false
+        remoteEntities.forEach((ent) => {
+          if (!found && (ent.name === authorName || ent.dharmaName === authorName)) {
+            showSpeechBubble(ent.rig, ent.name, text)
+            found = true
+          }
+        })
+        if (!found) {
+          const res = residentAgents.find((a) => a.resident.name === authorName)
+          if (res) showSpeechBubble(res.rig, res.resident.name, text)
+        }
+      }
+    }
+    window.addEventListener('community_chat_message', onIncomingChatMessage)
+    window.addEventListener('room-realtime-message', (e: any) => {
+      if (e.detail?.type === 'ROOM_CHAT') {
+        onIncomingChatMessage(e)
+      }
+    })
+
+    const onDevoteeChangeRobe = (event: any) => {
+      const p = event.detail
+      if (!p) return
+      const cId = String(p.senderId || p.clientId || '')
+      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
+      if (!cId || cId === myId) return
+      const ent = remoteEntities.get(cId)
+      if (ent) {
+        const col = p.robeColor || ROBE_COLORS[p.theme] || ROBE_COLORS.xanh
+        ent.robeTheme = p.theme
+        ent.robeColor = col
+        ent.rig.robe.color.set(col)
+      }
+    }
+    window.addEventListener('devotee_change_robe', onDevoteeChangeRobe)
 
     const cameraTarget = new THREE.Vector3()
     const desiredCamera = new THREE.Vector3()
@@ -1910,6 +2013,8 @@ export default function TempleScene({
           pose: player.pose,
           walking: walking,
           seatNo: seated,
+          theme: themeRef.current,
+          robeColor: ROBE_COLORS[themeRef.current] || ROBE_COLORS.xanh,
         })
       }
 
@@ -2046,14 +2151,8 @@ export default function TempleScene({
               agent.pauseUntil = elapsed + 4 + Math.random() * 4
               if (small) small.textContent = 'Đang tĩnh tâm quán chiếu'
 
-              // Chance to perform a mindful bow
-              if (Math.random() < 0.5) {
-                rig.action = { kind: 'bow', start: elapsed, duration: 2.6 }
-                if (small) small.textContent = 'Đang thành tâm đảnh lễ'
-              }
-              // Turn towards main altar [0, -20]
-              const altarAngle = Math.atan2(0 - pos.x, -20 - pos.z)
-              agent.heading = altarAngle
+              // Tĩnh tâm chiêm nghiệm, không cúi đầu linh tinh khi đi dạo
+              agent.heading = Math.PI
             } else {
               pos.x += (dx / dist) * stride
               pos.z += (dz / dist) * stride
@@ -2335,6 +2434,30 @@ export default function TempleScene({
           label.style.zIndex = String(1000 - Math.round(far * 10))
         }
       })
+      // 4. Update 3D floating speech bubbles
+      speechBubbles.forEach((bubble, key) => {
+        if (elapsed > bubble.expiresAt) {
+          bubble.element.style.opacity = '0'
+          if (elapsed > bubble.expiresAt + 0.5) {
+            if (bubble.element.parentNode) bubble.element.parentNode.removeChild(bubble.element)
+            speechBubbles.delete(key)
+          }
+          return
+        }
+        projected.copy(bubble.targetRig.group.position)
+        projected.y += bubble.targetRig.pose === 'sit' ? 2.85 : 3.2
+        const far = camera.position.distanceTo(projected)
+        projected.project(camera)
+        const visible = projected.z < 1 && far < 50 && Math.abs(projected.x) < 1.3 && Math.abs(projected.y) < 1.3
+        bubble.element.style.opacity = visible ? '1' : '0'
+        if (visible) {
+          const sx = ((projected.x + 1) / 2) * width
+          const sy = ((1 - projected.y) / 2) * height
+          bubble.element.style.transform = `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0) translate(-50%, -100%)`
+          bubble.element.style.zIndex = '1500'
+        }
+      })
+
       if (needleRef.current) needleRef.current.style.transform = `rotate(${-yaw}rad)`
 
       renderer.render(scene, camera)

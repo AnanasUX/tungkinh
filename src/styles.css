@@ -483,6 +483,44 @@
   background: radial-gradient(circle at 40% 35%, #f6d6b5, #d9ac82);
   box-shadow: inset 0 -4px 0 #3b72b8;
 }
+.scene-speech-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+  max-width: 240px;
+  min-width: 60px;
+  background: rgba(255, 252, 245, 0.96);
+  color: #2b180d;
+  border: 1.5px solid #d4af37;
+  border-radius: 14px;
+  padding: 6px 12px;
+  font-size: var(--fs-xs, 12px);
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 12px rgba(212, 175, 55, 0.3);
+  transition: opacity 0.3s ease;
+  will-change: transform, opacity;
+  z-index: 1500;
+}
+.scene-speech-bubble .bubble-tail {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #d4af37;
+}
+.scene-speech-bubble .bubble-author {
+  color: #8c5319;
+  font-size: 11px;
+  margin-right: 4px;
+}
 .scene-compass {
   position: absolute;
   z-index: 4;

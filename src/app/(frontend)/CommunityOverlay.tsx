@@ -128,12 +128,39 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
   const [messages, setMessages] = useState([
     {
       id: 1,
-      author: 'Chùa Yên Phúc',
+      author: 'Chùa An Nhiên',
       body: 'Chào mừng bạn đến Đạo Tràng Chung. Gửi một lời lành để cùng nhau thực tập chánh niệm.',
       time: 'Bây giờ',
       system: true,
     },
   ])
+
+  useEffect(() => {
+    const onIncoming = (e: any) => {
+      const msg = e.detail
+      if (!msg) return
+      const text = (msg.text || msg.body || '').trim()
+      if (!text) return
+      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
+      if (msg.senderId && msg.senderId === myId && !msg.isSelf) return
+      const author = msg.author || msg.name || msg.fullName || msg.senderName || 'Đồng Tu'
+      setMessages((current) => {
+        if (msg.id && current.some((m) => m.id === msg.id)) return current
+        return [
+          ...current,
+          {
+            id: msg.id || Date.now(),
+            author,
+            body: text,
+            time: 'Vừa xong',
+            system: false,
+          },
+        ]
+      })
+    }
+    window.addEventListener('community_chat_message', onIncoming)
+    return () => window.removeEventListener('community_chat_message', onIncoming)
+  }, [])
   const micRef = useRef<MediaStream | null>(null)
 
   useEffect(
@@ -155,11 +182,28 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
   const send = (text = draft) => {
     const body = text.trim()
     if (!body) return
-    setMessages((current) => [
-      ...current,
-      { id: Date.now(), author: playerName, body, time: 'Vừa xong', system: false },
-    ])
+    const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
+    const msg = {
+      id: Date.now(),
+      author: playerName,
+      name: playerName,
+      fullName: playerName,
+      body,
+      text: body,
+      time: 'Vừa xong',
+      system: false,
+      senderId: myId,
+      clientId: myId,
+    }
+    setMessages((current) => [...current, msg])
     setDraft('')
+
+    // 1. Broadcast to all clients via Supabase Realtime
+    ;(window as any).SupabaseSanctuary?.broadcast?.('ROOM_CHAT', msg)
+
+    // 2. Dispatch locally for 3D speech bubble and room-chat history
+    window.dispatchEvent(new CustomEvent('community_chat_message', { detail: { ...msg, isSelf: true } }))
+    window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_CHAT', ...msg } }))
   }
 
   const toggleMic = async () => {
@@ -215,7 +259,14 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
           </div>
           <button
             type="button"
-            onClick={onCall}
+            onClick={() => {
+              if (typeof (window as any).startZaloVideoCall === 'function') {
+                (window as any).startZaloVideoCall()
+                onClose()
+              } else {
+                onCall()
+              }
+            }}
             className="hidden h-9 items-center gap-2 rounded-full border border-emerald-300/50 bg-emerald-600/80 px-4 text-xs font-bold text-white shadow-[0_5px_18px_rgba(5,150,105,.22)] transition hover:bg-emerald-500 sm:flex"
           >
             <Glyph name="camera" size={15} /> Gọi Video
@@ -492,7 +543,14 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
         <div className="flex gap-2 border-t border-[#e2bd6e]/18 p-3 sm:hidden">
           <button
             type="button"
-            onClick={onCall}
+            onClick={() => {
+              if (typeof (window as any).startZaloVideoCall === 'function') {
+                (window as any).startZaloVideoCall()
+                onClose()
+              } else {
+                onCall()
+              }
+            }}
             className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-emerald-600 text-xs font-bold text-white"
           >
             <Glyph name="camera" size={15} /> Gọi Video
