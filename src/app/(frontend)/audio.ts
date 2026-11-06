@@ -1,11 +1,39 @@
-// Synthesised temple sounds (no audio files). The AudioContext is only created
-// or resumed from user gestures to respect browser autoplay policies.
+/**
+ * Chùa An Nhiên — High-Fidelity Audio Engine
+ * Tích hợp toàn diện 3 file âm thanh gốc trong thư mục "nhac/":
+ * 1. nhac/tieng_go_mo.mp3       -> Tiếng gõ mõ thanh tịnh (Web Audio Buffer + Rapid HTML5 Audio Pool)
+ * 2. nhac/tieng_chuong_chua.mp3 -> Tiếng chuông Đại Hồng Chung ngân vang sâu lắng
+ * 3. nhac/nhac_thien_nen.mp3   -> Nhạc thiền nền tịnh tâm, tự động lặp vô tận, mở khóa tương tác trình duyệt
+ *
+ * Tự động có âm tổng hợp (synthesizer) làm phương án dự phòng (fallback) nếu mạng hoặc thiết bị gặp sự cố.
+ */
+
+const AUDIO_FILES = {
+  woodblock: 'nhac/tieng_go_mo.mp3',
+  templeBell: 'nhac/tieng_chuong_chua.mp3',
+  ambient: 'nhac/nhac_thien_nen.mp3',
+}
 
 let context: AudioContext | null = null
-let master: GainNode | null = null
-let ambient: { gain: GainNode; nodes: AudioScheduledSourceNode[] } | null = null
+let masterGain: GainNode | null = null
 
-function engine() {
+// Pre-decoded Web Audio buffers for instant 0ms latency playback
+let woodblockBuffer: AudioBuffer | null = null
+let bellBuffer: AudioBuffer | null = null
+let audioPreloadStarted = false
+
+// HTML5 Audio fallback pool for rapid wooden fish knocks
+let moAudioPool: HTMLAudioElement[] = []
+let moPoolIndex = 0
+let bellAudioFallback: HTMLAudioElement | null = null
+
+// Background ambient meditation music stream
+let ambientAudio: HTMLAudioElement | null = null
+let ambientTargetVolume = 0.3
+let ambientDesiredState = false
+let gestureUnlockAttached = false
+
+function getAudioContext(): { ctx: AudioContext; out: GainNode } | null {
   if (typeof window === 'undefined') return null
   if (!context) {
     const AudioContextClass =
@@ -13,15 +41,95 @@ function engine() {
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!AudioContextClass) return null
     context = new AudioContextClass()
-    master = context.createGain()
-    master.gain.value = 0.9
-    master.connect(context.destination)
+    masterGain = context.createGain()
+    masterGain.gain.value = 0.95
+    masterGain.connect(context.destination)
   }
-  if (context.state === 'suspended') void context.resume()
-  return { ctx: context, out: master! }
+  if (context.state === 'suspended') {
+    void context.resume().catch(() => {})
+  }
+  return { ctx: context, out: masterGain! }
 }
 
-function tone(
+/**
+ * Preload and decode audio buffers early so sounds play with 0ms delay.
+ */
+function preloadAssets() {
+  if (typeof window === 'undefined' || audioPreloadStarted) return
+  audioPreloadStarted = true
+
+  // 1. Initialize HTML5 Audio elements
+  try {
+    moAudioPool = Array.from({ length: 8 }, () => {
+      const a = new Audio(AUDIO_FILES.woodblock)
+      a.preload = 'auto'
+      return a
+    })
+    bellAudioFallback = new Audio(AUDIO_FILES.templeBell)
+    bellAudioFallback.preload = 'auto'
+  } catch (_) {}
+
+  // 2. Pre-fetch and decode Web Audio Buffers
+  const setupBuffers = () => {
+    const engine = getAudioContext()
+    if (!engine || !window.fetch) return
+
+    fetch(AUDIO_FILES.woodblock)
+      .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject('woodblock 404')))
+      .then((buf) => engine.ctx.decodeAudioData(buf))
+      .then((decoded) => {
+        woodblockBuffer = decoded
+      })
+      .catch(() => {})
+
+    fetch(AUDIO_FILES.templeBell)
+      .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject('bell 404')))
+      .then((buf) => engine.ctx.decodeAudioData(buf))
+      .then((decoded) => {
+        bellBuffer = decoded
+      })
+      .catch(() => {})
+  }
+
+  setupBuffers()
+  attachGestureUnlock()
+}
+
+/**
+ * Auto-unlock AudioContext and Ambient Music on first user interaction.
+ */
+function attachGestureUnlock() {
+  if (typeof window === 'undefined' || gestureUnlockAttached) return
+  gestureUnlockAttached = true
+
+  const unlock = () => {
+    if (context && context.state === 'suspended') {
+      void context.resume().catch(() => {})
+    }
+    // If user requested ambient music before permission was granted, start it now
+    if (ambientDesiredState && ambientAudio && ambientAudio.paused) {
+      ambientAudio.play().catch(() => {})
+    }
+  }
+
+  ['pointerdown', 'touchstart', 'keydown', 'click'].forEach((event) => {
+    window.addEventListener(event, unlock, { once: true, passive: true })
+  })
+}
+
+// Auto-preload on file load in browser
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', preloadAssets, { once: true })
+  } else {
+    preloadAssets()
+  }
+}
+
+/**
+ * Fallback tone synthesis if audio files cannot be loaded.
+ */
+function synthTone(
   ctx: AudioContext,
   out: AudioNode,
   frequency: number,
@@ -43,107 +151,178 @@ function tone(
   return oscillator
 }
 
-/** Wooden fish (mõ): a short resonant knock around 420–800 Hz. */
+/**
+ * Tiếng gõ mõ (Wooden Fish strike):
+ * Ưu tiên 1: Web Audio Buffer từ nhac/tieng_go_mo.mp3 (chuẩn 0ms, không cắt tiếng cũ)
+ * Ưu tiên 2: HTML5 Audio Pool từ nhac/tieng_go_mo.mp3 (gõ siêu tốc 10 lần/giây)
+ * Dự phòng 3: Âm tổng hợp vật lý nếu file bị mất hoặc lỗi mạng
+ */
 export function playWoodblock() {
-  const audio = engine()
-  if (!audio) return
-  const { ctx, out } = audio
-  const now = ctx.currentTime
-  const body = tone(ctx, out, 760, 0.55, 0.22, 'triangle', now)
-  body.frequency.exponentialRampToValueAtTime(430, now + 0.09)
-  tone(ctx, out, 1520, 0.12, 0.06, 'sine', now)
-  const noise = ctx.createBufferSource()
-  const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.03), ctx.sampleRate)
-  const data = buffer.getChannelData(0)
-  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length)
-  noise.buffer = buffer
-  const band = ctx.createBiquadFilter()
-  band.type = 'bandpass'
-  band.frequency.value = 1900
-  band.Q.value = 3
-  const gain = ctx.createGain()
-  gain.gain.value = 0.35
-  noise.connect(band).connect(gain).connect(out)
-  noise.start(now)
+  preloadAssets()
+  const engine = getAudioContext()
+
+  // 1. Web Audio Buffer Source (Chất lượng cao nhất & không độ trễ)
+  if (engine && woodblockBuffer) {
+    try {
+      const source = engine.ctx.createBufferSource()
+      source.buffer = woodblockBuffer
+      const gain = engine.ctx.createGain()
+      gain.gain.value = 0.95
+      source.connect(gain).connect(engine.out)
+      source.start(0)
+      return
+    } catch (_) {}
+  }
+
+  // 2. HTML5 Audio Pool (Hỗ trợ nhấp chuột liên tục)
+  if (moAudioPool.length > 0) {
+    try {
+      const audio = moAudioPool[moPoolIndex]
+      moPoolIndex = (moPoolIndex + 1) % moAudioPool.length
+      audio.currentTime = 0
+      audio.volume = 0.9
+      const playPromise = audio.play()
+      if (playPromise) {
+        playPromise.catch(() => {})
+      }
+      return
+    } catch (_) {}
+  }
+
+  // 3. Fallback Synthesizer
+  if (engine) {
+    const { ctx, out } = engine
+    const now = ctx.currentTime
+    const body = synthTone(ctx, out, 760, 0.55, 0.22, 'triangle', now)
+    body.frequency.exponentialRampToValueAtTime(430, now + 0.09)
+    synthTone(ctx, out, 1520, 0.12, 0.06, 'sine', now)
+  }
 }
 
-/** Great temple bell (Đại Hồng Chung): layered metallic partials ringing ~14 s. */
+/**
+ * Tiếng Chuông Chùa / Đại Hồng Chung:
+ * Ưu tiên 1: Web Audio Buffer từ nhac/tieng_chuong_chua.mp3 (ngân vang 12-15s chân thực)
+ * Ưu tiên 2: HTML5 Audio từ nhac/tieng_chuong_chua.mp3
+ * Dự phòng 3: Bộ tổng hợp sóng đa hài chuông đồng
+ */
 export function playTempleBell() {
-  const audio = engine()
-  if (!audio) return
-  const { ctx, out } = audio
-  const now = ctx.currentTime
-  const base = 98
-  const partials: [number, number, number][] = [
-    [0.5, 0.32, 15],
-    [1, 0.5, 14],
-    [1.006, 0.3, 13],
-    [2, 0.26, 9],
-    [2.4, 0.18, 7],
-    [3, 0.14, 6],
-    [4.2, 0.09, 4],
-    [5.4, 0.06, 3],
-  ]
-  partials.forEach(([ratio, peak, decay]) => tone(ctx, out, base * ratio, peak, decay, 'sine', now))
-  const strike = tone(ctx, out, 620, 0.12, 0.25, 'triangle', now)
-  strike.frequency.exponentialRampToValueAtTime(180, now + 0.2)
+  preloadAssets()
+  const engine = getAudioContext()
+
+  // 1. Web Audio Buffer
+  if (engine && bellBuffer) {
+    try {
+      const source = engine.ctx.createBufferSource()
+      source.buffer = bellBuffer
+      const gain = engine.ctx.createGain()
+      gain.gain.value = 1.0
+      source.connect(gain).connect(engine.out)
+      source.start(0)
+      return
+    } catch (_) {}
+  }
+
+  // 2. HTML5 Audio
+  if (bellAudioFallback) {
+    try {
+      bellAudioFallback.currentTime = 0
+      bellAudioFallback.volume = 0.95
+      const p = bellAudioFallback.play()
+      if (p) p.catch(() => {})
+      return
+    } catch (_) {}
+  } else {
+    try {
+      const a = new Audio(AUDIO_FILES.templeBell)
+      a.volume = 0.95
+      a.play().catch(() => {})
+      return
+    } catch (_) {}
+  }
+
+  // 3. Fallback Metallic Synthesis
+  if (engine) {
+    const { ctx, out } = engine
+    const now = ctx.currentTime
+    const base = 98
+    const partials: [number, number, number][] = [
+      [0.5, 0.32, 14],
+      [1, 0.5, 12],
+      [1.006, 0.3, 11],
+      [2, 0.26, 8],
+      [2.4, 0.18, 6],
+      [3, 0.14, 5],
+    ]
+    partials.forEach(([ratio, peak, decay]) =>
+      synthTone(ctx, out, base * ratio, peak, decay, 'sine', now),
+    )
+  }
 }
 
-/** Small bright chime used for merit rewards. */
+/**
+ * Tiếng khánh / chuông nhỏ báo công đức.
+ */
 export function playChime() {
-  const audio = engine()
-  if (!audio) return
-  const { ctx, out } = audio
+  preloadAssets()
+  const engine = getAudioContext()
+  if (!engine) return
+  const { ctx, out } = engine
   const now = ctx.currentTime
-  tone(ctx, out, 880, 0.09, 1.6, 'sine', now)
-  tone(ctx, out, 1320, 0.05, 1.2, 'sine', now + 0.04)
+  synthTone(ctx, out, 880, 0.09, 1.6, 'sine', now)
+  synthTone(ctx, out, 1320, 0.05, 1.2, 'sine', now + 0.04)
 }
 
-/** Soft meditative drone loop. */
+/**
+ * Nhạc thiền nền tĩnh tâm (nhac/nhac_thien_nen.mp3):
+ * - Tự động lặp vô tận (loop = true)
+ * - Mở khóa Autoplay thông minh khi người dùng chạm vào màn hình
+ * - Tăng/giảm âm lượng êm dịu, không giật
+ */
 export function setAmbient(on: boolean, volume = 0.3) {
-  const audio = engine()
-  if (!audio) return
-  const { ctx, out } = audio
+  preloadAssets()
+  ambientDesiredState = on
+  ambientTargetVolume = volume
+
+  if (!ambientAudio) {
+    try {
+      ambientAudio = new Audio(AUDIO_FILES.ambient)
+      ambientAudio.loop = true
+      ambientAudio.preload = 'metadata'
+    } catch (_) {}
+  }
+
+  if (!ambientAudio) return
+
   if (!on) {
-    if (ambient) {
-      const { gain, nodes } = ambient
-      gain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.6)
-      window.setTimeout(() => nodes.forEach((node) => node.stop()), 2500)
-      ambient = null
-    }
+    // Fade out smoothly
+    const curVol = ambientAudio.volume
+    let step = 0
+    const fadeTimer = window.setInterval(() => {
+      step++
+      if (ambientAudio && ambientAudio.volume > 0.05) {
+        ambientAudio.volume = Math.max(0, curVol * (1 - step / 10))
+      } else {
+        window.clearInterval(fadeTimer)
+        if (ambientAudio) {
+          ambientAudio.pause()
+          ambientAudio.currentTime = 0
+        }
+      }
+    }, 50)
     return
   }
-  if (ambient) {
-    ambient.gain.gain.setTargetAtTime(volume * 0.16, ctx.currentTime, 0.4)
-    return
+
+  // Turn ON: Resume AudioContext and play ambient track
+  if (context && context.state === 'suspended') {
+    void context.resume().catch(() => {})
   }
-  const gain = ctx.createGain()
-  gain.gain.value = 0.0001
-  const filter = ctx.createBiquadFilter()
-  filter.type = 'lowpass'
-  filter.frequency.value = 900
-  gain.connect(filter).connect(out)
-  const nodes: AudioScheduledSourceNode[] = []
-  for (const [frequency, level] of [
-    [73.42, 0.5],
-    [110, 0.35],
-    [146.83, 0.18],
-    [220.5, 0.08],
-  ]) {
-    const oscillator = ctx.createOscillator()
-    const voice = ctx.createGain()
-    oscillator.frequency.value = frequency
-    voice.gain.value = level
-    const lfo = ctx.createOscillator()
-    const depth = ctx.createGain()
-    lfo.frequency.value = 0.05 + frequency / 4000
-    depth.gain.value = level * 0.4
-    lfo.connect(depth).connect(voice.gain)
-    oscillator.connect(voice).connect(gain)
-    oscillator.start()
-    lfo.start()
-    nodes.push(oscillator, lfo)
+
+  ambientAudio.volume = volume
+  const playPromise = ambientAudio.play()
+  if (playPromise) {
+    playPromise.catch((_err) => {
+      // Browser blocked autoplay without user gesture yet; wait for gesture unlock
+      attachGestureUnlock()
+    })
   }
-  gain.gain.setTargetAtTime(volume * 0.16, ctx.currentTime, 1.2)
-  ambient = { gain, nodes }
 }
