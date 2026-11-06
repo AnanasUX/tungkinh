@@ -1271,6 +1271,26 @@ export default function TempleScene({
       player.group.rotation.set(0, Math.PI, 0)
     }
     const rigs = [player]
+
+    type ResidentAgent = {
+      resident: Resident
+      rig: CharacterRig
+      labelIndex: number
+      mode: 'patrol' | 'bell' | 'meditate'
+      waypoints?: { x: number; z: number }[]
+      wpIndex: number
+      state: 'walking' | 'pausing' | 'acting'
+      pauseUntil: number
+      speed: number
+      heading: number
+      bellStage?: 'home' | 'to_bell' | 'at_bell' | 'return'
+      nextActionTime: number
+      homeSeat?: { x: number; z: number; no: number }
+      altarStep?: 'sitting' | 'to_altar' | 'offering' | 'return'
+    }
+
+    const residentAgents: ResidentAgent[] = []
+
     RESIDENTS.forEach((resident, index) => {
       const rig = character(
         resident.x,
@@ -1281,6 +1301,86 @@ export default function TempleScene({
       )
       rig.group.lookAt(resident.face[0], 0, resident.face[1])
       rigs.push(rig)
+
+      let agent: ResidentAgent
+      if (resident.id === 'phuc-an-nhien') {
+        agent = {
+          resident,
+          rig,
+          labelIndex: index + 1,
+          mode: 'patrol',
+          waypoints: [
+            { x: 1.25, z: 14.4 },
+            { x: 4.2, z: 8.5 },
+            { x: 5.0, z: 2.5 },
+            { x: 0.0, z: 1.5 },
+            { x: -5.0, z: 2.5 },
+            { x: -4.2, z: 8.5 },
+          ],
+          wpIndex: 0,
+          state: 'pausing',
+          pauseUntil: 3.0,
+          speed: 1.35,
+          heading: Math.PI,
+          nextActionTime: 6.0,
+        }
+      } else if (resident.id === 'tam-an') {
+        agent = {
+          resident,
+          rig,
+          labelIndex: index + 1,
+          mode: 'patrol',
+          waypoints: [
+            { x: -1.7, z: 13.4 },
+            { x: -6.2, z: 10.5 },
+            { x: -9.5, z: 5.0 },
+            { x: -6.5, z: 0.8 },
+            { x: -2.8, z: 6.0 },
+          ],
+          wpIndex: 0,
+          state: 'pausing',
+          pauseUntil: 5.0,
+          speed: 1.25,
+          heading: Math.PI,
+          nextActionTime: 8.0,
+        }
+      } else if (resident.id === 'minh-tam') {
+        agent = {
+          resident,
+          rig,
+          labelIndex: index + 1,
+          mode: 'bell',
+          waypoints: [
+            { x: 13.2, z: 5.6 },
+            { x: 13.5, z: 1.0 },
+            { x: 14.0, z: -2.0 },
+          ],
+          wpIndex: 0,
+          state: 'pausing',
+          pauseUntil: 6.0,
+          speed: 1.4,
+          heading: Math.PI,
+          bellStage: 'home',
+          nextActionTime: 10.0,
+        }
+      } else {
+        // Meditating monks: an-hien, dao-dao, tu-be
+        agent = {
+          resident,
+          rig,
+          labelIndex: index + 1,
+          mode: 'meditate',
+          wpIndex: 0,
+          state: 'pausing',
+          pauseUntil: 0,
+          speed: 1.2,
+          heading: Math.PI,
+          homeSeat: { x: resident.x, z: resident.z, no: index },
+          nextActionTime: 8 + index * 6,
+          altarStep: 'sitting',
+        }
+      }
+      residentAgents.push(agent)
     })
     robeRef.current = (color) => player.robe.color.set(color)
     const clock = new THREE.Clock()
@@ -1320,8 +1420,8 @@ export default function TempleScene({
 
           if (remoteEntities.has(clientId)) {
             const entity = remoteEntities.get(clientId)!
-            const isRecentLive = (performance.now() - entity.lastUpdate) < 4000 || entity.isWalking
-            if (!isRecentLive && entity.seatNo !== seatNo) {
+            const isRecentLive = (performance.now() - entity.lastUpdate) < 6000 || entity.isWalking || entity.seatNo === null
+            if (!isRecentLive && entity.seatNo !== seatNo && seatNo !== null) {
               entity.seatNo = seatNo
               if (seatNo && SEATS.find((s) => s.no === seatNo)) {
                 const s = SEATS.find((s) => s.no === seatNo)!
@@ -1329,8 +1429,6 @@ export default function TempleScene({
                 entity.targetZ = s.z
                 entity.targetHeading = Math.PI
                 entity.targetPose = 'sit'
-              } else {
-                entity.targetPose = 'stand'
               }
               entity.label.innerHTML = `<strong>${devoteeName}<span class="scene-label__level">Bồ đoàn #${seatNo || 'Sân'}</span></strong><small>${dharmaName}</small>`
             }
@@ -1343,6 +1441,10 @@ export default function TempleScene({
               x = s.x
               z = s.z
               pose = 'sit'
+            } else if (typeof d.x === 'number' && typeof d.z === 'number') {
+              x = d.x
+              z = d.z
+              pose = d.pose || 'stand'
             } else {
               let hash = 0
               for (let i = 0; i < clientId.length; i++) hash = (hash * 31 + clientId.charCodeAt(i)) & 0xfffff
@@ -1544,6 +1646,7 @@ export default function TempleScene({
       seatNo: seated,
       time: 0,
     }
+    ;(window as any).lastPlayerPos = lastBroadcastPos
 
     const setSeated = (seat: number | null) => {
       if (seated === seat) return
@@ -1798,6 +1901,7 @@ export default function TempleScene({
         lastBroadcastPos.pose = player.pose
         lastBroadcastPos.seatNo = seated
         lastBroadcastPos.time = nowMs
+        ;(window as any).lastPlayerPos = lastBroadcastPos
 
         ;(window as any).SupabaseSanctuary?.broadcast?.('DEVOTEE_WALKING', {
           x: Number(position.x.toFixed(2)),
@@ -1919,30 +2023,266 @@ export default function TempleScene({
         }
       })
 
-      // 2. Animate limbs & body movement for ALL rigs
+      // 2. Update autonomous virtual resident agents (NPC monks & devotees)
+      residentAgents.forEach((agent) => {
+        const rig = agent.rig
+        const label = labelRefs.current[agent.labelIndex]
+        const small = label?.querySelector('small')
+
+        if (agent.mode === 'patrol' && agent.waypoints) {
+          if (agent.state === 'walking') {
+            const target = agent.waypoints[agent.wpIndex]
+            const pos = rig.group.position
+            const dx = target.x - pos.x
+            const dz = target.z - pos.z
+            const dist = Math.hypot(dx, dz)
+            const stride = agent.speed * delta
+
+            if (dist <= stride + 0.04) {
+              pos.x = target.x
+              pos.z = target.z
+              agent.state = 'pausing'
+              rig.isWalking = false
+              agent.pauseUntil = elapsed + 4 + Math.random() * 4
+              if (small) small.textContent = 'Đang tĩnh tâm quán chiếu'
+
+              // Chance to perform a mindful bow
+              if (Math.random() < 0.5) {
+                rig.action = { kind: 'bow', start: elapsed, duration: 2.6 }
+                if (small) small.textContent = 'Đang thành tâm đảnh lễ'
+              }
+              // Turn towards main altar [0, -20]
+              const altarAngle = Math.atan2(0 - pos.x, -20 - pos.z)
+              agent.heading = altarAngle
+            } else {
+              pos.x += (dx / dist) * stride
+              pos.z += (dz / dist) * stride
+              rig.isWalking = true
+              if (small && small.textContent !== 'Thiền hành an lạc') {
+                small.textContent = 'Thiền hành an lạc'
+              }
+              const targetAngle = Math.atan2(dx, dz)
+              const turn = Math.atan2(Math.sin(targetAngle - agent.heading), Math.cos(targetAngle - agent.heading))
+              agent.heading += turn * Math.min(1, delta * 8)
+            }
+            rig.group.rotation.y = agent.heading
+          } else if (agent.state === 'pausing') {
+            rig.isWalking = false
+            if (elapsed >= agent.pauseUntil && !rig.action) {
+              agent.wpIndex = (agent.wpIndex + 1) % agent.waypoints.length
+              agent.state = 'walking'
+            }
+          }
+        } else if (agent.mode === 'bell') {
+          // Bell Monk Minh Tâm
+          const bellPos = { x: 14.0, z: -2.0 }
+          const homePos = { x: 13.2, z: 5.6 }
+          const pos = rig.group.position
+
+          if (agent.bellStage === 'home') {
+            rig.isWalking = false
+            if (small && small.textContent !== 'Chăm sóc vườn hoa') small.textContent = 'Chăm sóc vườn hoa'
+            if (elapsed >= agent.nextActionTime) {
+              agent.bellStage = 'to_bell'
+              rig.pose = 'stand'
+              if (small) small.textContent = 'Đi thỉnh Đại Hồng Chung'
+            }
+          } else if (agent.bellStage === 'to_bell') {
+            const dx = bellPos.x - pos.x
+            const dz = bellPos.z - pos.z
+            const dist = Math.hypot(dx, dz)
+            const stride = agent.speed * delta
+
+            if (dist <= stride + 0.05) {
+              pos.x = bellPos.x
+              pos.z = bellPos.z
+              agent.bellStage = 'at_bell'
+              rig.isWalking = false
+              rig.group.lookAt(17, 0, -3) // Look at the bell
+              agent.heading = rig.group.rotation.y
+              rig.action = { kind: 'bow', start: elapsed, duration: 2.8 }
+              if (small) small.textContent = 'Trang nghiêm đảnh lễ Chung'
+              agent.pauseUntil = elapsed + 3.2
+            } else {
+              pos.x += (dx / dist) * stride
+              pos.z += (dz / dist) * stride
+              rig.isWalking = true
+              const targetAngle = Math.atan2(dx, dz)
+              const turn = Math.atan2(Math.sin(targetAngle - agent.heading), Math.cos(targetAngle - agent.heading))
+              agent.heading += turn * Math.min(1, delta * 8)
+              rig.group.rotation.y = agent.heading
+            }
+          } else if (agent.bellStage === 'at_bell') {
+            rig.isWalking = false
+            if (elapsed >= agent.pauseUntil && !rig.action) {
+              // Strike the bell!
+              bellStart = elapsed
+              if (typeof window !== 'undefined' && (window as any).AudioEngine?.playTempleBell) {
+                try { (window as any).AudioEngine.playTempleBell() } catch (_) {}
+              }
+              if (small) small.textContent = '🔔 Vừa thỉnh Đại Hồng Chung'
+              // Pause in listening reverence for 12 seconds
+              agent.pauseUntil = elapsed + 12
+              agent.bellStage = 'return'
+            }
+          } else if (agent.bellStage === 'return') {
+            if (elapsed < agent.pauseUntil) {
+              rig.isWalking = false
+            } else {
+              const dx = homePos.x - pos.x
+              const dz = homePos.z - pos.z
+              const dist = Math.hypot(dx, dz)
+              const stride = agent.speed * delta
+
+              if (dist <= stride + 0.05) {
+                pos.x = homePos.x
+                pos.z = homePos.z
+                agent.bellStage = 'home'
+                rig.isWalking = false
+                rig.group.lookAt(6, 0, 18)
+                agent.heading = rig.group.rotation.y
+                agent.nextActionTime = elapsed + 30 + Math.random() * 20
+                if (small) small.textContent = 'Khai thị tâm an'
+              } else {
+                pos.x += (dx / dist) * stride
+                pos.z += (dz / dist) * stride
+                rig.isWalking = true
+                if (small && small.textContent !== 'Trở về thiền thất') small.textContent = 'Trở về thiền thất'
+                const targetAngle = Math.atan2(dx, dz)
+                const turn = Math.atan2(Math.sin(targetAngle - agent.heading), Math.cos(targetAngle - agent.heading))
+                agent.heading += turn * Math.min(1, delta * 8)
+                rig.group.rotation.y = agent.heading
+              }
+            }
+          }
+        } else if (agent.mode === 'meditate') {
+          // Meditating monks (an-hien, dao-dao, tu-be)
+          const home = agent.homeSeat || { x: agent.resident.x, z: agent.resident.z }
+          const pos = rig.group.position
+
+          if (agent.resident.id === 'an-hien') {
+            // An Hiền periodically stands up to offer incense at altar [0, -5.0]
+            if (!agent.altarStep || agent.altarStep === 'sitting') {
+              rig.pose = 'sit'
+              rig.isWalking = false
+              if (elapsed >= agent.nextActionTime) {
+                if (Math.random() < 0.65) {
+                  // Perform bow on cushion
+                  rig.action = { kind: 'bow', start: elapsed, duration: 2.8 }
+                  if (small) small.textContent = 'Chắp tay đảnh lễ Phật'
+                  agent.nextActionTime = elapsed + 18 + Math.random() * 15
+                } else {
+                  // Stand up to offer incense!
+                  agent.altarStep = 'to_altar'
+                  rig.pose = 'stand'
+                  rig.leftLeg.visible = rig.rightLeg.visible = true
+                  rig.body.position.y = 0
+                  if (small) small.textContent = 'Đứng dậy đi dâng hương'
+                }
+              }
+            } else if (agent.altarStep === 'to_altar') {
+              const altarTarget = { x: 0, z: -5.0 }
+              const dx = altarTarget.x - pos.x
+              const dz = altarTarget.z - pos.z
+              const dist = Math.hypot(dx, dz)
+              const stride = agent.speed * delta
+
+              if (dist <= stride + 0.05) {
+                pos.x = altarTarget.x
+                pos.z = altarTarget.z
+                rig.isWalking = false
+                agent.altarStep = 'offering'
+                rig.group.rotation.y = Math.PI
+                agent.heading = Math.PI
+                rig.action = { kind: 'bow', start: elapsed, duration: 3.2 }
+                incenseUntil = elapsed + 25
+                if (small) small.textContent = '🌸 Thành kính dâng hương'
+                agent.pauseUntil = elapsed + 3.5
+              } else {
+                pos.x += (dx / dist) * stride
+                pos.z += (dz / dist) * stride
+                rig.isWalking = true
+                const targetAngle = Math.atan2(dx, dz)
+                const turn = Math.atan2(Math.sin(targetAngle - agent.heading), Math.cos(targetAngle - agent.heading))
+                agent.heading += turn * Math.min(1, delta * 8)
+                rig.group.rotation.y = agent.heading
+              }
+            } else if (agent.altarStep === 'offering') {
+              rig.isWalking = false
+              if (elapsed >= agent.pauseUntil && !rig.action) {
+                agent.altarStep = 'return'
+                if (small) small.textContent = 'Trở về bồ đoàn'
+              }
+            } else if (agent.altarStep === 'return') {
+              const dx = home.x - pos.x
+              const dz = home.z - pos.z
+              const dist = Math.hypot(dx, dz)
+              const stride = agent.speed * delta
+
+              if (dist <= stride + 0.05) {
+                pos.x = home.x
+                pos.z = home.z
+                rig.isWalking = false
+                rig.pose = 'sit'
+                rig.group.rotation.y = Math.PI
+                agent.heading = Math.PI
+                agent.altarStep = 'sitting'
+                agent.nextActionTime = elapsed + 25 + Math.random() * 20
+                if (small) small.textContent = 'An tọa nhập thiền'
+              } else {
+                pos.x += (dx / dist) * stride
+                pos.z += (dz / dist) * stride
+                rig.isWalking = true
+                const targetAngle = Math.atan2(dx, dz)
+                const turn = Math.atan2(Math.sin(targetAngle - agent.heading), Math.cos(targetAngle - agent.heading))
+                agent.heading += turn * Math.min(1, delta * 8)
+                rig.group.rotation.y = agent.heading
+              }
+            }
+          } else {
+            // Dao Dao & Tu Be: serene meditation with periodic bowing
+            rig.pose = 'sit'
+            rig.isWalking = false
+            if (elapsed >= agent.nextActionTime) {
+              rig.action = { kind: 'bow', start: elapsed, duration: 2.8 }
+              if (small) small.textContent = 'Thành tâm niệm Phật'
+              agent.nextActionTime = elapsed + 15 + Math.random() * 20
+            }
+          }
+        }
+      })
+
+      // 3. Animate limbs & body movement for ALL rigs (Player, Residents, Remote devotees)
       rigs.forEach((rig, index) => {
         const moving = (index === 0 && walking) || Boolean(rig.isWalking)
         const pace = moving ? elapsed * 10 : elapsed * 1.5 + rig.phase
         const step = Math.sin(pace)
         rig.body.rotation.x = 0
         rig.leftLeg.visible = rig.rightLeg.visible = rig.pose !== 'sit'
-        if (index === 0 && action) {
-          const t = (elapsed - action.start) / action.duration
+
+        const currentAction = index === 0 ? action : rig.action
+        if (currentAction) {
+          const t = (elapsed - currentAction.start) / currentAction.duration
           if (t >= 1) {
-            const done = action.done
-            action = null
-            done?.()
+            if (index === 0) {
+              const done = action?.done
+              action = null
+              done?.()
+            } else {
+              rig.action = undefined
+            }
           } else {
             const k = Math.sin(t * Math.PI)
             const raise = Math.min(1, k * 1.8)
             rig.leftArm.rotation.set(-1.25 * raise, 0, -0.38 * raise - 0.16 * (1 - raise))
             rig.rightArm.rotation.set(-1.25 * raise, 0, 0.38 * raise + 0.16 * (1 - raise))
-            rig.body.rotation.x = action.kind === 'bow' ? 0.55 * k : 0.15 * k
+            rig.body.rotation.x = currentAction.kind === 'bow' ? 0.55 * k : 0.15 * k
             rig.body.position.y = rig.pose === 'sit' ? -0.14 : 0
-            rig.head.rotation.set(action.kind === 'bow' ? 0.2 * k : 0.1 * k, 0, 0)
+            rig.head.rotation.set(currentAction.kind === 'bow' ? 0.2 * k : 0.1 * k, 0, 0)
             return
           }
         }
+
         if (rig.pose === 'sit') {
           rig.leftArm.rotation.set(-0.95, 0, -0.35)
           rig.rightArm.rotation.set(-0.95, 0, 0.35)
@@ -1950,6 +2290,7 @@ export default function TempleScene({
           rig.head.rotation.x = 0.06 + Math.sin(pace * 0.6) * 0.02
           return
         }
+
         rig.leftArm.rotation.set(step * (moving ? 0.7 : 0.05), 0, -0.16)
         rig.rightArm.rotation.set(-step * (moving ? 0.7 : 0.05), 0, 0.16)
         rig.leftLeg.rotation.x = moving ? -step * 0.55 : 0

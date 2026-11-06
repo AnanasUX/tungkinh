@@ -633,7 +633,10 @@
         wish: profile.wish || 'Cầu bình an & sức khỏe',
         clientIp: profile.clientIp || window.currentDetectedIP || '117.5.x.x',
         isLocked: !!profile.isLocked,
-        onlineAt: profile.onlineAt || new Date().toISOString()
+        onlineAt: profile.onlineAt || new Date().toISOString(),
+        x: (typeof window !== 'undefined' && window.lastPlayerPos) ? window.lastPlayerPos.x : undefined,
+        z: (typeof window !== 'undefined' && window.lastPlayerPos) ? window.lastPlayerPos.z : undefined,
+        pose: (typeof window !== 'undefined' && window.lastPlayerPos) ? window.lastPlayerPos.pose : undefined
       };
 
       try {
