@@ -333,6 +333,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const [theme, setTheme] = useState('xanh')
   const [phrase, setPhrase] = useState('')
   const [seat, setSeat] = useState<number | null>(null)
+  const [onlineCount, setOnlineCount] = useState(1)
   const seatRef = useRef(seat)
   seatRef.current = seat
   const [hydrated, setHydrated] = useState(false)
@@ -346,15 +347,27 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   knocksRef.current = knocks
 
   useEffect(() => {
+    const updateCount = (e?: any) => {
+      const list = e?.detail || ((window as any).SupabaseSanctuary?.activeDevotees
+        ? Array.from((window as any).SupabaseSanctuary.activeDevotees.values())
+        : [])
+      setOnlineCount(1 + list.length)
+    }
+    window.addEventListener('sanctuary_devotees_updated', updateCount)
+    updateCount()
+    const timer = setInterval(updateCount, 2000)
+    return () => {
+      window.removeEventListener('sanctuary_devotees_updated', updateCount)
+      clearInterval(timer)
+    }
+  }, [])
+  useEffect(() => {
     const prof = (window as any).currentUserProfile
     if (prof) {
       if (prof.fullName) setPlayerName(prof.fullName)
       if (prof.dharmaName) setDharmaName(prof.dharmaName)
       if (typeof prof.assignedSeatNo === 'number') {
-        const timer = setTimeout(() => {
-          sceneRef.current?.sit(prof.assignedSeatNo)
-        }, 1200)
-        return () => clearTimeout(timer)
+        setSeat(prof.assignedSeatNo)
       }
     }
   }, [])
@@ -646,7 +659,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
               aria-label="Xem người trong chùa"
               onClick={() => setPanel('people')}
             >
-              <Icon name="users" size={16} /> 12
+              <Icon name="users" size={16} /> {onlineCount}
             </button>
             <span className="divider" />
             <button type="button" aria-label="Hồ sơ tu tập" onClick={() => setPanel('profile')}>

@@ -100,6 +100,12 @@ export default function PracticeBody({
 }
 
 function SeatsView({ ctx }: { ctx: PracticeContext }) {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const onUpdate = () => setTick((t) => t + 1)
+    window.addEventListener('sanctuary_devotees_updated', onUpdate)
+    return () => window.removeEventListener('sanctuary_devotees_updated', onUpdate)
+  }, [])
   return (
     <div className="grid gap-4">
       <div className="rounded-2xl border border-[#f2c766]/25 bg-gradient-to-b from-[#8a3214]/55 to-[#8a3214]/5 px-4 py-3 text-center">

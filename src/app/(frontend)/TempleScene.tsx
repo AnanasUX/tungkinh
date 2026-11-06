@@ -1259,7 +1259,16 @@ export default function TempleScene({
       }
     }
 
-    const player = character(0, 17, ROBE_COLORS[themeRef.current] ?? ROBE_COLORS.xanh, 'stand', 0)
+    const initialSeatNo = (window as any).currentUserProfile?.assignedSeatNo
+    const initialSeat = initialSeatNo ? SEATS.find((s) => s.no === initialSeatNo) : null
+    const spawnX = initialSeat ? initialSeat.x : 0
+    const spawnZ = initialSeat ? initialSeat.z : -3.0
+    const spawnPose: Pose = initialSeat ? 'sit' : 'stand'
+
+    const player = character(spawnX, spawnZ, ROBE_COLORS[themeRef.current] ?? ROBE_COLORS.xanh, spawnPose, 0)
+    if (initialSeat) {
+      player.group.rotation.set(0, Math.PI, 0)
+    }
     const rigs = [player]
     RESIDENTS.forEach((resident, index) => {
       const rig = character(
@@ -1426,7 +1435,7 @@ export default function TempleScene({
     let route: THREE.Vector2[] = []
     let onArrive: (() => void) | null = null
     let action: Action | null = null
-    let seated: number | null = null
+    let seated: number | null = initialSeat ? initialSeat.no : null
     const laneZ = SEAT_LANE_Z
 
     const setSeated = (seat: number | null) => {
@@ -1765,8 +1774,8 @@ export default function TempleScene({
         projected.y += rig.pose === 'sit' ? 2.3 : 2.55
         const far = camera.position.distanceTo(projected)
         projected.project(camera)
-        const visible = projected.z < 1 && far < 42 && Math.abs(projected.x) < 1.1
-        label.style.opacity = visible ? String(THREE.MathUtils.clamp((42 - far) / 10, 0, 1)) : '0'
+        const visible = projected.z < 1 && far < 55 && Math.abs(projected.x) < 1.3 && Math.abs(projected.y) < 1.3
+        label.style.opacity = visible ? String(THREE.MathUtils.clamp((55 - far) / 12, 0, 1)) : '0'
         if (visible) {
           const x = ((projected.x + 1) / 2) * width
           const y = ((1 - projected.y) / 2) * height
@@ -1799,8 +1808,8 @@ export default function TempleScene({
         projected.y += rig.pose === 'sit' ? 2.3 : 2.55
         const far = camera.position.distanceTo(projected)
         projected.project(camera)
-        const visible = projected.z < 1 && far < 42 && Math.abs(projected.x) < 1.1
-        label.style.opacity = visible ? String(THREE.MathUtils.clamp((42 - far) / 10, 0, 1)) : '0'
+        const visible = projected.z < 1 && far < 55 && Math.abs(projected.x) < 1.3 && Math.abs(projected.y) < 1.3
+        label.style.opacity = visible ? String(THREE.MathUtils.clamp((55 - far) / 12, 0, 1)) : '0'
         if (visible) {
           const x = ((projected.x + 1) / 2) * width
           const y = ((1 - projected.y) / 2) * height
@@ -1825,7 +1834,15 @@ export default function TempleScene({
       syncRemoteDevotees(initialList)
     }
 
+    const pollInterval = setInterval(() => {
+      if ((window as any).SupabaseSanctuary?.activeDevotees) {
+        const currentList = Array.from((window as any).SupabaseSanctuary.activeDevotees.values())
+        syncRemoteDevotees(currentList)
+      }
+    }, 1200)
+
     return () => {
+      clearInterval(pollInterval)
       cancelAnimationFrame(frame)
       window.removeEventListener('sanctuary_devotees_updated', onDevoteesUpdated)
       remoteEntities.forEach((entity) => {

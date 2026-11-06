@@ -49,6 +49,10 @@
     },
 
     async init() {
+      if (this._isInitializing || (this.isConnected && this.channel)) {
+        return;
+      }
+      this._isInitializing = true;
       console.log('[SupabaseSanctuary] Đang khởi tạo kết nối Supabase Database & Realtime...');
 
       // 1. Đọc cấu hình từ LocalStorage hoặc dùng mặc định
@@ -77,6 +81,19 @@
 
         // 3. Tải danh sách đồng tu từ Database Supabase trước khi xếp chỗ
         await this.fetchDevoteesFromDB();
+
+        // 3b. Đảm bảo bồ đoàn của chính mình hợp lệ và ghi danh ngay lên Database
+        if (window.currentUserProfile) {
+          const myPref = window.currentUserProfile.assignedSeatNo;
+          const conflict = window.sanctuarySeats?.find(s => s.seatNo === myPref && s.occupied && !s.isUser);
+          if (conflict && typeof window.pickBestAvailableSeat === 'function') {
+            const freeSeat = window.pickBestAvailableSeat();
+            if (freeSeat && typeof window.assignUserToSeat === 'function') {
+              window.assignUserToSeat(freeSeat);
+            }
+          }
+          await this.saveDevoteeToDB(window.currentUserProfile, window.currentUserProfile.assignedSeatNo);
+        }
 
         // 4. Kết nối Realtime Channel & Lắng nghe Presence & Broadcast (AWAIT để sẵn sàng nhận & gửi ngay)
         await this.setupRealtimeChannel();
@@ -788,8 +805,10 @@
         seat.points = dev.meritScore || 20;
         seat.ip = dev.clientIp || '117.5.x.x';
 
+        dev.seatNo = seat.seatNo;
         this.activeDevotees.set(dev.clientId, dev);
       } else {
+        dev.seatNo = targetSeatNo;
         this.activeDevotees.set(dev.clientId, dev);
       }
     },
@@ -879,6 +898,23 @@
         seat.age = dbRow.age || 25;
         seat.points = dbRow.merit_score || 0;
         seat.ip = dbRow.client_ip || '';
+
+        this.activeDevotees.set(dbRow.client_id, {
+          id: dbRow.client_id,
+          clientId: dbRow.client_id,
+          name: dbRow.full_name || 'Hành Giả',
+          fullName: dbRow.full_name || 'Hành Giả',
+          dharmaName: dbRow.dharma_name || 'Tịnh Tâm',
+          dharma: dbRow.dharma_name || 'Tịnh Tâm',
+          seatNo: seat.seatNo,
+          avatarType: dbRow.avatar_type || 'monk',
+          age: dbRow.age || 25,
+          hometown: dbRow.hometown || '',
+          meritScore: dbRow.merit_score || 0
+        });
+        if (typeof window.renderSanctuaryFloor === 'function') {
+          window.renderSanctuaryFloor();
+        }
       }
     },
 
@@ -1025,4 +1061,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.sanctuary_devotees;`;
   };
 
   window.SupabaseSanctuary = SupabaseSanctuary;
+
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(() => SupabaseSanctuary.init(), 20);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => SupabaseSanctuary.init());
+      window.addEventListener('load', () => SupabaseSanctuary.init());
+    }
+  }
 })();

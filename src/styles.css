@@ -1017,7 +1017,7 @@
   .scene-label small {
     display: none;
   }
-  .status-pill .visitor-count,
+  /* Allow visitor count pill on mobile */
   .status-pill .divider {
     display: none;
   }

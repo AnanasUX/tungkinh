@@ -249,7 +249,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
           {[
             ['common', 'Đạo Tràng Chung', 'chat'],
             ['private', 'Nhắn tin riêng', 'shield'],
-            ['people', `Hiện diện (${presentPeople.length + 1})`, 'users'],
+            ['people', `Hiện diện (${onlineDevotees.length + 1})`, 'users'],
           ].map(([id, label, icon]) => (
             <button
               key={id}
@@ -433,14 +433,29 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
               Những nhân vật đang hiện diện trong cảnh Chánh Điện.
             </p>
             <div className="mt-4 space-y-2">
-              {presentPeople.slice(0, 2).map(([initial, name, status]) => (
-                <div key={name} className="flex items-center gap-2.5">
+              {onlineDevotees.map((d: any) => {
+                const name = d.name || d.fullName || 'Đồng Tu'
+                const seatStr = d.seatNo ? `Bồ đoàn #${d.seatNo}` : 'Sân Chùa'
+                return (
+                  <div key={d.clientId || d.id || name} className="flex items-center gap-2.5">
+                    <span className="grid size-8 place-items-center rounded-full border border-[#f2c766]/30 bg-[#5c2810] text-xs font-bold text-[#f1c86d]">
+                      {name.slice(0, 1).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <strong className="block truncate text-xs text-[#f5e4c5]">{name}</strong>
+                      <span className="text-[10px] text-emerald-300">Trực tuyến · {seatStr}</span>
+                    </div>
+                  </div>
+                )
+              })}
+              {presentPeople.slice(0, Math.max(1, 3 - onlineDevotees.length)).map(([initial, name, status]) => (
+                <div key={name} className="flex items-center gap-2.5 opacity-70">
                   <span className="grid size-8 place-items-center rounded-full bg-[#6f3013] text-xs font-bold text-[#f1c86d]">
                     {initial}
                   </span>
                   <div className="min-w-0">
                     <strong className="block truncate text-xs text-[#f5e4c5]">{name}</strong>
-                    <span className="text-[10px] text-emerald-300">{status}</span>
+                    <span className="text-[10px] text-[#cbb28f]">{status}</span>
                   </div>
                 </div>
               ))}
