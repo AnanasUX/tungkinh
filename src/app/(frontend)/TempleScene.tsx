@@ -1283,6 +1283,7 @@ export default function TempleScene({
       rigs.push(rig)
     })
     robeRef.current = (color) => player.robe.color.set(color)
+    const clock = new THREE.Clock()
 
     // Remote devotees synchronization (Supabase Realtime Presence).
     type RemoteDevoteeEntity = {
@@ -1520,6 +1521,15 @@ export default function TempleScene({
     let action: Action | null = null
     let seated: number | null = initialSeat ? initialSeat.no : null
     const laneZ = SEAT_LANE_Z
+    const lastBroadcastPos = {
+      x: spawnX,
+      z: spawnZ,
+      heading: initialSeat ? Math.PI : Math.PI,
+      walking: false,
+      pose: spawnPose,
+      seatNo: seated,
+      time: 0,
+    }
 
     const setSeated = (seat: number | null) => {
       if (seated === seat) return
@@ -1667,7 +1677,6 @@ export default function TempleScene({
     const cameraTarget = new THREE.Vector3()
     const desiredCamera = new THREE.Vector3()
     const projected = new THREE.Vector3()
-    const clock = new THREE.Clock()
     let frame = 0
     let firstFrame = true
 
