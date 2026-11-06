@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import TempleScene, { type SceneApi, ROBE_COLORS } from './TempleScene'
 import SystemPanel, { type PanelId } from './SystemPanel'
 import TouchJoystick from './TouchJoystick'
+import OnboardingGate, { loadDevoteeProfile, type DevoteeProfile } from './OnboardingGate'
+import OrientationGuard from './OrientationGuard'
+import ZoneNavigator from './ZoneNavigator'
+import { DEFAULT_ZONE, TEMPLE_ZONES, isTempleZone, type TempleZoneId } from './temple-zones'
 import CommunityOverlay, { VideoCallOverlay } from './CommunityOverlay'
 import type { PracticeContext, Petition } from './PracticePanels'
 import { levelFor } from './temple-data'
@@ -320,7 +324,10 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const [panel, setPanel] = useState<PanelId | null>(null)
   const [communityOpen, setCommunityOpen] = useState(false)
   const [callOpen, setCallOpen] = useState(false)
-  const [playerName, setPlayerName] = useState('Tuệ Phúc')
+  const [zoneOpen, setZoneOpen] = useState(false)
+  const [zone, setZone] = useState<TempleZoneId>(DEFAULT_ZONE)
+  const [profileReady, setProfileReady] = useState(false)
+  const [playerName, setPlayerName] = useState('Đạo hữu')
   const [dharmaName, setDharmaName] = useState('')
   const [merit, setMerit] = useState(0)
   const [beads, setBeads] = useState(0)
@@ -362,14 +369,23 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     }
   }, [])
   useEffect(() => {
-    const prof = (window as any).currentUserProfile
-    if (prof) {
-      if (prof.fullName) setPlayerName(prof.fullName)
-      if (prof.dharmaName) setDharmaName(prof.dharmaName)
-      if (typeof prof.assignedSeatNo === 'number') {
-        setSeat(prof.assignedSeatNo)
-      }
-    }
+    const prof = loadDevoteeProfile() ?? (window as any).currentUserProfile
+    if (!prof?.registered) return
+    ;(window as any).currentUserProfile = prof
+    if (prof.fullName) setPlayerName(prof.fullName)
+    if (prof.dharmaName) setDharmaName(prof.dharmaName)
+    if (typeof prof.assignedSeatNo === 'number') setSeat(prof.assignedSeatNo)
+    setProfileReady(true)
+  }, [])
+
+  const completeOnboarding = useCallback((profile: DevoteeProfile) => {
+    ;(window as any).currentUserProfile = profile
+    setPlayerName(profile.fullName)
+    setDharmaName(profile.dharmaName)
+    setSeat(profile.assignedSeatNo)
+    if (profile.assignedSeatNo) sceneRef.current?.sit(profile.assignedSeatNo)
+    setProfileReady(true)
+    ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
   }, [])
 
   useEffect(() => {
@@ -380,6 +396,37 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
     }
   }, [playerName, dharmaName])
+
+  useEffect(() => {
+    const saved = localStorage.getItem('chua_an_nhien_zone')
+    if (isTempleZone(saved)) setZone(saved)
+  }, [])
+
+  const travelToZone = useCallback((nextZone: TempleZoneId) => {
+    setZone(nextZone)
+    setZoneOpen(false)
+    setSeat(null)
+    localStorage.setItem('chua_an_nhien_zone', nextZone)
+    const profile = (window as any).currentUserProfile
+    if (profile) {
+      profile.zoneId = nextZone
+      profile.assignedSeatNo = null
+      try {
+        localStorage.setItem('chua_an_nhien_user_profile', JSON.stringify(profile))
+      } catch {}
+    }
+    const clientId = (window as any).SANCTUARY_CLIENT_ID
+    ;((window as any).sanctuarySeats ?? []).forEach((item: any) => {
+      if (item.isUser || (clientId && item.remoteClientId === clientId)) {
+        item.isUser = false
+        item.occupied = false
+        item.remoteClientId = null
+      }
+    })
+    setToast(`Đã dịch chuyển tới ${TEMPLE_ZONES[nextZone].name}`)
+    ;(window as any).SupabaseSanctuary?.broadcast?.('CHANGE_ZONE', { zoneId: nextZone })
+    ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
+  }, [])
 
   const completed = useMemo(() => Object.values(done).filter(Boolean).length, [done])
   const rank = levelFor(merit)
@@ -586,7 +633,10 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     else if (id === 'bow') bow()
     else if (id === 'incense') offerIncense()
     else if (id === 'bell') ringBell()
-    else if (id === 'video') {
+    else if (id === 'chant') {
+      if (seat !== null) sceneRef.current?.bow()
+      setPanel('chant')
+    } else if (id === 'video') {
       setPanel(null)
       setCommunityOpen(false)
       if (typeof (window as any).startZaloVideoCall === 'function') {
@@ -636,7 +686,11 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
 
   return (
     <main className={`game-shell theme-${theme}`}>
+      <OnboardingGate open={!profileReady} onComplete={completeOnboarding} />
+      <OrientationGuard active={profileReady} />
       <TempleScene
+        key={zone}
+        zone={zone}
         theme={theme}
         playerName={playerName}
         level={level}
@@ -658,13 +712,13 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       <div className="atmosphere" aria-hidden="true" />
 
       <header className="topbar">
-        <button className="brand glass" onClick={() => setPanel('rooms')}>
+        <button className="brand glass" onClick={() => setZoneOpen(true)}>
           <span className="lotus-mark">
             <Icon name="lotus" size={17} />
           </span>
-          <strong>Chùa An Nhiên</strong>
+          <strong>{TEMPLE_ZONES[zone].shortName}</strong>
           <span className="online-dot" />
-          <span className="room-name">Phòng {room}</span>
+          <span className="room-name">Bản đồ</span>
           <Icon name="chevron" size={14} />
         </button>
 
@@ -905,6 +959,12 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
           </button>
         </div>
       )}
+      <ZoneNavigator
+        open={zoneOpen}
+        current={zone}
+        onClose={() => setZoneOpen(false)}
+        onTravel={travelToZone}
+      />
       <CommunityOverlay
         playerName={playerName}
         open={communityOpen}

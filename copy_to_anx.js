@@ -3,6 +3,8 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const srcDir = __dirname;
+const shouldPush = process.argv.includes('--push');
+const configuredDest = process.env.ANX_TUNGKINH_DEST;
 
 // Possible destination directories for anx.io.vn
 const candidateDirs = [
@@ -12,9 +14,10 @@ const candidateDirs = [
   'E:/AnannasUX/Python/website/quan-ly-tien-phong/website/public/tung-kinh'
 ];
 
-let destDir = candidateDirs.find(d => fs.existsSync(path.dirname(d)));
+let destDir = configuredDest || candidateDirs.find(d => fs.existsSync(path.dirname(d)));
 if (!destDir) {
-  destDir = candidateDirs[0];
+  console.error('Không tìm thấy thư mục đích. Hãy đặt biến ANX_TUNGKINH_DEST.');
+  process.exit(1);
 }
 
 console.log('================================================================');
@@ -26,7 +29,10 @@ console.log('================================================================');
 // 0. Ensure fresh build before copying
 try {
   console.log('[1/4] Biên dịch gói giao diện và âm thanh mới nhất (npm run build)...');
-  execSync('npm run build', { cwd: srcDir, stdio: 'inherit' });
+  const runner = process.env.npm_execpath
+    ? `"${process.execPath}" "${process.env.npm_execpath}" run build`
+    : 'npm run build';
+  execSync(runner, { cwd: srcDir, stdio: 'inherit', shell: true });
 } catch (e) {
   console.warn('[Cảnh báo] Lỗi biên dịch build:', e.message);
 }
@@ -59,13 +65,13 @@ if (!html.includes('<base href="/tung-kinh/">')) {
   html = html.replace('<head>', '<head>\n  <base href="/tung-kinh/">');
 }
 const buildTimestamp = Date.now().toString(36);
-html = html.replace(/\?v=2026[0-9a-zA-Z_]+/g, '?v=' + buildTimestamp);
+html = html.replace(/\?v=[0-9a-zA-Z_-]+/g, '?v=' + buildTimestamp);
 fs.writeFileSync(path.join(destDir, 'index.html'), html, 'utf8');
 console.log('✓ Đã sao chép 100% dữ liệu sang:', destDir);
 
 // 3. Auto commit & push to Website_thoitiet_design (anx.io.vn)
 const websiteRepoDir = path.resolve(destDir, '../../');
-if (fs.existsSync(path.join(websiteRepoDir, '.git'))) {
+if (shouldPush && fs.existsSync(path.join(websiteRepoDir, '.git'))) {
   console.log('[3/4] Phát hiện Git repository của anx.io.vn tại:', websiteRepoDir);
   try {
     // Get current commit hash of tungkinh
@@ -96,4 +102,8 @@ if (fs.existsSync(path.join(websiteRepoDir, '.git'))) {
   } catch (err) {
     console.warn('[Lưu ý] Tiến trình Git sync sang Website_thoitiet_design:', err.message);
   }
+}
+
+if (!shouldPush) {
+  console.log('✓ Đã đồng bộ cục bộ. Không commit/push (dùng --push hoặc npm run deploy khi được yêu cầu).');
 }

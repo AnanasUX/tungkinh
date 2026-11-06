@@ -4,6 +4,7 @@ import { useEffect, useRef, type MutableRefObject } from 'react'
 import * as THREE from 'three'
 import { appFontFamily, whenAppFontReady } from './app-font'
 import { SEAT_AISLE, SEAT_LANE_Z, SEATS } from './temple-data'
+import { DEFAULT_ZONE, TEMPLE_ZONES, type TempleZoneId } from './temple-zones'
 
 /** Imperative controls the HUD uses to drive the player inside the scene. */
 export type SceneApi = {
@@ -149,17 +150,20 @@ function canvasTexture(
 
 export default function TempleScene({
   theme = 'xanh',
+  zone = DEFAULT_ZONE,
   playerName,
   level,
   apiRef,
   onSeatChange,
 }: {
   theme?: string
+  zone?: TempleZoneId
   playerName: string
   level: number
   apiRef?: MutableRefObject<SceneApi | null>
   onSeatChange?: (seat: number | null) => void
 }) {
+  const zoneConfig = TEMPLE_ZONES[zone]
   const mountRef = useRef<HTMLDivElement>(null)
   const labelRefs = useRef<(HTMLDivElement | null)[]>([])
   const labelsContainerRef = useRef<HTMLDivElement>(null)
@@ -195,21 +199,21 @@ export default function TempleScene({
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.05
-    renderer.domElement.setAttribute('aria-label', 'Không gian 3D sân Chùa An Nhiên')
+    renderer.domElement.setAttribute('aria-label', `Không gian 3D ${zoneConfig.name}`)
     mount.appendChild(renderer.domElement)
     mount.classList.add('is-webgl')
 
     const scene = new THREE.Scene()
     scene.background = canvasTexture(4, 256, (ctx) => {
       const gradient = ctx.createLinearGradient(0, 0, 0, 256)
-      gradient.addColorStop(0, '#4f8fd8')
-      gradient.addColorStop(0.45, '#8fc0ea')
-      gradient.addColorStop(0.62, '#cfe3ef')
+      gradient.addColorStop(0, zoneConfig.skyTop)
+      gradient.addColorStop(0.45, zoneConfig.skyMid)
+      gradient.addColorStop(0.62, '#cfe3df')
       gradient.addColorStop(1, '#e8efe9')
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, 4, 256)
     })
-    scene.fog = new THREE.Fog('#d9e7ee', 60, 210)
+    scene.fog = new THREE.Fog(zoneConfig.fog, 60, 210)
 
     const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.1, 260)
     // Portrait screens need a wider lens to keep the temple and the player in frame.
@@ -248,9 +252,9 @@ export default function TempleScene({
       wallCap: std('#6e6862'),
       cream: std('#eadcbf'),
       wood: std('#6b3524'),
-      red: std('#a8291f', { roughness: 0.6 }),
+      red: std(zoneConfig.roof, { roughness: 0.6 }),
       redDark: std('#7c2119'),
-      yellow: std('#e2b33c', { roughness: 0.55 }),
+      yellow: std(zoneConfig.accent, { roughness: 0.55 }),
       gold: std('#d9a93a', { metalness: 0.55, roughness: 0.35 }),
       bronze: std('#a37d3a', { metalness: 0.6, roughness: 0.4 }),
       trunk: std('#6e5a47', { flatShading: true }),
@@ -268,7 +272,7 @@ export default function TempleScene({
       256,
       256,
       (ctx) => {
-        ctx.fillStyle = '#93452f'
+        ctx.fillStyle = zoneConfig.roof
         ctx.fillRect(0, 0, 256, 256)
         for (let x = 0; x < 256; x += 16) {
           ctx.fillStyle = 'rgba(70, 24, 14, .55)'
@@ -320,6 +324,36 @@ export default function TempleScene({
       mesh.receiveShadow = true
       parent.add(mesh)
       return mesh
+    }
+
+    // Each destination keeps the shared interaction system but has a distinct landmark.
+    const landmarkMaterial = std(zoneConfig.accent, { roughness: 0.55 })
+    if (zoneConfig.landmark === 'gate') {
+      for (const x of [-10, 10]) {
+        cylinder(0.35, 0.45, 7, 10, [x, 3.5, 7], mat.stone)
+        box([5, 0.5, 0.8], [x, 7, 7], landmarkMaterial)
+      }
+    } else if (zoneConfig.landmark === 'lotus') {
+      const pond = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.5, 0.14, 40), std('#397c91', { roughness: 0.2 }))
+      pond.position.set(-17, 0.08, 5)
+      world.add(pond)
+      for (let i = 0; i < 9; i++) {
+        const angle = (i / 9) * Math.PI * 2
+        cylinder(0.35, 0.5, 0.08, 16, [-17 + Math.cos(angle) * (2 + (i % 3)), 0.2, 5 + Math.sin(angle) * (2 + (i % 3))], landmarkMaterial)
+      }
+    } else if (zoneConfig.landmark === 'tower') {
+      for (const x of [-17, 17]) {
+        for (let i = 0; i < 4; i++) {
+          box([4.5 - i * 0.55, 1.2, 4.5 - i * 0.55], [x, 0.7 + i * 1.25, -4], i % 2 ? mat.cream : mat.stone)
+        }
+        cylinder(0.12, 0.12, 2, 8, [x, 6, -4], mat.gold)
+      }
+    } else if (zoneConfig.landmark === 'bamboo') {
+      for (let i = 0; i < 18; i++) {
+        const x = (i < 9 ? -1 : 1) * (14 + (i % 3) * 1.4)
+        const z = -2 + (i % 9) * 2.8
+        cylinder(0.12, 0.16, 7 + (i % 4), 8, [x, 3.5 + (i % 4) * 0.5, z], std(i % 2 ? '#517947' : '#6e9254'))
+      }
     }
 
     // Ground: grass, tiled courtyard and the grey stone path to the main hall.
@@ -642,7 +676,7 @@ export default function TempleScene({
       ctx.font = `800 56px ${appFontFamily()}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText('CHÙA YÊN PHÚC', 256, 60, 470)
+      ctx.fillText(zoneConfig.name.toUpperCase(), 256, 60, 470)
     }
     const signTexture = canvasTexture(512, 116, drawSign)
     // Redraw once the web font is ready so the plaque never keeps a fallback face.
@@ -1669,6 +1703,7 @@ export default function TempleScene({
     let onArrive: (() => void) | null = null
     let action: Action | null = null
     let seated: number | null = initialSeat ? initialSeat.no : null
+    let thresholdBowDone = false
     const laneZ = SEAT_LANE_Z
     const lastBroadcastPos = {
       x: spawnX,
@@ -1748,8 +1783,16 @@ export default function TempleScene({
             duration: 2.8,
             done: () => {
               incenseUntil = clock.elapsedTime + 25
-              onOffered()
-              if (returnSeat !== null) sit(returnSeat)
+              // Bow toward the altar after placing the incense, then return.
+              action = {
+                kind: 'bow',
+                start: clock.elapsedTime,
+                duration: 2.4,
+                done: () => {
+                  onOffered()
+                  if (returnSeat !== null) sit(returnSeat)
+                },
+              }
             },
           }
         }
@@ -1786,7 +1829,17 @@ export default function TempleScene({
         }
       },
       ringBell: () => {
-        bellStart = clock.elapsedTime
+        if (route.length) return
+        heading = Math.PI
+        player.group.rotation.y = Math.PI
+        action = {
+          kind: 'bow',
+          start: clock.elapsedTime,
+          duration: 2.2,
+          done: () => {
+            bellStart = clock.elapsedTime
+          },
+        }
       },
       setMove: (x, y) => {
         stick.x = x
@@ -1872,12 +1925,21 @@ export default function TempleScene({
           id: key,
           targetRig,
           element: el,
-          expiresAt: clock.elapsedTime + 6.5,
+          expiresAt: clock.elapsedTime + 5,
         }
         speechBubbles.set(key, bubble)
       }
-      bubble.expiresAt = clock.elapsedTime + 6.5
-      bubble.element.innerHTML = `<span class="bubble-tail"></span><strong class="bubble-author">${authorName}:</strong> <span>${text}</span>`
+      bubble.expiresAt = clock.elapsedTime + 5
+      // User chat is untrusted: build text nodes instead of assigning innerHTML.
+      bubble.element.replaceChildren()
+      const tail = document.createElement('span')
+      tail.className = 'bubble-tail'
+      const author = document.createElement('strong')
+      author.className = 'bubble-author'
+      author.textContent = `${authorName}:`
+      const content = document.createElement('span')
+      content.textContent = ` ${text}`
+      bubble.element.append(tail, author, content)
       bubble.element.style.opacity = '1'
     }
 
@@ -2010,6 +2072,22 @@ export default function TempleScene({
         const turn = Math.atan2(Math.sin(target - heading), Math.cos(target - heading))
         heading += turn * Math.min(1, delta * 12)
       }
+      // First manual approach to the central front of the temple: stop and bow.
+      if (
+        manual &&
+        !thresholdBowDone &&
+        !route.length &&
+        !action &&
+        seated === null &&
+        Math.abs(position.x) < 3.2 &&
+        position.z < -3.8
+      ) {
+        thresholdBowDone = true
+        heading = Math.PI
+        player.group.rotation.y = Math.PI
+        action = { kind: 'bow', start: clock.elapsedTime, duration: 2.4 }
+      }
+
       position.x = THREE.MathUtils.clamp(position.x, -26, 26)
       position.z = THREE.MathUtils.clamp(position.z, -7.4, 30)
       for (const collider of colliders) {

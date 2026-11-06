@@ -6,10 +6,10 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build:js": "esbuild src/app/(frontend)/entry.tsx --bundle --minify --outfile=dist/app.bundle.js --format=esm --target=es2022 --jsx=automatic && node -e \"require('fs').copyFileSync('dist/app.bundle.js', 'js/app.bundle.js')\"",
+    "build:js": "esbuild \"src/app/(frontend)/entry.tsx\" --bundle --minify --outfile=dist/app.bundle.js --format=esm --target=es2022 --jsx=automatic && node -e \"require('fs').copyFileSync('dist/app.bundle.js', 'js/app.bundle.js')\"",
     "build:css": "tailwindcss -i src/styles.css -o css/modern-ui.css --minify",
-    "build": "npm run build:css && npm run build:js",
-    "deploy": "node copy_to_anx.js && git push origin main",
+    "build": "tailwindcss -i src/styles.css -o css/modern-ui.css --minify && esbuild \"src/app/(frontend)/entry.tsx\" --bundle --minify --outfile=dist/app.bundle.js --format=esm --target=es2022 --jsx=automatic && node -e \"require('fs').copyFileSync('dist/app.bundle.js', 'js/app.bundle.js')\"",
+    "deploy": "node copy_to_anx.js --push",
     "sync:anx": "node copy_to_anx.js",
     "test": "node --check server.js && node --check js/realtime-sanctuary.js && node --check js/room-chat.js"
   },

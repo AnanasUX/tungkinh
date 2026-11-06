@@ -241,7 +241,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
 
   return (
     <div
-      className="fixed inset-0 z-[70] grid place-items-center bg-[#080402]/60 p-3 backdrop-blur-md sm:p-6"
+      className="fixed inset-0 z-[70] grid place-items-center bg-[#080402]/60 p-3 backdrop-blur-md sm:p-6 [@media(max-height:560px)]:p-1.5"
       role="presentation"
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
     >
@@ -249,22 +249,22 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
         role="dialog"
         aria-modal="true"
         aria-labelledby="community-title"
-        className="relative flex h-[min(720px,calc(100svh-32px))] w-[min(980px,100%)] flex-col overflow-hidden rounded-[22px] border border-[#e2bd6e]/55 bg-[radial-gradient(circle_at_50%_0%,rgba(137,44,18,.32),transparent_45%),linear-gradient(160deg,#35150c,#1d0b06_62%,#140704)] text-[#f8eddb] shadow-[0_35px_100px_rgba(0,0,0,.7),0_0_0_5px_rgba(30,12,6,.9),0_0_0_6px_rgba(226,189,110,.2)]"
+        className="relative flex h-[min(720px,calc(100dvh-32px))] w-[min(980px,100%)] flex-col overflow-hidden rounded-[22px] [@media(max-height:560px)]:h-[calc(100dvh-12px)] [@media(max-height:560px)]:rounded-[16px] border border-[#e2bd6e]/55 bg-[radial-gradient(circle_at_50%_0%,rgba(137,44,18,.32),transparent_45%),linear-gradient(160deg,#35150c,#1d0b06_62%,#140704)] text-[#f8eddb] shadow-[0_35px_100px_rgba(0,0,0,.7),0_0_0_5px_rgba(30,12,6,.9),0_0_0_6px_rgba(226,189,110,.2)]"
       >
-        <header className="flex min-h-[66px] items-center gap-3 border-b border-[#e2bd6e]/25 px-4 sm:px-5">
-          <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/50 bg-[#a75b16]/25 text-[#f5cf76] shadow-[0_0_18px_rgba(226,189,110,.2)]">
+        <header className="flex min-h-[66px] items-center gap-3 border-b border-[#e2bd6e]/25 px-4 sm:px-5 [@media(max-height:560px)]:min-h-[52px] [@media(max-height:560px)]:gap-2 [@media(max-height:560px)]:px-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full [@media(max-height:560px)]:size-8 border border-[#e2bd6e]/50 bg-[#a75b16]/25 text-[#f5cf76] shadow-[0_0_18px_rgba(226,189,110,.2)]">
             <Glyph name="bell" size={19} />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 id="community-title" className="font-display text-lg font-bold text-[#ffe5aa]">
+              <h2 id="community-title" className="font-display text-lg font-bold text-[#ffe5aa] [@media(max-height:560px)]:text-base">
                 Đạo Tràng Chung
               </h2>
-              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300 [@media(max-height:560px)]:hidden">
                 {1 + onlineDevotees.length} Đồng Tu Trực Tuyến
               </span>
             </div>
-            <p className="truncate text-xs text-[#cbb28f]">Cùng niệm Phật · Cùng gieo lời lành</p>
+            <p className="truncate text-xs text-[#cbb28f] [@media(max-height:560px)]:hidden">Cùng niệm Phật · Cùng gieo lời lành</p>
           </div>
           <button
             type="button"
@@ -276,7 +276,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
                 onCall()
               }
             }}
-            className="hidden h-9 items-center gap-2 rounded-full border border-emerald-300/50 bg-emerald-600/80 px-4 text-xs font-bold text-white shadow-[0_5px_18px_rgba(5,150,105,.22)] transition hover:bg-emerald-500 sm:flex"
+            className="hidden h-9 items-center gap-2 rounded-full border border-emerald-300/50 bg-emerald-600/80 px-4 text-xs font-bold text-white shadow-[0_5px_18px_rgba(5,150,105,.22)] transition hover:bg-emerald-500 sm:flex [@media(max-height:560px)]:h-8 [@media(max-height:560px)]:px-3"
           >
             <Glyph name="camera" size={15} /> Gọi Video
           </button>
@@ -284,7 +284,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
             type="button"
             onClick={toggleMic}
             aria-pressed={micReady}
-            className={`hidden h-9 items-center gap-2 rounded-full border px-4 text-xs font-bold transition sm:flex ${
+            className={`hidden h-9 items-center gap-2 rounded-full border px-4 text-xs font-bold transition sm:flex [@media(max-height:560px)]:h-8 [@media(max-height:560px)]:px-3 ${
               micReady
                 ? 'border-emerald-300/40 bg-emerald-600/25 text-emerald-200'
                 : 'border-[#e2bd6e]/35 bg-black/20 text-[#e7d2a9] hover:bg-[#e2bd6e]/10'
@@ -303,7 +303,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
         </header>
 
         <nav
-          className="flex shrink-0 overflow-x-auto border-b border-[#e2bd6e]/18 bg-black/10 px-3"
+          className="flex shrink-0 overflow-x-auto border-b border-[#e2bd6e]/18 bg-black/10 px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Khu vực Đạo Tràng"
         >
           {[
@@ -315,7 +315,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
               key={id}
               type="button"
               onClick={() => setTab(id as typeof tab)}
-              className={`flex h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-xs font-bold transition ${
+              className={`flex h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-xs font-bold transition [@media(max-height:560px)]:h-9 [@media(max-height:560px)]:px-3 ${
                 tab === id
                   ? 'border-[#f2c766] bg-[#e2bd6e]/10 text-[#ffe5a3]'
                   : 'border-transparent text-[#bba889] hover:text-white'
@@ -324,23 +324,23 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
               <Glyph name={icon as GlyphName} size={14} /> {label}
             </button>
           ))}
-          <span className="ml-auto hidden items-center gap-2 self-center px-3 text-[11px] text-emerald-300 sm:flex">
+          <span className="ml-auto hidden items-center gap-2 self-center px-3 text-[11px] text-emerald-300 sm:flex [@media(max-height:560px)]:hidden">
             <i className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" /> Cục bộ
           </span>
         </nav>
 
-        <div className="grid min-h-0 flex-1 md:grid-cols-[1fr_270px]">
-          <div className="flex min-h-0 flex-col border-[#e2bd6e]/18 md:border-r">
+        <div className="grid min-h-0 flex-1 md:grid-cols-[1fr_270px] [@media(max-height:560px)]:grid-cols-1">
+          <div className="flex min-h-0 flex-col border-[#e2bd6e]/18 md:border-r [@media(max-height:560px)]:border-r-0">
             {tab === 'common' && (
               <>
-                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-5">
-                  <p className="flex items-center gap-2 border-b border-[#e2bd6e]/15 pb-3 text-xs font-bold text-[#e4c47f]">
+                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-5 [@media(max-height:560px)]:space-y-2 [@media(max-height:560px)]:p-3">
+                  <p className="flex items-center gap-2 border-b border-[#e2bd6e]/15 pb-3 text-xs [@media(max-height:560px)]:pb-2 font-bold text-[#e4c47f]">
                     <Glyph name="users" size={14} /> Đạo hữu cùng thực tập
                   </p>
                   {messages.map((message) => (
                     <article
                       key={message.id}
-                      className={`ml-auto max-w-[88%] rounded-2xl border p-3.5 ${
+                      className={`ml-auto max-w-[88%] rounded-2xl border p-3.5 [@media(max-height:560px)]:max-w-[94%] [@media(max-height:560px)]:p-2.5 ${
                         message.system
                           ? 'mr-auto ml-0 border-[#e2bd6e]/20 bg-[#e2bd6e]/[.07]'
                           : 'border-[#f0b849]/55 bg-gradient-to-br from-[#a86218] to-[#6c310e] shadow-[0_8px_22px_rgba(91,42,10,.24)]'
@@ -354,8 +354,8 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
                     </article>
                   ))}
                 </div>
-                <div className="border-t border-[#e2bd6e]/18 bg-black/10 p-3">
-                  <div className="mb-2 flex gap-1.5 overflow-x-auto pb-0.5">
+                <div className="border-t border-[#e2bd6e]/18 bg-black/10 p-3 [@media(max-height:560px)]:p-2">
+                  <div className="mb-2 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [@media(max-height:560px)]:mb-1">
                     {quickPhrases.map((phrase) => (
                       <button
                         type="button"
@@ -490,7 +490,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
             )}
           </div>
 
-          <aside className="hidden min-h-0 overflow-y-auto bg-black/10 p-4 md:block">
+          <aside className="hidden min-h-0 overflow-y-auto bg-black/10 p-4 md:block [@media(max-height:560px)]:hidden">
             <h3 className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#ebcf91]">
               Đạo hữu hiện diện
             </h3>
