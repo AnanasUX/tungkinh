@@ -403,11 +403,59 @@
         })
         .on('broadcast', { event: 'DEVOTEE_WALKING' }, ({ payload }) => {
           if (!payload || payload.senderId === this.getClientId() || payload.clientId === this.getClientId()) return;
-          console.log('[SupabaseSanctuary] Nhận broadcast DEVOTEE_WALKING:', payload);
           if (typeof window.handleRemoteDevoteeWalking === 'function') {
             window.handleRemoteDevoteeWalking(payload);
           }
         })
+        .on('broadcast', { event: 'SANCTUARY_SIT_DOWN' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          console.log('[SupabaseSanctuary] Nhận broadcast SANCTUARY_SIT_DOWN:', payload);
+          const remoteClientId = payload.senderId || payload.clientId;
+          const targetSeatNo = payload.seatNo;
+          this.applyPresenceDevoteeToSeat({
+            clientId: remoteClientId,
+            seatNo: targetSeatNo,
+            fullName: payload.senderName || 'Đồng Tu',
+            name: payload.senderName || 'Đồng Tu'
+          });
+          if (typeof window.handleRemoteDevoteeWalking === 'function') {
+            window.handleRemoteDevoteeWalking({
+              clientId: remoteClientId,
+              senderId: remoteClientId,
+              seatNo: targetSeatNo,
+              pose: 'sit',
+              walking: false
+            });
+          }
+        })
+        .on('broadcast', { event: 'SANCTUARY_STAND_UP' }, ({ payload }) => {
+          if (!payload || payload.senderId === this.getClientId()) return;
+          console.log('[SupabaseSanctuary] Nhận broadcast SANCTUARY_STAND_UP:', payload);
+          const remoteClientId = payload.senderId || payload.clientId;
+          if (window.sanctuarySeats) {
+            window.sanctuarySeats.forEach(s => {
+              if (s.remoteClientId === remoteClientId) {
+                s.occupied = false;
+                s.remoteClientId = null;
+                s.name = '';
+                s.dharma = '';
+              }
+            });
+          }
+          if (typeof window.handleRemoteDevoteeWalking === 'function') {
+            window.handleRemoteDevoteeWalking({
+              clientId: remoteClientId,
+              senderId: remoteClientId,
+              seatNo: null,
+              pose: 'stand',
+              walking: false
+            });
+          }
+          if (typeof window.renderSanctuaryFloor === 'function') {
+            window.renderSanctuaryFloor();
+          }
+        })
+
         .on('broadcast', { event: 'SWAP_SEATS' }, ({ payload }) => {
           if (!payload) return;
           console.log('[SupabaseSanctuary] Nhận broadcast SWAP_SEATS:', payload);

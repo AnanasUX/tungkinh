@@ -1114,6 +1114,7 @@ export default function TempleScene({
       robe: THREE.MeshStandardMaterial
       pose: Pose
       phase: number
+      isWalking?: boolean
       action?: { kind: 'bow' | 'knock'; start: number; duration: number }
     }
     const skin = std('#e2bb92', { roughness: 0.62 })
@@ -1291,6 +1292,12 @@ export default function TempleScene({
       seatNo: number | null
       rig: CharacterRig
       label: HTMLDivElement
+      targetX: number
+      targetZ: number
+      targetHeading: number
+      targetPose: Pose
+      isWalking: boolean
+      lastUpdate: number
     }
     const remoteEntities = new Map<string, RemoteDevoteeEntity>()
     const PALETTE = ['#3b72b8', '#7a4b33', '#c08a35', '#7a8288', '#9a3f33', '#b27a3c', '#5a6b7c', '#8c5e3d']
@@ -1316,15 +1323,12 @@ export default function TempleScene({
               entity.seatNo = seatNo
               if (seatNo && SEATS.find((s) => s.no === seatNo)) {
                 const s = SEATS.find((s) => s.no === seatNo)!
-                entity.rig.group.position.set(s.x, 0, s.z)
-                entity.rig.group.rotation.set(0, Math.PI, 0)
-                entity.rig.pose = 'sit'
-                entity.rig.leftLeg.visible = entity.rig.rightLeg.visible = false
-                entity.rig.body.position.y = -0.14
+                entity.targetX = s.x
+                entity.targetZ = s.z
+                entity.targetHeading = Math.PI
+                entity.targetPose = 'sit'
               } else {
-                entity.rig.pose = 'stand'
-                entity.rig.leftLeg.visible = entity.rig.rightLeg.visible = true
-                entity.rig.body.position.y = 0
+                entity.targetPose = 'stand'
               }
               entity.label.innerHTML = `<strong>${devoteeName}<span class="scene-label__level">Bồ đoàn #${seatNo || 'Sân'}</span></strong><small>${dharmaName}</small>`
             }
@@ -1364,6 +1368,12 @@ export default function TempleScene({
               seatNo,
               rig,
               label,
+              targetX: x,
+              targetZ: z,
+              targetHeading: pose === 'sit' ? Math.PI : Math.atan2(0 - x, -20 - z),
+              targetPose: pose,
+              isWalking: false,
+              lastUpdate: performance.now(),
             })
           }
         })
@@ -1382,6 +1392,79 @@ export default function TempleScene({
       })
     }
 
+
+    // Listen to real-time movements, walking & actions from remote devotees
+    (window as any).handleRemoteDevoteeWalking = (payload: any) => {
+      if (!payload) return
+      const clientId = String(payload.senderId || payload.clientId || '')
+      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
+      if (!clientId || clientId === myId) return
+
+      let entity = remoteEntities.get(clientId)
+      if (!entity) {
+        const devoteeName = payload.senderName || payload.name || payload.fullName || 'Đồng Tu'
+        const dharmaName = payload.dharmaName || payload.dharma || 'Tịnh Tâm'
+        const rawSeat = typeof payload.seatNo === 'number' ? payload.seatNo : null
+        let spawnX = typeof payload.x === 'number' ? payload.x : 0
+        let spawnZ = typeof payload.z === 'number' ? payload.z : 0
+        const pose: Pose = payload.pose || (rawSeat ? 'sit' : 'stand')
+
+        if (rawSeat && SEATS.find((s) => s.no === rawSeat) && typeof payload.x !== 'number') {
+          const s = SEATS.find((s) => s.no === rawSeat)!
+          spawnX = s.x
+          spawnZ = s.z
+        }
+
+        const colorIdx = Math.abs(clientId.split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0)) % PALETTE.length
+        const rig = character(spawnX, spawnZ, PALETTE[colorIdx], pose, Math.random() * 2)
+        if (typeof payload.heading === 'number') {
+          rig.group.rotation.set(0, payload.heading, 0)
+        } else if (pose === 'sit') {
+          rig.group.rotation.set(0, Math.PI, 0)
+        }
+        rigs.push(rig)
+
+        const label = document.createElement('div')
+        label.className = 'scene-label scene-label--remote'
+        label.innerHTML = `<strong>${devoteeName}<span class="scene-label__level">Bồ đoàn #${rawSeat || 'Sân'}</span></strong><small>${dharmaName}</small>`
+        labelsContainerRef.current?.appendChild(label)
+
+        entity = {
+          id: clientId,
+          name: devoteeName,
+          dharmaName,
+          seatNo: rawSeat,
+          rig,
+          label,
+          targetX: spawnX,
+          targetZ: spawnZ,
+          targetHeading: typeof payload.heading === 'number' ? payload.heading : rig.group.rotation.y,
+          targetPose: pose,
+          isWalking: Boolean(payload.walking),
+          lastUpdate: performance.now(),
+        }
+        remoteEntities.set(clientId, entity)
+      } else {
+        if (typeof payload.x === 'number') entity.targetX = payload.x
+        if (typeof payload.z === 'number') entity.targetZ = payload.z
+        if (typeof payload.heading === 'number') entity.targetHeading = payload.heading
+        if (payload.pose) entity.targetPose = payload.pose
+        entity.isWalking = Boolean(payload.walking)
+        entity.lastUpdate = performance.now()
+
+        if (payload.seatNo !== undefined && entity.seatNo !== payload.seatNo) {
+          entity.seatNo = payload.seatNo
+          entity.label.innerHTML = `<strong>${entity.name}<span class="scene-label__level">Bồ đoàn #${payload.seatNo || 'Sân'}</span></strong><small>${entity.dharmaName}</small>`
+        }
+        if (payload.action === 'bow' || payload.action === 'offer') {
+          entity.rig.action = {
+            kind: 'bow',
+            start: clock.elapsedTime,
+            duration: payload.action === 'offer' ? 2.8 : 2.6,
+          }
+        }
+      }
+    }
     const triggerAction = (target: string | number | undefined, kind: 'bow' | 'knock') => {
       if (!target) return
       let targetSeat: number | null = null
@@ -1673,6 +1756,36 @@ export default function TempleScene({
       }
       player.group.rotation.y = heading
 
+      // Broadcast local movement to remote devotees via Supabase
+      const nowMs = performance.now()
+      const dX = position.x - lastBroadcastPos.x
+      const dZ = position.z - lastBroadcastPos.z
+      const movedDist = Math.hypot(dX, dZ)
+      const turnedRad = Math.abs(heading - lastBroadcastPos.heading)
+      const poseChanged = player.pose !== lastBroadcastPos.pose
+      const walkingChanged = walking !== lastBroadcastPos.walking
+      const seatChanged = seated !== lastBroadcastPos.seatNo
+      const isTime = nowMs - lastBroadcastPos.time > 80 // ~12 fps update rate
+
+      if ((walkingChanged || poseChanged || seatChanged) || (walking && isTime && (movedDist > 0.04 || turnedRad > 0.08)) || (!walking && lastBroadcastPos.walking)) {
+        lastBroadcastPos.x = position.x
+        lastBroadcastPos.z = position.z
+        lastBroadcastPos.heading = heading
+        lastBroadcastPos.walking = walking
+        lastBroadcastPos.pose = player.pose
+        lastBroadcastPos.seatNo = seated
+        lastBroadcastPos.time = nowMs
+
+        ;(window as any).SupabaseSanctuary?.broadcast?.('DEVOTEE_WALKING', {
+          x: Number(position.x.toFixed(2)),
+          z: Number(position.z.toFixed(2)),
+          heading: Number(heading.toFixed(2)),
+          pose: player.pose,
+          walking: walking,
+          seatNo: seated,
+        })
+      }
+
       desiredCamera.set(
         position.x + Math.sin(yaw) * distance,
         2.2 + pitch * 4 + distance * 0.2,
@@ -1726,7 +1839,7 @@ export default function TempleScene({
       })
 
       rigs.forEach((rig, index) => {
-        const moving = index === 0 && walking
+        const moving = (index === 0 && walking) || Boolean(rig.isWalking)
         const pace = moving ? elapsed * 10 : elapsed * 1.5 + rig.phase
         const step = Math.sin(pace)
         rig.body.rotation.x = 0
@@ -1784,11 +1897,45 @@ export default function TempleScene({
         }
       })
 
-      // Update remote entity label positions & custom actions
+      // Update remote entity movements, lerp walking position & label
       remoteEntities.forEach((entity) => {
         const rig = entity.rig
         const label = entity.label
 
+        // 1. Smooth position interpolation (Walking across temple)
+        const curX = rig.group.position.x
+        const curZ = rig.group.position.z
+        const dx = entity.targetX - curX
+        const dz = entity.targetZ - curZ
+        const dist = Math.hypot(dx, dz)
+
+        if (dist > 0.02) {
+          const lerpFactor = Math.min(1, delta * 9)
+          rig.group.position.x += dx * lerpFactor
+          rig.group.position.z += dz * lerpFactor
+          rig.isWalking = true
+        } else {
+          rig.group.position.x = entity.targetX
+          rig.group.position.z = entity.targetZ
+          rig.isWalking = entity.isWalking
+        }
+
+        // 2. Smooth heading rotation
+        const curHeading = rig.group.rotation.y
+        const turn = Math.atan2(
+          Math.sin(entity.targetHeading - curHeading),
+          Math.cos(entity.targetHeading - curHeading)
+        )
+        rig.group.rotation.y += turn * Math.min(1, delta * 12)
+
+        // 3. Pose transition (Stand up vs Sit down)
+        if (rig.pose !== entity.targetPose) {
+          rig.pose = entity.targetPose
+          rig.leftLeg.visible = rig.rightLeg.visible = entity.targetPose !== 'sit'
+          rig.body.position.y = entity.targetPose === 'sit' ? -0.14 : 0
+        }
+
+        // 4. Custom actions
         if (rig.action) {
           const t = (elapsed - rig.action.start) / rig.action.duration
           if (t >= 1) {
@@ -1852,6 +1999,7 @@ export default function TempleScene({
       remoteEntities.clear()
       delete (window as any).triggerDevoteeBow
       delete (window as any).triggerDevoteeKnock
+      delete (window as any).handleRemoteDevoteeWalking
       robeRef.current = null
       resetViewRef.current = null
       if (apiHolderRef.current) apiHolderRef.current.current = null
