@@ -105,7 +105,6 @@ const quickPhrases = ['A Di Đà Phật', 'Tùy hỷ công đức', 'Thân tâm 
 const presentPeople = [
   ['T', 'Thích Đào Đào', 'Đang thiền'],
   ['A', 'An Hiền', 'An tọa'],
-  ['B', 'Thích Từ Bế', 'Đang niệm Phật'],
 ]
 
 export default function CommunityOverlay({ playerName, open, onClose, onCall }: Props) {
@@ -128,7 +127,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
   const [messages, setMessages] = useState([
     {
       id: 1,
-      author: 'Chùa An Nhiên',
+      author: 'Chùa Yên Phúc',
       body: 'Chào mừng bạn đến Đạo Tràng Chung. Gửi một lời lành để cùng nhau thực tập chánh niệm.',
       time: 'Bây giờ',
       system: true,
@@ -260,8 +259,8 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
               <h2 id="community-title" className="font-display text-lg font-bold text-[#ffe5aa] [@media(max-height:560px)]:text-base">
                 Đạo Tràng Chung
               </h2>
-              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300 [@media(max-height:560px)]:hidden">
-                {1 + onlineDevotees.length} Đồng Tu Trực Tuyến
+              <span className="rounded-full border border-[#f2c766]/50 bg-[#f2c766]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ffe09a] [@media(max-height:560px)]:hidden">
+                PHIÊN CÁ NHÂN
               </span>
             </div>
             <p className="truncate text-xs text-[#cbb28f] [@media(max-height:560px)]:hidden">Cùng niệm Phật · Cùng gieo lời lành</p>
@@ -276,7 +275,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
                 onCall()
               }
             }}
-            className="hidden h-9 items-center gap-2 rounded-full border border-emerald-300/50 bg-emerald-600/80 px-4 text-xs font-bold text-white shadow-[0_5px_18px_rgba(5,150,105,.22)] transition hover:bg-emerald-500 sm:flex [@media(max-height:560px)]:h-8 [@media(max-height:560px)]:px-3"
+            className="hidden h-9 items-center gap-2 rounded-full border border-emerald-400/50 bg-[#107c41] px-4 text-xs font-bold text-white shadow-[0_5px_18px_rgba(5,150,105,.22)] transition hover:bg-[#15803d] sm:flex [@media(max-height:560px)]:h-8 [@media(max-height:560px)]:px-3"
           >
             <Glyph name="camera" size={15} /> Gọi Video
           </button>
@@ -309,7 +308,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
           {[
             ['common', 'Đạo Tràng Chung', 'chat'],
             ['private', 'Nhắn tin riêng', 'shield'],
-            ['people', `Hiện diện (${onlineDevotees.length + 1})`, 'users'],
+            ['people', `Hiện diện (${onlineDevotees.length + presentPeople.length + 1})`, 'users'],
           ].map(([id, label, icon]) => (
             <button
               key={id}
@@ -513,14 +512,14 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
                   </div>
                 )
               })}
-              {presentPeople.slice(0, Math.max(1, 3 - onlineDevotees.length)).map(([initial, name, status]) => (
-                <div key={name} className="flex items-center gap-2.5 opacity-70">
-                  <span className="grid size-8 place-items-center rounded-full bg-[#6f3013] text-xs font-bold text-[#f1c86d]">
+              {presentPeople.slice(0, Math.max(1, 2 - onlineDevotees.length)).map(([initial, name, status]) => (
+                <div key={name} className="flex items-center gap-2.5">
+                  <span className="grid size-8 place-items-center rounded-full bg-[#7a3515] text-xs font-bold text-[#f1c86d]">
                     {initial}
                   </span>
                   <div className="min-w-0">
                     <strong className="block truncate text-xs text-[#f5e4c5]">{name}</strong>
-                    <span className="text-[10px] text-[#cbb28f]">{status}</span>
+                    <span className="text-[10px] text-emerald-400">{status}</span>
                   </div>
                 </div>
               ))}
@@ -534,14 +533,14 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
                   onCall()
                 }
               }}
-              className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-emerald-300/45 bg-emerald-600/75 text-xs font-extrabold text-white transition hover:bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,.35)]"
+              className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-emerald-300/45 bg-[#107c41] text-xs font-extrabold text-white transition hover:bg-[#15803d] shadow-[0_0_20px_rgba(16,185,129,.35)]"
             >
-              <Glyph name="camera" size={15} /> Gọi Video Đạo Tràng
+              <Glyph name="camera" size={15} /> Gọi Video
             </button>
             <button
               type="button"
               onClick={toggleMic}
-              className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[#e2bd6e]/30 bg-[#e2bd6e]/[.06] text-xs font-bold text-[#e7d1a5]"
+              className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[#e2bd6e]/30 bg-[#2a1309] text-xs font-bold text-[#e7d1a5] transition hover:bg-[#e2bd6e]/10"
             >
               <Glyph name="mic" size={15} /> {micReady ? 'Tắt mic đàm thoại' : 'Bật mic đàm thoại'}
             </button>
