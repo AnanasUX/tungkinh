@@ -1320,7 +1320,8 @@ export default function TempleScene({
 
           if (remoteEntities.has(clientId)) {
             const entity = remoteEntities.get(clientId)!
-            if (entity.seatNo !== seatNo) {
+            const isRecentLive = (performance.now() - entity.lastUpdate) < 4000 || entity.isWalking
+            if (!isRecentLive && entity.seatNo !== seatNo) {
               entity.seatNo = seatNo
               if (seatNo && SEATS.find((s) => s.no === seatNo)) {
                 const s = SEATS.find((s) => s.no === seatNo)!
@@ -1381,7 +1382,8 @@ export default function TempleScene({
       }
 
       remoteEntities.forEach((entity, clientId) => {
-        if (!currentIds.has(clientId)) {
+        const isRecentLive = (performance.now() - entity.lastUpdate) < 6000 || entity.isWalking
+        if (!currentIds.has(clientId) && !isRecentLive) {
           world.remove(entity.rig.group)
           const idx = rigs.indexOf(entity.rig)
           if (idx !== -1) rigs.splice(idx, 1)
@@ -1456,6 +1458,18 @@ export default function TempleScene({
         if (payload.seatNo !== undefined && entity.seatNo !== payload.seatNo) {
           entity.seatNo = payload.seatNo
           entity.label.innerHTML = `<strong>${entity.name}<span class="scene-label__level">Bồ đoàn #${payload.seatNo || 'Sân'}</span></strong><small>${entity.dharmaName}</small>`
+        }
+
+        // Also reflect in activeDevotees so polling does not overwrite
+        if ((window as any).SupabaseSanctuary?.activeDevotees?.has(clientId)) {
+          const d = (window as any).SupabaseSanctuary.activeDevotees.get(clientId)
+          if (d) {
+            d.seatNo = payload.seatNo
+            d.x = payload.x
+            d.z = payload.z
+            d.pose = payload.pose
+            d.walking = payload.walking
+          }
         }
         if (payload.action === 'bow' || payload.action === 'offer') {
           entity.rig.action = {
@@ -1847,6 +1861,65 @@ export default function TempleScene({
         sprite.material.opacity = smokeLevel * 0.45 * Math.sin(life * Math.PI)
       })
 
+      // 1. Update remote entities: lerp position, heading, pose and walking state
+      remoteEntities.forEach((entity) => {
+        const rig = entity.rig
+
+        // Smooth position interpolation
+        const curX = rig.group.position.x
+        const curZ = rig.group.position.z
+        const dx = entity.targetX - curX
+        const dz = entity.targetZ - curZ
+        const dist = Math.hypot(dx, dz)
+
+        if (dist > 8) {
+          rig.group.position.x = entity.targetX
+          rig.group.position.z = entity.targetZ
+          rig.isWalking = false
+        } else if (dist > 0.02) {
+          const lerpFactor = Math.min(1, delta * 9)
+          rig.group.position.x += dx * lerpFactor
+          rig.group.position.z += dz * lerpFactor
+          rig.isWalking = true
+        } else {
+          rig.group.position.x = entity.targetX
+          rig.group.position.z = entity.targetZ
+          rig.isWalking = entity.isWalking
+        }
+
+        // Heading rotation interpolation
+        const curHeading = rig.group.rotation.y
+        const turn = Math.atan2(
+          Math.sin(entity.targetHeading - curHeading),
+          Math.cos(entity.targetHeading - curHeading)
+        )
+        rig.group.rotation.y += turn * Math.min(1, delta * 12)
+
+        // Pose transition (stand up vs sit down)
+        if (rig.pose !== entity.targetPose) {
+          rig.pose = entity.targetPose
+          rig.leftLeg.visible = rig.rightLeg.visible = entity.targetPose !== 'sit'
+          rig.body.position.y = entity.targetPose === 'sit' ? -0.14 : 0
+        }
+
+        // Custom action animations (bow, knock, etc.)
+        if (rig.action) {
+          const t = (elapsed - rig.action.start) / rig.action.duration
+          if (t >= 1) {
+            rig.action = undefined
+          } else {
+            const k = Math.sin(t * Math.PI)
+            const raise = Math.min(1, k * 1.8)
+            rig.leftArm.rotation.set(-1.25 * raise, 0, -0.38 * raise - 0.16 * (1 - raise))
+            rig.rightArm.rotation.set(-1.25 * raise, 0, 0.38 * raise + 0.16 * (1 - raise))
+            rig.body.rotation.x = rig.action.kind === 'bow' ? 0.55 * k : 0.15 * k
+            rig.body.position.y = rig.pose === 'sit' ? -0.14 : 0
+            rig.head.rotation.set(rig.action.kind === 'bow' ? 0.2 * k : 0.1 * k, 0, 0)
+          }
+        }
+      })
+
+      // 2. Animate limbs & body movement for ALL rigs
       rigs.forEach((rig, index) => {
         const moving = (index === 0 && walking) || Boolean(rig.isWalking)
         const pace = moving ? elapsed * 10 : elapsed * 1.5 + rig.phase
@@ -1886,7 +1959,7 @@ export default function TempleScene({
         rig.head.rotation.z = moving ? -step * 0.04 : Math.sin(pace * 0.5) * 0.04
       })
 
-      // Keep name labels attached to the characters' heads.
+      // 3. Keep name labels attached to all characters' heads
       const width = mount.clientWidth
       const height = mount.clientHeight
       rigs.forEach((rig, index) => {
@@ -1905,61 +1978,9 @@ export default function TempleScene({
           label.style.zIndex = String(1000 - Math.round(far * 10))
         }
       })
-
-      // Update remote entity movements, lerp walking position & label
       remoteEntities.forEach((entity) => {
         const rig = entity.rig
         const label = entity.label
-
-        // 1. Smooth position interpolation (Walking across temple)
-        const curX = rig.group.position.x
-        const curZ = rig.group.position.z
-        const dx = entity.targetX - curX
-        const dz = entity.targetZ - curZ
-        const dist = Math.hypot(dx, dz)
-
-        if (dist > 0.02) {
-          const lerpFactor = Math.min(1, delta * 9)
-          rig.group.position.x += dx * lerpFactor
-          rig.group.position.z += dz * lerpFactor
-          rig.isWalking = true
-        } else {
-          rig.group.position.x = entity.targetX
-          rig.group.position.z = entity.targetZ
-          rig.isWalking = entity.isWalking
-        }
-
-        // 2. Smooth heading rotation
-        const curHeading = rig.group.rotation.y
-        const turn = Math.atan2(
-          Math.sin(entity.targetHeading - curHeading),
-          Math.cos(entity.targetHeading - curHeading)
-        )
-        rig.group.rotation.y += turn * Math.min(1, delta * 12)
-
-        // 3. Pose transition (Stand up vs Sit down)
-        if (rig.pose !== entity.targetPose) {
-          rig.pose = entity.targetPose
-          rig.leftLeg.visible = rig.rightLeg.visible = entity.targetPose !== 'sit'
-          rig.body.position.y = entity.targetPose === 'sit' ? -0.14 : 0
-        }
-
-        // 4. Custom actions
-        if (rig.action) {
-          const t = (elapsed - rig.action.start) / rig.action.duration
-          if (t >= 1) {
-            rig.action = undefined
-          } else {
-            const k = Math.sin(t * Math.PI)
-            const raise = Math.min(1, k * 1.8)
-            rig.leftArm.rotation.set(-1.25 * raise, 0, -0.38 * raise - 0.16 * (1 - raise))
-            rig.rightArm.rotation.set(-1.25 * raise, 0, 0.38 * raise + 0.16 * (1 - raise))
-            rig.body.rotation.x = rig.action.kind === 'bow' ? 0.55 * k : 0.15 * k
-            rig.body.position.y = rig.pose === 'sit' ? -0.14 : 0
-            rig.head.rotation.set(rig.action.kind === 'bow' ? 0.2 * k : 0.1 * k, 0, 0)
-          }
-        }
-
         projected.copy(rig.group.position)
         projected.y += rig.pose === 'sit' ? 2.3 : 2.55
         const far = camera.position.distanceTo(projected)

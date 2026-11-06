@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
   <!-- MODERN UI DESIGN STYLESHEET (COMPILED WITH TAILWIND V4 & LANDSCAPE ENGINE) -->
-  <link rel="stylesheet" href="css/modern-ui.css?v=20261106_1250">
+  <link rel="stylesheet" href="css/modern-ui.css?v=20261106_1300">
 
   <!-- REALTIME & LIVEKIT SFU WEBRTC LIBRARIES -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -47,8 +47,7 @@
 
   <!-- SANCTUARY CORE CLIENT PROFILE & SEATS INITIALIZER -->
   <script>
-    window.SANCTUARY_CLIENT_ID = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('chua_an_nhien_cid'))
-      || ('phattu_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36).slice(-4));
+    window.SANCTUARY_CLIENT_ID = 'phattu_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36).slice(-4);
     try {
       if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('chua_an_nhien_cid', window.SANCTUARY_CLIENT_ID);
       var saved = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('chua_an_nhien_user_profile'));
@@ -168,14 +167,14 @@
   </script>
 
   <!-- DHARMA WISDOM & ORACLES -->
-  <script src="js/dharma-wisdom.js?v=20261106_1250"></script>
+  <script src="js/dharma-wisdom.js?v=20261106_1300"></script>
 
   <!-- REAL-TIME & WEBRTC CALLING ENGINE -->
-  <script src="js/supabase-sanctuary.js?v=20261106_1250"></script>
-  <script src="js/room-chat.js?v=20261106_1250"></script>
+  <script src="js/supabase-sanctuary.js?v=20261106_1300"></script>
+  <script src="js/room-chat.js?v=20261106_1300"></script>
 
   <!-- STANDALONE BUNDLE (THREE.JS 3D TEMPLE SCENE, DOCK, PANELS, AUDIO) -->
-  <script type="module" src="js/app.bundle.js?v=20261106_1250"></script>
+  <script type="module" src="js/app.bundle.js?v=20261106_1300"></script>
 
   <script>
     window.addEventListener('load', async () => {
