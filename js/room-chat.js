@@ -2129,10 +2129,15 @@
       console.warn('[RoomVoice] Web Audio DSP fallback to HTMLAudio:', dspErr);
     }
 
-    // Ensure remote audio plays cleanly through physical loudspeaker at maximum fidelity
-    audioEl.muted = false;
-    audioEl.volume = 1.0;
-    routeAudioToSpeaker(audioEl);
+    // Ensure remote audio plays cleanly without duplicate echoes
+    if (routedViaWebAudio) {
+      audioEl.muted = true; // Web Audio DSP handles the speakers directly, mute HTML5 audio to prevent double playback
+    } else {
+      audioEl.muted = false;
+      audioEl.volume = 1.0;
+      routeAudioToSpeaker(audioEl);
+      audioEl.play().catch(() => {});
+    }
     audioEl.play().catch(() => {
       const unlockAudio = () => {
         audioEl.play().catch(() => {});
@@ -2194,11 +2199,18 @@
     attachCurrentTracksToPC(pc);
 
     pc.ontrack = (event) => {
-      const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+      console.log('[ZaloVideoCall] ontrack fired:', event.track.kind, 'from peer:', peerId);
 
-      // Handle Video Track
-      if (event.track.kind === 'video' || stream.getVideoTracks().length > 0) {
-        console.log('[ZaloVideoCall] Received remote video stream from', peerId);
+      // 1. Audio Track: played cleanly through Web Audio DSP pipeline
+      if (event.track.kind === 'audio') {
+        const audioStream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+        playRemoteAudioStream(peerId, audioStream);
+        return;
+      }
+
+      // 2. Video Track: rendered in video elements with muted=true (MANDATORY FOR MOBILE AUTOPLAY)
+      if (event.track.kind === 'video') {
+        const videoStream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
         const member = state.members.get(peerId);
         addOrUpdateCallParticipant(peerId, {
           id: peerId,
@@ -2206,7 +2218,7 @@
           dharma: member ? member.dharma : 'Tịnh Tâm',
           location: member ? member.location : 'Việt Nam',
           isLocal: false,
-          stream: stream,
+          stream: videoStream,
           hasVideo: true,
           isMuted: member ? member.muted : false
         });
@@ -2216,37 +2228,31 @@
         const avatarFallback = document.getElementById('zalo-avatar-fallback');
 
         if (remoteVideo) {
-          remoteVideo.srcObject = stream;
+          remoteVideo.srcObject = videoStream;
+          remoteVideo.muted = true;
+          remoteVideo.defaultMuted = true;
           remoteVideo.playsInline = true;
-          remoteVideo.muted = false;
-          remoteVideo.volume = 1.0;
-          routeAudioToSpeaker(remoteVideo);
-          remoteVideo.play().catch(e => console.warn('Remote video play err:', e));
+          remoteVideo.setAttribute('playsinline', '');
+          remoteVideo.setAttribute('webkit-playsinline', '');
+          remoteVideo.setAttribute('autoplay', '');
+          remoteVideo.play().catch(e => console.warn('[VideoPlay Error]', e));
         }
         if (stripVideo) {
-          stripVideo.srcObject = stream;
+          stripVideo.srcObject = videoStream;
+          stripVideo.muted = true;
           stripVideo.playsInline = true;
           stripVideo.play().catch(() => {});
         }
         if (avatarFallback) {
           avatarFallback.classList.add('hidden');
         }
-      }
 
-      // Handle Audio Track
-      if (event.track.kind === 'audio' || stream.getAudioTracks().length > 0) {
-        console.log('[ZaloVideoCall] Received remote audio stream from', peerId);
-        playRemoteAudioStream(peerId, stream);
-        const member = state.members.get(peerId);
-        addOrUpdateCallParticipant(peerId, {
-          id: peerId,
-          name: member ? member.name : (peerId.slice(0, 8)),
-          dharma: member ? member.dharma : 'Tịnh Tâm',
-          location: member ? member.location : 'Việt Nam',
-          isLocal: false,
-          audioStream: stream,
-          isMuted: false
-        });
+        event.track.onunmute = () => {
+          if (avatarFallback) avatarFallback.classList.add('hidden');
+          if (remoteVideo) remoteVideo.play().catch(() => {});
+        };
+
+        renderZaloVideoGrid();
       }
     };
 
@@ -2281,11 +2287,17 @@
       attachCurrentTracksToPC(pc);
 
       if (isOfferInitiator) {
+        if (pc._negotiating || pc.signalingState !== 'stable') {
+          console.log('[ZaloVideoCall] Skipping duplicate offer creation for', peerId, 'signalingState:', pc.signalingState);
+          return;
+        }
+        pc._negotiating = true;
         const offer = await pc.createOffer({
           offerToReceiveAudio: true,
           offerToReceiveVideo: true
         });
         await pc.setLocalDescription(offer);
+        pc._negotiating = false;
         publish({
           type: 'ROOM_VOICE_OFFER',
           senderId: myId(),
@@ -2295,6 +2307,8 @@
         });
       }
     } catch (err) {
+      const pc = state.peerConnections.get(peerId);
+      if (pc) pc._negotiating = false;
       console.warn('[ZaloVideoCall] connectVideoPeer error:', err);
     }
   }
@@ -2552,16 +2566,21 @@
         if (payload.targetId === myId() || payload.targetId === 'all') {
           try {
             const pc = getOrCreatePeerConnection(payload.senderId);
-            attachCurrentTracksToPC(pc);
+            // In Unified Plan, MUST set remote description FIRST so transceivers match
             await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
             await flushPendingIceCandidates(payload.senderId, pc);
+
+            // Now attach local tracks to the established transceivers
+            attachCurrentTracksToPC(pc);
+
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             publish({
               type: 'ROOM_VOICE_ANSWER',
               senderId: myId(),
               targetId: payload.senderId,
-              sdp: answer
+              sdp: answer,
+              isVideoCall: Boolean(payload.isVideoCall)
             });
           } catch (err) {
             console.warn('[RoomVoice] Error answering voice offer:', err);
@@ -2573,7 +2592,7 @@
         if (payload.targetId === myId()) {
           try {
             const pc = state.peerConnections.get(payload.senderId);
-            if (pc) {
+            if (pc && pc.signalingState === 'have-local-offer') {
               await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
               await flushPendingIceCandidates(payload.senderId, pc);
             }
@@ -3043,6 +3062,9 @@
   // --------------------------------------------------------------------------
   function addOrUpdateCallParticipant(peerId, data) {
     if (!peerId) return;
+    if (peerId !== 'target_peer' && activeCallParticipants.has('target_peer')) {
+      activeCallParticipants.delete('target_peer');
+    }
     const existing = activeCallParticipants.get(peerId) || {};
     activeCallParticipants.set(peerId, { ...existing, ...data, id: peerId });
     renderZaloVideoGrid();
@@ -3412,8 +3434,9 @@
   }
 
   async function tryConnectLiveKit(roomId, userId, userName) {
+    // WebRTC P2P direct HD engine with TURN servers provides zero-latency instant connectivity
+    return false;
     if (typeof window.LivekitClient === 'undefined') {
-      console.log('[ZaloVideoCall] LivekitClient SDK not available, using WebRTC Mesh engine.');
       return false;
     }
 
@@ -3720,15 +3743,6 @@
       location: myProf.location
     });
 
-    publish({
-      type: 'ROOM_VIDEO_CALL_PARTICIPANT_JOINED',
-      roomId: activeCallRoomId,
-      senderId: myId(),
-      name: myProf.name,
-      dharma: myProf.dharma,
-      location: myProf.location
-    });
-
     updateActiveCallStrip(true, callData.callerName || 'Đạo Hữu');
   }
 
@@ -3767,7 +3781,10 @@
     });
 
     if (activeCallEngine === 'webrtc') {
-      connectVideoPeer(payload.senderId, true);
+      const pc = state.peerConnections.get(payload.senderId);
+      if (!pc || (pc.connectionState !== 'connected' && pc.signalingState === 'stable')) {
+        connectVideoPeer(payload.senderId, true);
+      }
     }
 
     if (window.showLiveGiftBanner) {
