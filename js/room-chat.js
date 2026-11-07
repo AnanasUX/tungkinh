@@ -2206,15 +2206,11 @@
 
   function getOrCreatePeerConnection(peerId) {
     if (state.peerConnections.has(peerId)) {
-      const existingPc = state.peerConnections.get(peerId);
-      attachCurrentTracksToPC(existingPc);
-      return existingPc;
+      return state.peerConnections.get(peerId);
     }
 
     const pc = new RTCPeerConnection(RTC_CONFIG);
     state.peerConnections.set(peerId, pc);
-
-    attachCurrentTracksToPC(pc);
 
     pc.ontrack = (event) => {
       console.log('[ZaloVideoCall] ontrack fired:', event.track.kind, 'from peer:', peerId);
@@ -2285,13 +2281,42 @@
       }
     };
 
+    let disconnectGraceTimer = null;
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+      console.log(`[WebRTC] Peer ${peerId} connectionState: ${pc.connectionState}`);
+      if (pc.connectionState === 'connected') {
+        if (disconnectGraceTimer) {
+          clearTimeout(disconnectGraceTimer);
+          disconnectGraceTimer = null;
+        }
+        const engineBadge = document.getElementById('zalo-call-engine-badge');
+        if (engineBadge) engineBadge.textContent = 'Đã kết nối HD';
+      } else if (pc.connectionState === 'disconnected') {
+        // Mobile network temporary drop: allow 6-second grace to reconnect without abruptly ending video
+        if (!disconnectGraceTimer) {
+          disconnectGraceTimer = setTimeout(() => {
+            if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+              console.warn(`[WebRTC] Peer ${peerId} disconnected timed out, removing participant`);
+              state.peerConnections.delete(peerId);
+              state.remoteAudioStreams.delete(peerId);
+              removeCallParticipant(peerId);
+              const el = document.getElementById(`remote-audio-${peerId}`);
+              if (el) el.remove();
+              renderZaloVideoGrid();
+            }
+          }, 6000);
+        }
+      } else if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        if (disconnectGraceTimer) {
+          clearTimeout(disconnectGraceTimer);
+          disconnectGraceTimer = null;
+        }
         state.peerConnections.delete(peerId);
         state.remoteAudioStreams.delete(peerId);
         removeCallParticipant(peerId);
         const el = document.getElementById(`remote-audio-${peerId}`);
         if (el) el.remove();
+        renderZaloVideoGrid();
       }
     };
 
@@ -2333,6 +2358,7 @@
 
   async function callPeer(peerId) {
     if (!peerId || peerId === myId()) return;
+    if (isZaloCallActive) return; // Dedicated video call engine manages transceivers
     try {
       const pc = getOrCreatePeerConnection(peerId);
       const isVideoActive = Boolean(zaloMediaStream);
@@ -2581,6 +2607,7 @@
         break;
 
       case 'ROOM_VOICE_OFFER':
+        if (payload.senderId === myId()) break;
         if (payload.targetId === myId() || payload.targetId === 'all') {
           try {
             // Auto-acquire local camera if answering a video call offer and camera not active
@@ -2604,6 +2631,19 @@
             }
 
             const pc = getOrCreatePeerConnection(payload.senderId);
+
+            // Perfect Negotiation Glare Collision Resolution
+            const isPolite = myId() < payload.senderId;
+            const offerCollision = (pc._negotiating || pc.signalingState !== 'stable');
+            if (offerCollision) {
+              if (!isPolite) {
+                console.log('[WebRTC] Impolite peer ignoring collision offer from', payload.senderId);
+                return;
+              }
+              console.log('[WebRTC] Polite peer rolling back local offer to accept remote offer from', payload.senderId);
+              await pc.setLocalDescription({ type: 'rollback' });
+            }
+
             // In Unified Plan, MUST set remote description FIRST so transceivers match
             await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
             await flushPendingIceCandidates(payload.senderId, pc);
@@ -2660,6 +2700,7 @@
       
       case 'CALL_ROOM_CREATED':
       case 'ROOM_VIDEO_CALL_OFFER':
+        if (payload.senderId === myId()) break; // Never show incoming call popup to self
         if (payload.targetId === myId() || payload.targetId === 'all' || !payload.targetId) {
           showIncomingVideoCallModal(payload);
         }
@@ -3762,9 +3803,9 @@
       location: callData.callerLocation || callData.location || 'Việt Nam'
     }, false);
 
-    // 2. In WebRTC Mesh mode, connect to the caller
+    // 2. In WebRTC Mesh mode, pre-initialize peer connection (tracks attach upon offer receipt)
     if (activeCallEngine === 'webrtc') {
-      connectVideoPeer(callData.senderId, false);
+      getOrCreatePeerConnection(callData.senderId);
     }
 
     // 3. Notify room that we accepted & joined
@@ -4088,6 +4129,12 @@
 
     activeCallParticipants.clear();
     updateActiveCallStrip(false);
+
+    // Cleanly close and reset peer connections for pristine state on subsequent calls
+    state.peerConnections.forEach((pc) => {
+      try { pc.close(); } catch (_) {}
+    });
+    state.peerConnections.clear();
 
     // Reset audio ducking & clean up DSP chains
     setRemoteAudioDucking(false);
