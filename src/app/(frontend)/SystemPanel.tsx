@@ -10,6 +10,7 @@ import PracticeBody, {
   type PracticePanelId,
 } from './PracticePanels'
 import { SEATS } from './temple-data'
+import { TEMPLE_SITES } from './temple-world'
 
 export type PanelId =
   | 'beads'
@@ -62,7 +63,7 @@ const panelTitles: Record<PanelId, string> = {
   rank: 'Bảng xếp hạng',
   more: 'Khám phá Chùa An Nhiên',
   settings: 'Cài đặt',
-  rooms: 'Chọn phòng',
+  rooms: 'Chọn khu vực',
   people: 'Người trong chùa',
   phrases: 'Câu nói tịnh tâm',
   feedback: 'Góp ý và báo lỗi',
@@ -83,7 +84,7 @@ const panelMeta: Record<PanelId, [group: string, note: string]> = {
   rank: ['Cộng đồng', 'Công đức của bạn so với các thiện hữu trong chùa.'],
   more: ['Chánh điện', 'Tất cả pháp môn và nghi lễ của Chùa An Nhiên.'],
   settings: ['Thiết lập', 'Âm thanh, chất lượng hiển thị và tên của bạn.'],
-  rooms: ['Cộng đồng', 'Chọn không gian tu tập phù hợp với bạn.'],
+  rooms: ['Bản đồ', 'Đi bộ khám phá hoặc dịch chuyển nhanh giữa năm khu vực.'],
   people: ['Cộng đồng', 'Những thiện hữu đang hiện diện trong chùa.'],
   phrases: ['Ái ngữ', 'Gửi một lời tịnh tâm đến mọi người quanh bạn.'],
   feedback: ['Hỗ trợ', 'Chia sẻ góp ý để chùa ngày càng thanh tịnh hơn.'],
@@ -580,24 +581,25 @@ export default function SystemPanel(props: Props) {
           {panel === 'rooms' && (
             <div className="rooms-view">
               <p className="panel-intro">
-                Mỗi phòng là một không gian công phu. Tiến độ của bạn được giữ nguyên khi đổi phòng.
+                Các khu vực nằm trong cùng một thế giới và được nối bằng đường đi. Dịch chuyển nhanh
+                chỉ là lựa chọn hỗ trợ.
               </p>
-              {[31, 24, 18, 11, 7, 3].map((count, index) => (
+              {TEMPLE_SITES.map((site) => (
                 <button
-                  className={room === index + 1 ? 'active' : ''}
+                  className={room === site.id ? 'active' : ''}
                   type="button"
-                  key={index}
+                  key={site.id}
                   onClick={() => {
-                    onRoom(index + 1)
+                    onRoom(site.id)
                     onClose()
                   }}
                 >
                   <span className="room-lotus">◇</span>
                   <div>
-                    <strong>Phòng {index + 1}</strong>
-                    <small>{index === 0 ? 'Không gian chính điện' : 'Sân chùa thanh tịnh'}</small>
+                    <strong>{site.name}</strong>
+                    <small>{site.description}</small>
                   </div>
-                  <em>{count}/100 người</em>
+                  <em>{room === site.id ? 'Đang ở đây' : 'Đến khu này'}</em>
                 </button>
               ))}
             </div>
@@ -607,7 +609,9 @@ export default function SystemPanel(props: Props) {
             <div className="people-view">
               <div className="people-summary">
                 <strong>{people.length + 1}</strong>
-                <span>người đang công phu trong Phòng {room}</span>
+                <span>
+                  người đang công phu tại {TEMPLE_SITES.find((site) => site.id === room)?.name}
+                </span>
               </div>
               <article className="me">
                 <span className="avatar">{playerName.slice(0, 1)}</span>
@@ -829,7 +833,6 @@ export default function SystemPanel(props: Props) {
                   ['vang', 'Vàng đất'],
                   ['xam', 'Lam xám'],
                   ['do', 'Đỏ trầm'],
-                  ['trang', 'Bạch y'],
                 ].map(([value, label]) => (
                   <button
                     className={theme === value ? 'active' : ''}

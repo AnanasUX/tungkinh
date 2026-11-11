@@ -1,43 +1,60 @@
 {
-  "name": "tungkinh",
-  "version": "1.0.0",
-  "description": "> Không gian tâm linh thanh tịnh, trang nghiêm dành cho Phật tử và hành giả tu tập trực tuyến: Gõ Mõ, Thỉnh Đại Hồng Chung, Tụng Kinh Tự Động, Dâng Hương, Đảnh Lễ và Tích Lũy Công Đức.",
-  "main": "server.js",
+  "name": "figma-make-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "commonjs",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "build:js": "esbuild \"src/app/(frontend)/entry.tsx\" --bundle --minify --outfile=dist/app.bundle.js --format=esm --target=es2022 --jsx=automatic && node -e \"require('fs').copyFileSync('dist/app.bundle.js', 'js/app.bundle.js')\"",
-    "build:css": "tailwindcss -i src/styles.css -o css/modern-ui.css --minify",
+    "dev": "NODE_OPTIONS=--no-deprecation next dev --port ${PORT:-3000} --hostname 0.0.0.0",
     "build": "tailwindcss -i src/styles.css -o css/modern-ui.css --minify && esbuild \"src/app/(frontend)/entry.tsx\" --bundle --minify --outfile=dist/app.bundle.js --format=esm --target=es2022 --jsx=automatic && node -e \"require('fs').copyFileSync('dist/app.bundle.js', 'js/app.bundle.js')\"",
+    "build:payload": "NODE_OPTIONS=--no-deprecation payload build",
+    "build:bundle": "tailwindcss -i src/styles.css -o css/modern-ui.css --minify && esbuild \"src/app/(frontend)/entry.tsx\" --bundle --minify --outfile=dist/app.bundle.js --format=esm --target=es2022 --jsx=automatic && node -e \"require('fs').copyFileSync('dist/app.bundle.js', 'js/app.bundle.js')\"",
     "deploy": "node copy_to_anx.js --push",
     "sync:anx": "node copy_to_anx.js",
-    "test": "node --check server.js && node --check js/realtime-sanctuary.js && node --check js/room-chat.js"
+    "test": "node --check server.js && node --check js/realtime-sanctuary.js && node --check js/room-chat.js",
+    "start": "NODE_OPTIONS=--no-deprecation next start",
+    "format": "oxfmt",
+    "generate:importmap": "NODE_OPTIONS=--no-deprecation payload generate:importmap",
+    "generate:types": "NODE_OPTIONS=--no-deprecation payload generate:types",
+    "payload": "NODE_OPTIONS=--no-deprecation payload"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AnanasUX/tungkinh.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/AnanasUX/tungkinh/issues"
-  },
-  "homepage": "https://github.com/AnanasUX/tungkinh#readme",
   "dependencies": {
-    "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.118.0",
-    "livekit-client": "^2.23.0",
-    "livekit-server-sdk": "^2.19.2",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "three": "^0.187.0",
-    "ws": "^8.22.1"
+    "@payloadcms/figma": "1.0.0-beta.1",
+    "@payloadcms/next": "4.0.0-beta.4",
+    "@payloadcms/plugin-cloud-storage": "4.0.0-beta.4",
+    "@payloadcms/plugin-mcp": "4.0.0-beta.4",
+    "@payloadcms/richtext-lexical": "4.0.0-beta.4",
+    "@payloadcms/translations": "4.0.0-beta.4",
+    "@payloadcms/ui": "4.0.0-beta.4",
+    "@types/three": "^0.187.0",
+    "graphql": "^16.8.1",
+    "html-react-parser": "^5.2.10",
+    "monaco-editor": "0.55.1",
+    "next": "16.4.2",
+    "payload": "4.0.0-beta.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "sharp": "^0.35.4",
+    "three": "^0.187.0"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.3.4",
-    "esbuild": "^0.28.2",
-    "tailwindcss": "^4.3.4"
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "24.12.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "oxfmt": "^0.73.0",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "6.0.3"
+  },
+  "engines": {
+    "node": ">=24.22.1",
+    "pnpm": "^9 || ^10 || ^11"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "esbuild",
+      "unrs-resolver"
+    ]
   }
 }

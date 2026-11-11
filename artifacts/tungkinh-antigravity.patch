@@ -1,0 +1,1454 @@
+diff --git a/.gemini/rules.md b/.gemini/rules.md
+index a52c367..6c46f77 100644
+--- a/.gemini/rules.md
++++ b/.gemini/rules.md
+@@ -1,24 +1,13 @@
+-# QUY TẮC PHÁT TRIỂN & VẬN HÀNH DỰ ÁN CHÙA AN NHIÊN
+-> **Tham chiếu tài liệu cấu hình chuẩn**: [SYSTEM_CONFIG.md](file:///d:/Python/tungkinh/SYSTEM_CONFIG.md)
++# Antigravity entry rules
+ 
+-Khi thực hiện bất kỳ tác vụ nào trong không gian làm việc này, AI Agent BẮT BUỘC phải tuân thủ:
++Read and obey [`AGENTS.md`](../AGENTS.md) before every change. It is the repository's authoritative contract.
+ 
+-1. **Quy định Xoay Ngang Màn Hình (Orientation Guard)**:
+-   - Toàn bộ thiết bị Mobile và Tablet bắt buộc phải xoay ngang (`Landscape`) khi vào Chánh Điện.
+-   - Nếu thiết bị đang ở chế độ Dọc (`Portrait`), phải hiển thị màn hình chuyển hướng `#orientation-guard-overlay`.
+-   - **Riêng PC (Desktop & Laptop có chuột/bàn phím `pointer: fine` và màn hình $\ge 1024\text{px}$)**: Tuyệt đối không hiển thị màn hình chuyển hướng, vào thẳng Chánh Điện ngay lập tức.
++Key reminders:
+ 
+-2. **Chống Cắt Giao Diện (Zero Cut-Off Layout)**:
+-   - `#temple-stage`: Luôn dùng `width: 100% !important; height: 100% !important; max-width: 100% !important; aspect-ratio: auto !important;`. Không dùng `calc(100vh * 16 / 9)`.
+-   - Thanh đáy 14 nút công cụ (`#bottom-dock-scroll`): Bố trí theo lưới cân đối **2 hàng $\times$ 7 cột** (`max-width: 980px`). Không bao giờ làm rớt hoặc cắt nút.
+-   - Tọa độ Bồ Đoàn: Hàng 0 tại `56%`, Hàng 1 tại `71%`. Cách thanh đáy tối thiểu 40px.
+-
+-3. **Cơ Chế Máy Chủ & Chat Đạo Tràng**:
+-   - Máy chủ `server.js` chạy trên cổng `3000`, lưu trữ bền vững lịch sử tin nhắn trong `data/sanctuary_db.json`.
+-   - Module chat đạo tràng [js/room-chat.js](file:///d:/Python/tungkinh/js/room-chat.js) kích hoạt từ `#room-chat-header-button`.
+-   - Lớp Realtime [js/realtime-sanctuary.js](file:///d:/Python/tungkinh/js/realtime-sanctuary.js) ưu tiên kết nối máy chủ cục bộ khi chạy trên localhost.
+-
+-4. **Bảo Tồn Toàn Bộ Nghiệp Vụ Cốt Lõi**:
+-   - Giữ nguyên popup nhập thông tin người dùng `#registration-gate-modal` khi vào phiên.
+-   - Giữ nguyên âm thanh Web Audio API và động cơ 3D Three.js WebGL.
+-   - Chỉ gọi `requestFullscreen(true)` khi có cử chỉ tương tác người dùng (`userGesture`).
++1. Edit React/Three source in `src/app/(frontend)` and deployed CSS in `src/styles.css`.
++2. Never edit generated `dist/app.bundle.js`, `js/app.bundle.js`, or `css/modern-ui.css` directly.
++3. First visit requires a real profile; never generate sample identity data.
++4. Mobile/tablet gameplay requires landscape; desktop is never blocked. Fullscreen requires a user gesture.
++5. Preserve browser storage keys and realtime event contracts.
++6. Run `npm run build` and `npm test` after changes.
++7. Do not auto-push during build or local sync.
+diff --git a/AGENTS.md b/AGENTS.md
+new file mode 100644
+index 0000000..72e1392
+--- /dev/null
++++ b/AGENTS.md
+@@ -0,0 +1,116 @@
++# Tungkinh Agent Contract
++
++This file is the authoritative instruction set for Antigravity, Gemini and other coding agents working in this repository. Read it before editing source.
++
++## 1. Canonical source and generated output
++
++| Purpose | Canonical source | Generated/runtime output |
++|---|---|---|
++| React UI and 3D scene | `src/app/(frontend)/*.tsx`, `*.ts` | `dist/app.bundle.js`, `js/app.bundle.js` |
++| Deployed website CSS | `src/styles.css` | `css/modern-ui.css` |
++| Realtime/WebRTC bridge | `js/room-chat.js`, `js/realtime-sanctuary.js`, `js/supabase-sanctuary.js` | loaded directly by `index.html` |
++| HTML boot/profile bridge | `index.html` | copied to the host by `copy_to_anx.js` |
++| Local Node server | `server.js` | runtime only |
++
++Never hand-edit `dist/app.bundle.js`, `js/app.bundle.js` or `css/modern-ui.css`. Run `npm run build`.
++
++`src/app/(frontend)/styles.css`, `page.tsx`, `layout.tsx`, `actions.ts` and Payload-oriented comments are retained for upstream Figma compatibility, but the standalone deployment reads `src/styles.css` and `entry.tsx`.
++
++Legacy `js/app.js`, `css/style.css` and `index_bundle.html` are not loaded by `index.html`. Do not add new behavior there.
++
++## 2. Required product behavior
++
++### First browser visit
++
++- Never generate a fake person profile.
++- `OnboardingGate.tsx` must require full name, birth date and hometown.
++- Age is derived from birth date, rejects future/invalid dates, and is never directly editable.
++- Store the validated profile under `chua_an_nhien_user_profile` in `localStorage`; mirror it to `sessionStorage` only for compatibility.
++- Returning users with a valid stored profile skip onboarding.
++
++### Orientation and fullscreen
++
++- Desktop/laptop with a fine pointer and width at least 1024px enters directly.
++- Mobile/tablet portrait shows `OrientationGuard` after onboarding.
++- Fullscreen and `screen.orientation.lock('landscape')` may only run from a user click/tap.
++- Mobile/tablet landscape is the primary layout. Portrait onboarding must remain usable.
++
++### Responsive acceptance matrix
++
++- Mobile portrait: 390×844 and 430×932; onboarding works, then orientation guard blocks the game.
++- Mobile landscape: 844×390 and 932×430; no horizontal page scroll, dock and joystick remain reachable.
++- Tablet portrait: 768×1024; onboarding works, then orientation guard.
++- Tablet landscape: 1024×768 and 1180×820; panels fit without clipping.
++- Desktop: 1440×900 and 1920×1080; controls do not overlap the scene.
++
++All modal shells use a flex column, `min-height: 0` for scroll children and `100dvh`/`100svh`; never fix a content area's height without its own overflow.
++
++### Community chat and video
++
++- `CommunityOverlay.tsx` owns the three tabs: common room, private messages and presence.
++- Realtime messages use `ROOM_CHAT`; UI must also dispatch `community_chat_message` for the 3D speech bubble.
++- `TempleScene.tsx` displays chat over the matching player for exactly 5 seconds.
++- Chat text is untrusted. Use `textContent`/React text nodes; never assign user chat to `innerHTML`.
++- Camera, microphone and screen tracks must stop on close/unmount.
++- Permission denial is a normal UI state, not an uncaught error.
++
++### Zones and map travel
++
++The five zones are defined only in `temple-zones.ts`:
++
++1. Sân Đạo Tràng Trung Tâm
++2. Chùa Yên Phúc
++3. Chùa Phúc Duyên
++4. Chùa Thiên Phú
++5. Chùa Tịnh Gia
++
++Add/change a zone in that registry, then consume it from `ZoneNavigator` and `TempleScene`. Never duplicate zone names in random files. Zone travel preserves profile and merit, clears the current seat, remounts the scene and broadcasts `CHANGE_ZONE`.
++
++### Reverence animation
++
++The player's head/body bows automatically when:
++
++- manually crossing the central front threshold of the temple;
++- opening scripture while seated and facing the temple;
++- finishing incense offering;
++- performing the bow ritual;
++- before ringing the bell.
++
++Do not trigger repeated bows every animation frame. Gate proximity actions with a one-shot state.
++
++## 3. State and compatibility keys
++
++Do not rename existing browser keys without a migration:
++
++- `chua_an_nhien_user_profile`
++- `chua_an_nhien_zone`
++- `chua-sen-progress`
++- `chua_an_nhien_cid`
++
++`window.currentUserProfile` remains the compatibility bridge for realtime scripts. React owns validation and UI state; bridge scripts may read it but must not invent fallback identity data.
++
++## 4. Commands
++
++```bash
++npm install
++npm run build
++npm test
++npm start
++```
++
++After source changes:
++
++1. Run `npm run build`.
++2. Run `npm test`.
++3. Start `node server.js` and verify `/`, `/api/sanctuary/state`, chat connection and static assets.
++4. Test the responsive matrix above.
++5. Run `npm run sync:anx` for a local copy only.
++6. Only run `npm run deploy` when an explicit push to the website repository is intended.
++
++## 5. Safety constraints
++
++- Do not commit secrets or print Supabase/LiveKit credentials.
++- Do not insert personal absolute Windows paths into source or Markdown links.
++- Do not auto-commit/push from a normal build or local sync.
++- Do not edit compiled bundles to fix a source bug.
++- Preserve realtime event names unless all publishers/subscribers and this contract are migrated together.
+diff --git a/SYSTEM_CONFIG.md b/SYSTEM_CONFIG.md
+index 071def7..75002c1 100644
+--- a/SYSTEM_CONFIG.md
++++ b/SYSTEM_CONFIG.md
+@@ -1,187 +1,118 @@
+-# 🏛️ HỆ THỐNG TU TẬP CHÙA AN NHIÊN — SYSTEM CONFIGURATION & AGENT RUNBOOK
+-> **Tài liệu cấu hình chuẩn hóa hệ thống (Standard Configuration & Runtime Execution Manual)**.  
+-> *Bất kỳ tác nhân AI (AI Agent), lập trình viên hoặc tiến trình tự động nào khi tiếp nhận mã nguồn dự án BẮT BUỘC phải đọc kỹ và tuân thủ tuyệt đối các quy chuẩn kỹ thuật trong tệp này trước khi tiến hành thực thi hoặc chỉnh sửa.*
+-
+----
+-
+-## 1. TỔNG QUAN HỆ THỐNG & TRIẾT LÝ VẬN HÀNH
+-
+-- **Tên dự án**: Chùa An Nhiên — Không Gian Tu Tập & Lễ Phật Trực Tuyến.
+-- **Mục tiêu**: Cung cấp không gian tâm linh thanh tịnh, trang nghiêm cho Phật tử và hành giả tu tập trực tuyến: Gõ Mõ Tịnh Tâm, Thỉnh Đại Hồng Chung, Tụng Kinh Tự Động, Dâng Hương, Đảnh Lễ, Xin Quẻ Xăm, Thả Hoa Đăng, Phóng Sanh, Đồng Tụng và Chat Đạo Tràng thời gian thực.
+-- **Nền tảng công nghệ**:
+-  - **Frontend**: Vanilla Web Standards (HTML5 Semantic, CSS3 Modern Flexbox/Grid/Tailwind Classes, Vanilla JavaScript ES6+, Web Audio API Synthesizer, Canvas 2D Particles, Three.js r128 WebGL).
+-  - **Backend Server**: Node.js (`http`, `fs`, `path`, SSE Stream, WebSocket `ws`).
+-  - **Realtime Mesh**: Kiến trúc kết hợp đa tầng:
+-    1. *Dedicated Local Node Server* (`server.js` trên `localhost:3000`).
+-    2. *Supabase Realtime Cloud Sync* (qua `@supabase/supabase-js` v2).
+-    3. *Universal Fallback Mesh* (BroadcastChannel + LocalStorage Events đa tab).
+-
+----
+-
+-## 2. CẤU HÌNH MÁY CHỦ & MÔI TRƯỜNG THỰC THI (SERVER CONFIG)
+-
+-### 2.1. Cổng Dịch Vụ & Biến Môi Trường
+-- **Port mặc định**: `3000` (hoặc cấu hình qua biến `PORT`).
+-- **Địa chỉ truy cập**:
+-  - Web UI: `http://localhost:3000`
+-  - REST State API: `GET http://localhost:3000/api/sanctuary/state`
+-  - REST Event API: `POST http://localhost:3000/api/sanctuary/event`
+-  - SSE Stream: `GET http://localhost:3000/api/sanctuary/events`
+-  - WebSocket Server: `ws://localhost:3000`
+-- **File Database cục bộ**: `data/sanctuary_db.json` (tự động tạo và lưu trữ liên tục trạng thái 12 bồ đoàn, danh sách đạo hữu, tiến trình tụng niệm và lịch sử chat).
+-
+-### 2.2. Lệnh Khởi Động & Thực Thi
++# Chùa Yên Phúc / Tungkinh System Configuration
++
++`AGENTS.md` is authoritative. This document explains runtime and deployment wiring.
++
++## Architecture
++
++The deployed page is a standalone React 19/Three.js application mounted from `index.html`.
++
++Load order:
++
++1. `index.html` creates the client ID, restores a validated profile if available and initializes 24 seat records.
++2. `js/supabase-sanctuary.js` provides cloud presence/realtime.
++3. `js/room-chat.js` provides the realtime/WebRTC bridge.
++4. `js/app.bundle.js`, generated from `src/app/(frontend)/entry.tsx`, mounts React.
++5. React owns onboarding, game UI, map travel, 3D rendering, local progress, chat presentation and local media UI.
++
++The local Node server exposes static files, REST state/events, SSE and WebSocket transport. Supabase and browser BroadcastChannel/localStorage are fallbacks/bridges, not separate UI implementations.
++
++## Source ownership
++
++- UI: `src/app/(frontend)`
++- Production CSS input: `src/styles.css`
++- Generated JS: `dist/app.bundle.js`, copied to `js/app.bundle.js`
++- Generated CSS: `css/modern-ui.css`
++- Realtime bridge: `js/room-chat.js`, `js/realtime-sanctuary.js`, `js/supabase-sanctuary.js`
++- Server: `server.js`
++- Deployment copy: `copy_to_anx.js`
++
++If behavior appears in a generated bundle but not source, rebuild first; never patch the bundle.
++
++## Profile contract
++
++```ts
++type DevoteeProfile = {
++  registered: true
++  fullName: string
++  birthDate: string // YYYY-MM-DD
++  hometown: string
++  age: number // derived on load and submit
++  dharmaName: string
++  assignedSeatNo: number | null
++  avatarType: 'monk'
++  meritScore: number
++  wish: string
++  zoneId?: TempleZoneId
++}
++```
++
++Storage key: `chua_an_nhien_user_profile`. The app recalculates age rather than trusting a stored age.
++
++## Orientation lifecycle
++
++1. Onboarding is usable in either orientation.
++2. Submitting is a user gesture; the app saves profile, requests fullscreen, and attempts landscape lock.
++3. If a coarse-pointer device remains portrait, `OrientationGuard` covers the game.
++4. Desktop/fine-pointer devices bypass the guard.
++
++## Zone lifecycle
++
++Zone registry: `src/app/(frontend)/temple-zones.ts`.
++
++Travel actions:
++
++1. save `chua_an_nhien_zone`;
++2. clear the occupied local seat;
++3. remount `TempleScene` with the zone key;
++4. update `window.currentUserProfile.zoneId`;
++5. broadcast `CHANGE_ZONE` and refresh presence.
++
++Each zone has its own sign, palette and landmark configuration. Shared rituals remain identical.
++
++## Chat event
++
++```json
++{
++  "type": "ROOM_CHAT",
++  "senderId": "client-id",
++  "name": "Đạo hữu",
++  "text": "Nam mô A Di Đà Phật",
++  "timestamp": 1730600000000
++}
++```
++
++React dispatches `community_chat_message` locally after send. Three.js matches sender ID/name to a player and displays a text-only bubble for 5 seconds.
++
++## Build and verification
++
+ ```bash
+-# Cài đặt thư viện phụ thuộc
+ npm install
+-
+-# Khởi động máy chủ chính
+-npm start
+-# Hoặc:
++npm run build
++npm test
+ node server.js
+ ```
+ 
+----
+-
+-## 3. CẤU HÌNH GIAO DIỆN & QUY TẮC ĐA MÀN HÌNH BẮT BUỘC (RESPONSIVE & ORIENTATION)
+-
+-### 3.1. Trực Tiếp Vào Chánh Điện (Direct Sanctuary Access & Zero Interruption)
+-> **NGUYÊN TẮC CỐT LÕI**: Người dùng khi vào chùa phải được **bước thẳng vào Chánh Điện thanh tịnh ngay lập tức**: Thấy ngay bàn thờ Tam Bảo, tượng Phật, lư hương, hoa sen, ánh nến, 12 bồ đoàn và thanh công cụ.
+-
+-1. **Vào Thẳng Không Bị Chặn Cửa**:
+-   - Lớp màn hình chuyển hướng `#orientation-guard-overlay` được ẩn hoàn toàn (`display: none !important`), tuyệt đối **không chặn cửa hay hiển thị thông báo "bảo xoay ngang màn hình"** gây phiền toái cho người dùng.
+-   - Không tự động ép bật popup `#registration-gate-modal` (Sớ Ghi Danh) khi vừa tải trang. Hệ thống tự động nạp phiên hoặc gán danh xưng Đạo Hữu an lành để người dùng có thể lễ Phật, gõ mõ, tụng kinh ngay. Khi người dùng muốn xem/sửa hồ sơ, họ có thể chủ động bấm biểu tượng `📜` trên Header.
+-2. **Hỗ Trợ Toàn Diện Cả Chế Độ Dọc (Portrait) & Ngang (Landscape)**:
+-   - **Chế độ Ngang (Landscape)**: 12 bồ đoàn hiển thị 2 hàng $\times$ 6 cột cân xứng, tầm nhìn Chánh Điện khoáng đạt.
+-   - **Chế độ Dọc (Portrait)**: 12 bồ đoàn tự động sắp xếp 3 hàng $\times$ 4 cột (`seatY = 58 + row * 12`), bảo toàn $100\%$ tính năng chiêm bái trên mọi thiết bị di động mà không cần phải xoay máy.
+-   - Nút Toàn Màn Hình (`⛶`) trên Header sẵn sàng phục vụ khi người dùng chủ động muốn mở rộng không gian.
+-
+-### 3.2. Không Bao Giờ Cắt Giao Diện & Tối Ưu Cảm Ứng Mobile (Mobile Touch Optimization)
+-- **Tỉ lệ Chánh Điện (`#temple-stage`)**: Phải sử dụng `width: 100% !important; height: 100% !important; max-width: 100% !important; aspect-ratio: auto !important;`. Tuyệt đối **không** dùng `max-width: calc(100vh * 16/9)` vì sẽ gây ra viền đen (pillarboxing) và bóp nghẹt không gian trên các smartphone màn hình dài (19.5:9, 20:9).
+-- **Thanh Đảo Thiền Hành Động (`#bottom-dock-scroll`)**:
+-   - **Trên Mobile Ngang (Điện thoại màn hình nhỏ $\le 560\text{px}$ chiều cao hoặc $\le 950\text{px}$ chiều rộng)**:
+-     - Chuyển sang thanh trượt cảm ứng siêu mượt (`overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; display: flex`).
+-     - Chiều cao nút bấm: $36\text{px}$, chữ $11.5\text{px}$ đậm, bo tròn $9999\text{px}$, `min-width: max-content`, đệm ngón tay chuẩn công thái học di động.
+-     - Tuyệt đối **không ép 14 nút vào lưới 2x7 chỉ cao 21px** trên điện thoại vì ngón tay người dùng không thể chạm chính xác.
+-     - Các nút cốt lõi đặt đầu thanh: *Việc Lành · Gõ Mõ · Lễ Phật · Dâng Hương · Đồng Tụng · 🎙️ Micro* giúp ngón tay cái chạm bấm tức thì, vuốt ngang êm ái để chọn thêm các pháp môn khác.
+-   - **Trên Màn Hình Lớn (Tablet, Laptop, PC $\ge 1024\text{px}$)**:
+-     - Duy trì bố cục lưới cân đối hoặc thanh công cụ chuẩn Chánh Điện.
+-- **Tọa Độ Bồ Đoàn (`renderSanctuaryFloor`)**:
+-   - Hàng bồ đoàn trên (Row 0): `seatY = 55% - 56.5%`.
+-   - Hàng bồ đoàn dưới (Row 1): `seatY = 70% - 71.5%`.
+-   - Khoảng trống từ chân bồ đoàn hàng dưới đến đỉnh thanh công cụ luôn đạt tối thiểu $30\text{px} - 40\text{px}$, không bao giờ để thanh đáy đè lên người ngồi hoặc bảng tên bồ đoàn.
+-
+-### 3.3. Đàm Thoại Giọng Nói Thời Gian Thực (Realtime Voice / Mic Engine)
+-- Hệ thống truyền dẫn âm thanh giọng nói 2 chiều (WebRTC Mesh + Web Audio API Opus Chunk Broadcast):
+-  1. **WebSocket Stream Tức Thời**: Mọi thiết bị truy cập qua mạng nội bộ hoặc Internet kết nối thẳng vào luồng WebSocket của Node server (`ws://.../ws`) sử dụng gói tin phụ thuộc `ws` chuẩn hóa.
+-  2. **Chu Kỳ Thu Âm Tự Thân (Self-Contained Looping Slices)**: Thu âm từng lát cắt 400ms độc lập, đảm bảo 100% gói tin âm thanh xuất ra đều mang đầy đủ container header (EBML/moov), loại bỏ hoàn toàn lỗi không nhận dạng định dạng khi giải mã.
+-  3. **Giải Mã Web Audio API Trực Tiếp & Lên Lịch Phát (Timeline Scheduler)**: Toàn bộ luồng âm thanh được giải mã qua `AudioEngine.ctx` (`decodeAudioData` + `BufferSource.start(nextScheduledTime)`), tạo dòng âm thanh liền mạch, không giật cục, không bị chặn bởi Autoplay Policy trên iOS Safari và Android Chrome.
+-  4. **Nút Bật Mic Nhanh Đa Vị Trí**:
+-     - Nút Mic trên thanh đáy Chánh Điện (`#btn-dock-mic`).
+-     - Nút Mic trên Header của hộp thoại Chat (`#room-header-mic-btn`).
+-     - Nút Mic trong Sidebar thành viên kèm thước đo âm lượng nhấp nhô (`.room-voice-meter`).
+-
+----
+-
+-## 4. CẤU HÌNH DỮ LIỆU & GIAO THỨC CHAT THỜI GIAN THỰC
+-
+-### 4.1. Room Chat Protocol & Giao Diện Không Đè Lấn ([js/room-chat.js](file:///d:/Python/tungkinh/js/room-chat.js))
+-- Nút kích hoạt trên Header: `#room-chat-header-button` (icon bong bóng thoại viền xanh cyan ngọc bích).
+-- Panel chat: `#room-chat-modal` kiến trúc kính trầm hương thiền tịnh (Imperial Gold Zen Glassmorphism).
+-- **Quy tắc chống đè lấn (Zero Overlapping Invariant)**:
+-  - Khung thoại `.room-chat-shell` cố định theo Flexbox hướng dọc (`flex-direction: column; overflow: hidden`), chiều cao giới hạn `min(650px, 94dvh)`.
+-  - Danh sách tin nhắn `.room-chat-messages` nằm trong khoang cuộn độc lập (`flex: 1 1 0%; min-height: 0; overflow-y: auto`).
+-  - Thanh lời lành `.room-dharma-pills` (1 hàng duy nhất trượt ngang, không bao giờ rơi dòng đè chữ).
+-  - Khung soạn thảo `.room-chat-composer` cố định vững chắc ở đáy (chiều cao 46px - 52px), không bao giờ bị trôi hoặc che lấp tin nhắn.
+-  - Trên màn hình nhỏ hoặc xoay ngang ($\le 840\text{px}$ hoặc $\le 540\text{px}$ chiều cao): Tự động tách thành các tab thông minh (`🌐 Đạo Tràng Toàn Cầu`, `🔒 Nhắn Tin Riêng`, `👥 Đồng Tu & Mã Phòng`) — khi xem chat thì khung chat chiếm 100% diện tích, khi xem thành viên thì chiếm 100% diện tích, triệt tiêu hoàn toàn tình trạng sidebar 280px chèn ép làm vỡ khung chat.
+-- Sự kiện phát sóng:
+-  ```json
+-  {
+-    "type": "ROOM_CHAT",
+-    "roomId": "global-sanctuary",
+-    "channel": "lobby",
+-    "senderId": "user-uuid",
+-    "name": "Thích Tâm An",
+-    "text": "Nam Mô A Di Đà Phật 🙏",
+-    "timestamp": 1730600000000
+-  }
+-  ```
+-- **Lưu trữ bền vững**: Máy chủ lưu 300 tin nhắn gần nhất trong `sanctuaryDB.chatHistory`. Khi client kết nối, nhận ngay 120 tin nhắn gần nhất để hiển thị liền mạch.
+-
+-### 4.2. Bồ Đoàn & Trạng Thái Đồng Bộ ([js/realtime-sanctuary.js](file:///d:/Python/tungkinh/js/realtime-sanctuary.js))
+-- Tổng số bồ đoàn Chánh điện mặc định: 12 vị trí (Đánh số từ `#1` đến `#12`).
+-- Mỗi vị trí lưu: `seatNo`, `occupied`, `isUser`, `name`, `dharmaName`, `points`, `avatar`, `remoteClientId`, `lastActive`.
+-- Trạng thái hành giả:
+-  - Khi chưa đăng ký: Tự động mở popup sớ ghi danh `#registration-gate-modal` sau 100ms khi vào hệ thống.
+-  - Khi bấm dâng hương (`performWalkAndOfferIncense`): Nhân vật đứng dậy đi từ bồ đoàn lên trước bàn thờ Phật, dâng 3 nén tâm hương tỏa khói trầm, nhận +20 công đức, sau đó trở về bồ đoàn. Hành động này được phát sóng thời gian thực cho toàn bộ đạo tràng cùng chiêm bái.
+-
+----
+-
+-## 5. HỆ THỐNG ÂM THANH & ĐỒ HỌA 3D
+-
+-### 5.1. Web Audio Synthesizer ([js/audio.js](file:///d:/Python/tungkinh/js/audio.js))
+-- Hoàn toàn tổng hợp âm thanh bằng thuật toán vật lý sóng âm qua Web Audio API (không phụ thuộc file mp3 ngoài có thể bị lỗi 404):
+-  - **Tiếng Mõ Tịnh Tâm**: Mô phỏng cộng hưởng gỗ tần số trung trầm $420\text{Hz} - 800\text{Hz}$ kèm bộ lọc suy giảm theo thời gian thực.
+-  - **Đại Hồng Chung**: 7 tầng họa âm kim loại kết hợp điều chế tần số (FM Synthesis), ngân vang sâu lắng $12 - 18$ giây.
+-  - **Nhạc Thiền Nền**: Tự động lặp vô tận, âm lượng mặc định 30%, có nút bật/tắt và thanh trượt điều chỉnh âm lượng trên Header.
+-- Tuân thủ chính sách trình duyệt: Tự động resume `AudioContext` ngay trên cử chỉ chạm đầu tiên của người dùng (`pointerdown` / `click`).
+-
+-### 5.2. Chánh Điện 3D WebGL ([js/temple-3d.js](file:///d:/Python/tungkinh/js/temple-3d.js))
+-- Chuyển đổi linh hoạt giữa 2.5D Cổ Điển và 3D Toàn Cảnh bằng nút `#btn-toggle-3d`.
+-- Giới hạn khoảng cách camera: `minDistance: 8`, `maxDistance: 34`.
+-- Tự động tối ưu khử răng cưa và điều chỉnh theo DPR màn hình (`window.devicePixelRatio`).
+-
+----
+-
+-## 6. DANH MỤC CÁC TỆP TIN NÒNG CỐT CỦA DỰ ÁN
+-
+-| Đường Dẫn Tệp | Vai Trò & Chức Năng Chính |
+-|---|---|
+-| [index.html](file:///d:/Python/tungkinh/index.html) | Điểm vào chính của ứng dụng: Chánh Điện SVG, 14 nút công cụ, 11 modal nghiệp vụ, Orientation Guard và toàn bộ kịch bản điều khiển giao diện. |
+-| [server.js](file:///d:/Python/tungkinh/server.js) | Máy chủ backend Node.js: Cung cấp API tĩnh, REST API lưu trữ bồ đoàn, WebSocket / SSE Stream và đồng bộ chat. |
+-| [js/room-chat.js](file:///d:/Python/tungkinh/js/room-chat.js) | Giao diện và logic phòng chat đạo tràng dùng chung thời gian thực. |
+-| [js/realtime-sanctuary.js](file:///d:/Python/tungkinh/js/realtime-sanctuary.js) | Lớp giao tiếp thời gian thực kết hợp: Node Server, Supabase Realtime và Local Broadcast Mesh. |
+-| [js/supabase-sanctuary.js](file:///d:/Python/tungkinh/js/supabase-sanctuary.js) | Lớp kết nối lưu trữ đám mây Supabase PostgreSQL và Realtime Channels. |
+-| [js/daily-quests.js](file:///d:/Python/tungkinh/js/daily-quests.js) | Động cơ nhiệm vụ tu học, việc tốt mỗi ngày và tích lũy công đức hoa sen `🪷`. |
+-| [js/profile-figurine-3d.js](file:///d:/Python/tungkinh/js/profile-figurine-3d.js) | Mô hình 3D tượng tiểu đồng/hành giả đại diện (Avatar 3D Figurine) trong modal Hồ Sơ Tu Tập. |
+-| [js/temple-3d.js](file:///d:/Python/tungkinh/js/temple-3d.js) | Động cơ Chánh Điện 3D Three.js: Tôn tượng Phật Thích Ca, lư hương, cột đình, chuông mõ 3D. |
+-| [js/audio.js](file:///d:/Python/tungkinh/js/audio.js) | Động cơ âm thanh tổng hợp Web Audio API (Mõ, Chuông, Nhạc thiền). |
+-| [js/canvas-effects.js](file:///d:/Python/tungkinh/js/canvas-effects.js) | Động cơ vật lý Canvas: Khói trầm hương, hoa đăng, bồ câu phóng sanh, bụi vàng kim quang. |
+-| [data/sanctuary_db.json](file:///d:/Python/tungkinh/data/sanctuary_db.json) | Cơ sở dữ liệu JSON tự động lưu trữ trạng thái bồ đoàn và tin nhắn chat. |
+-
+----
+-
+-## 7. QUY TRÌNH KIỂM THỬ TRƯỚC KHI BÀN GIAO (VERIFICATION RUNBOOK)
+-
+-Mỗi khi có bất kỳ thay đổi nào trong mã nguồn, Agent bắt buộc phải thực hiện kiểm thử theo các bước sau:
+-
+-1. **Kiểm tra cú pháp JavaScript & Node.js**:
+-   ```bash
+-   node -e "new Function(require('fs').readFileSync('js/room-chat.js', 'utf8')); console.log('OK');"
+-   node -e "new Function(require('fs').readFileSync('js/realtime-sanctuary.js', 'utf8')); console.log('OK');"
+-   ```
+-2. **Kiểm tra máy chủ khởi động thành công**:
+-   - Chạy thử `node server.js` kiểm tra server lắng nghe cổng 3000 không văng lỗi.
+-3. **Kiểm thử Responsive Headless Chrome trên 6 độ phân giải tham chiếu**:
+-   - *Mobile Portrait (390x844)*: `orientation-guard-overlay` hiển thị yêu cầu xoay ngang.
+-   - *Mobile Landscape (844x390)*: Chánh Điện tràn viền $100\%$, 0 nút bị cắt, bồ đoàn không đè thanh đáy.
+-   - *Tablet Portrait (768x1024)*: `orientation-guard-overlay` hiển thị yêu cầu xoay ngang.
+-   - *Tablet Landscape (1024x768)*: Chánh Điện hiển thị trọn vẹn, không có thanh cuộn ngang trang.
+-   - *Desktop PC (1920x1080 & 1440x900)*: Vào thẳng Chánh Điện, 14 nút hiển thị cân đối $2 \times 7$.
+-
+----
+-
+-## 8. ĐIỀU KIỆN BẤT BIẾN KHI CHỈNH SỬA MÃ NGUỒN (INVARIANT CONSTRAINTS)
+-
+-1. **Bảo tồn tính năng nghiệp vụ**: Tuyệt đối **không** được xóa, ẩn (`display: none`) các nút chức năng cốt lõi (14 nút công cụ ở đáy, nút chat, nút âm thanh, popup đăng ký) trừ khi cung cấp giao diện truy cập thay thế rõ ràng.
+-2. **Bảo toàn cơ chế xoay màn hình**:
+-   - Mobile và Tablet bắt buộc phải xoay ngang khi vào Chánh Điện.
+-   - Riêng PC thì không cần xoay.
+-3. **Tuân thủ chuẩn bảo mật trình duyệt**:
+-   - Các API như `requestFullscreen()` và `AudioContext.resume()` chỉ được gọi khi có cử chỉ tương tác người dùng (`user gesture`). Không gọi tự động gây lỗi NotAllowedError trên console.
+-4. **Giữ nguyên định dạng liên kết và tài liệu**:
+-   - Bảo tồn tất cả chú thích hiện có trong mã nguồn.
+-   - Các liên kết tệp tin trong tài liệu phải sử dụng chuẩn Markdown có thể click được.
+-
+----
+-*Tài liệu này là căn cứ tối cao điều khiển mọi hành vi bảo trì và phát triển tính năng mới cho Chùa An Nhiên.*
++Verify:
++
++- first visit and returning visit;
++- age calculation at birthday boundary;
++- portrait guard versus desktop bypass;
++- fullscreen only after tap;
++- all five zones;
++- chat send, private/presence tabs and 5-second bubble;
++- camera/mic denial and cleanup;
++- ritual bow sequencing;
++- responsive matrix from `AGENTS.md`.
++
++## Deployment
++
++`npm run sync:anx` builds and copies files locally but must not push.
++
++`npm run deploy` is the explicit push path. It may commit/push the separate website repository only when requested by the operator.
++
++Do not hard-code a new machine path. Set `ANX_TUNGKINH_DEST` when the destination is not one of the known local candidates:
++
++```powershell
++$env:ANX_TUNGKINH_DEST = 'E:\path\to\website\public\tung-kinh'
++npm run sync:anx
++```
+diff --git a/copy_to_anx.js b/copy_to_anx.js
+index a78c6c1..8deaa23 100644
+--- a/copy_to_anx.js
++++ b/copy_to_anx.js
+@@ -3,6 +3,8 @@ const path = require('path');
+ const { execSync } = require('child_process');
+ 
+ const srcDir = __dirname;
++const shouldPush = process.argv.includes('--push');
++const configuredDest = process.env.ANX_TUNGKINH_DEST;
+ 
+ // Possible destination directories for anx.io.vn
+ const candidateDirs = [
+@@ -12,9 +14,10 @@ const candidateDirs = [
+   'E:/AnannasUX/Python/website/quan-ly-tien-phong/website/public/tung-kinh'
+ ];
+ 
+-let destDir = candidateDirs.find(d => fs.existsSync(path.dirname(d)));
++let destDir = configuredDest || candidateDirs.find(d => fs.existsSync(path.dirname(d)));
+ if (!destDir) {
+-  destDir = candidateDirs[0];
++  console.error('Không tìm thấy thư mục đích. Hãy đặt biến ANX_TUNGKINH_DEST.');
++  process.exit(1);
+ }
+ 
+ console.log('================================================================');
+@@ -26,7 +29,10 @@ console.log('================================================================');
+ // 0. Ensure fresh build before copying
+ try {
+   console.log('[1/4] Biên dịch gói giao diện và âm thanh mới nhất (npm run build)...');
+-  execSync('npm run build', { cwd: srcDir, stdio: 'inherit' });
++  const runner = process.env.npm_execpath
++    ? `"${process.execPath}" "${process.env.npm_execpath}" run build`
++    : 'npm run build';
++  execSync(runner, { cwd: srcDir, stdio: 'inherit', shell: true });
+ } catch (e) {
+   console.warn('[Cảnh báo] Lỗi biên dịch build:', e.message);
+ }
+@@ -59,13 +65,13 @@ if (!html.includes('<base href="/tung-kinh/">')) {
+   html = html.replace('<head>', '<head>\n  <base href="/tung-kinh/">');
+ }
+ const buildTimestamp = Date.now().toString(36);
+-html = html.replace(/\?v=2026[0-9a-zA-Z_]+/g, '?v=' + buildTimestamp);
++html = html.replace(/\?v=[0-9a-zA-Z_-]+/g, '?v=' + buildTimestamp);
+ fs.writeFileSync(path.join(destDir, 'index.html'), html, 'utf8');
+ console.log('✓ Đã sao chép 100% dữ liệu sang:', destDir);
+ 
+ // 3. Auto commit & push to Website_thoitiet_design (anx.io.vn)
+ const websiteRepoDir = path.resolve(destDir, '../../');
+-if (fs.existsSync(path.join(websiteRepoDir, '.git'))) {
++if (shouldPush && fs.existsSync(path.join(websiteRepoDir, '.git'))) {
+   console.log('[3/4] Phát hiện Git repository của anx.io.vn tại:', websiteRepoDir);
+   try {
+     // Get current commit hash of tungkinh
+@@ -97,3 +103,7 @@ if (fs.existsSync(path.join(websiteRepoDir, '.git'))) {
+     console.warn('[Lưu ý] Tiến trình Git sync sang Website_thoitiet_design:', err.message);
+   }
+ }
++
++if (!shouldPush) {
++  console.log('✓ Đã đồng bộ cục bộ. Không commit/push (dùng --push hoặc npm run deploy khi được yêu cầu).');
++}
+diff --git a/index.html b/index.html
+index 6b60268..48d2137 100644
+--- a/index.html
++++ b/index.html
+@@ -50,10 +50,9 @@
+     window.SANCTUARY_CLIENT_ID = 'phattu_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36).slice(-4);
+     try {
+       if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('chua_an_nhien_cid', window.SANCTUARY_CLIENT_ID);
+-      var saved = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('chua_an_nhien_user_profile'));
+-      if (saved) {
+-        window.currentUserProfile = JSON.parse(saved);
+-      }
++      var saved = (typeof localStorage !== 'undefined' && localStorage.getItem('chua_an_nhien_user_profile'))
++        || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('chua_an_nhien_user_profile'));
++      if (saved) window.currentUserProfile = JSON.parse(saved);
+     } catch (_) {}
+ 
+     // Initialize 24 sanctuary seats (cushions) to sync with Supabase Realtime
+@@ -75,38 +74,8 @@
+       };
+     });
+ 
+-    if (!window.currentUserProfile) {
+-      var SAMPLE_NAMES = [
+-        { name: 'Tuệ Phúc', dharma: 'Minh Tâm', gender: 'monk' },
+-        { name: 'Diệu Hoa', dharma: 'Diệu Hoa', gender: 'female' },
+-        { name: 'Phúc Thiện', dharma: 'Phúc Thiện', gender: 'monk' },
+-        { name: 'Tâm An', dharma: 'Tịnh Tâm', gender: 'monk' },
+-        { name: 'Diệu Tâm', dharma: 'Diệu Tâm', gender: 'female' },
+-        { name: 'Thiện Duyên', dharma: 'Thiện Duyên', gender: 'monk' },
+-        { name: 'Tuệ Lâm', dharma: 'Tuệ Lâm', gender: 'female' },
+-        { name: 'Đăng Quang', dharma: 'Chân Quang', gender: 'monk' }
+-      ];
+-      var sample = SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)];
+-      var AVAILABLE_INIT_SEATS = [1, 3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20];
+-      var randomSeat = AVAILABLE_INIT_SEATS[Math.floor(Math.random() * AVAILABLE_INIT_SEATS.length)];
+-      window.currentUserProfile = {
+-        registered: true,
+-        fullName: sample.name,
+-        dharmaName: sample.dharma,
+-        clientIp: '113.161.x.x',
+-        hometown: 'Việt Nam',
+-        meritScore: 165,
+-        assignedSeatNo: randomSeat,
+-        avatarType: sample.gender,
+-        wish: 'Cầu quốc thái dân an, gia đạo ấm êm và tâm hồn thanh tịnh'
+-      };
+-      try {
+-        if (typeof sessionStorage !== 'undefined') {
+-          sessionStorage.setItem('chua_an_nhien_user_profile', JSON.stringify(window.currentUserProfile));
+-        }
+-        localStorage.setItem('chua_an_nhien_user_profile', JSON.stringify(window.currentUserProfile));
+-      } catch (_) {}
+-    }
++    // Do not create a fake profile. The React onboarding gate collects the
++    // required information on the first browser visit and persists it locally.
+ 
+     if (window.currentUserProfile && window.currentUserProfile.assignedSeatNo) {
+       var initSeat = window.sanctuarySeats.find(function(s) { return s.seatNo === window.currentUserProfile.assignedSeatNo; });
+diff --git a/package.json b/package.json
+index 7d5078b..4388a2d 100644
+--- a/package.json
++++ b/package.json
+@@ -6,10 +6,10 @@
+   "scripts": {
+     "start": "node server.js",
+     "dev": "node server.js",
+-    "build:js": "esbuild src/app/(frontend)/entry.tsx --bundle --minify --outfile=dist/app.bundle.js --format=esm --target=es2022 --jsx=automatic && node -e \"require('fs').copyFileSync('dist/app.bundle.js', 'js/app.bundle.js')\"",
++    "build:js": "esbuild \"src/app/(frontend)/entry.tsx\" --bundle --minify --outfile=dist/app.bundle.js --format=esm --target=es2022 --jsx=automatic && node -e \"require('fs').copyFileSync('dist/app.bundle.js', 'js/app.bundle.js')\"",
+     "build:css": "tailwindcss -i src/styles.css -o css/modern-ui.css --minify",
+-    "build": "npm run build:css && npm run build:js",
+-    "deploy": "node copy_to_anx.js && git push origin main",
++    "build": "tailwindcss -i src/styles.css -o css/modern-ui.css --minify && esbuild \"src/app/(frontend)/entry.tsx\" --bundle --minify --outfile=dist/app.bundle.js --format=esm --target=es2022 --jsx=automatic && node -e \"require('fs').copyFileSync('dist/app.bundle.js', 'js/app.bundle.js')\"",
++    "deploy": "node copy_to_anx.js --push",
+     "sync:anx": "node copy_to_anx.js",
+     "test": "node --check server.js && node --check js/realtime-sanctuary.js && node --check js/room-chat.js"
+   },
+diff --git a/src/app/(frontend)/ChuaSenApp.tsx b/src/app/(frontend)/ChuaSenApp.tsx
+index 8dd4b85..7e54f2c 100644
+--- a/src/app/(frontend)/ChuaSenApp.tsx
++++ b/src/app/(frontend)/ChuaSenApp.tsx
+@@ -4,6 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+ import TempleScene, { type SceneApi, ROBE_COLORS } from './TempleScene'
+ import SystemPanel, { type PanelId } from './SystemPanel'
+ import TouchJoystick from './TouchJoystick'
++import OnboardingGate, { loadDevoteeProfile, type DevoteeProfile } from './OnboardingGate'
++import OrientationGuard from './OrientationGuard'
++import ZoneNavigator from './ZoneNavigator'
++import { DEFAULT_ZONE, TEMPLE_ZONES, isTempleZone, type TempleZoneId } from './temple-zones'
+ import CommunityOverlay, { VideoCallOverlay } from './CommunityOverlay'
+ import type { PracticeContext, Petition } from './PracticePanels'
+ import { levelFor } from './temple-data'
+@@ -320,7 +324,10 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
+   const [panel, setPanel] = useState<PanelId | null>(null)
+   const [communityOpen, setCommunityOpen] = useState(false)
+   const [callOpen, setCallOpen] = useState(false)
+-  const [playerName, setPlayerName] = useState('Tuệ Phúc')
++  const [zoneOpen, setZoneOpen] = useState(false)
++  const [zone, setZone] = useState<TempleZoneId>(DEFAULT_ZONE)
++  const [profileReady, setProfileReady] = useState(false)
++  const [playerName, setPlayerName] = useState('Đạo hữu')
+   const [dharmaName, setDharmaName] = useState('')
+   const [merit, setMerit] = useState(0)
+   const [beads, setBeads] = useState(0)
+@@ -362,14 +369,23 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
+     }
+   }, [])
+   useEffect(() => {
+-    const prof = (window as any).currentUserProfile
+-    if (prof) {
+-      if (prof.fullName) setPlayerName(prof.fullName)
+-      if (prof.dharmaName) setDharmaName(prof.dharmaName)
+-      if (typeof prof.assignedSeatNo === 'number') {
+-        setSeat(prof.assignedSeatNo)
+-      }
+-    }
++    const prof = loadDevoteeProfile() ?? (window as any).currentUserProfile
++    if (!prof?.registered) return
++    ;(window as any).currentUserProfile = prof
++    if (prof.fullName) setPlayerName(prof.fullName)
++    if (prof.dharmaName) setDharmaName(prof.dharmaName)
++    if (typeof prof.assignedSeatNo === 'number') setSeat(prof.assignedSeatNo)
++    setProfileReady(true)
++  }, [])
++
++  const completeOnboarding = useCallback((profile: DevoteeProfile) => {
++    ;(window as any).currentUserProfile = profile
++    setPlayerName(profile.fullName)
++    setDharmaName(profile.dharmaName)
++    setSeat(profile.assignedSeatNo)
++    if (profile.assignedSeatNo) sceneRef.current?.sit(profile.assignedSeatNo)
++    setProfileReady(true)
++    ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
+   }, [])
+ 
+   useEffect(() => {
+@@ -381,6 +397,37 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
+     }
+   }, [playerName, dharmaName])
+ 
++  useEffect(() => {
++    const saved = localStorage.getItem('chua_an_nhien_zone')
++    if (isTempleZone(saved)) setZone(saved)
++  }, [])
++
++  const travelToZone = useCallback((nextZone: TempleZoneId) => {
++    setZone(nextZone)
++    setZoneOpen(false)
++    setSeat(null)
++    localStorage.setItem('chua_an_nhien_zone', nextZone)
++    const profile = (window as any).currentUserProfile
++    if (profile) {
++      profile.zoneId = nextZone
++      profile.assignedSeatNo = null
++      try {
++        localStorage.setItem('chua_an_nhien_user_profile', JSON.stringify(profile))
++      } catch {}
++    }
++    const clientId = (window as any).SANCTUARY_CLIENT_ID
++    ;((window as any).sanctuarySeats ?? []).forEach((item: any) => {
++      if (item.isUser || (clientId && item.remoteClientId === clientId)) {
++        item.isUser = false
++        item.occupied = false
++        item.remoteClientId = null
++      }
++    })
++    setToast(`Đã dịch chuyển tới ${TEMPLE_ZONES[nextZone].name}`)
++    ;(window as any).SupabaseSanctuary?.broadcast?.('CHANGE_ZONE', { zoneId: nextZone })
++    ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
++  }, [])
++
+   const completed = useMemo(() => Object.values(done).filter(Boolean).length, [done])
+   const rank = levelFor(merit)
+   const level = rank.level
+@@ -586,7 +633,10 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
+     else if (id === 'bow') bow()
+     else if (id === 'incense') offerIncense()
+     else if (id === 'bell') ringBell()
+-    else if (id === 'video') {
++    else if (id === 'chant') {
++      if (seat !== null) sceneRef.current?.bow()
++      setPanel('chant')
++    } else if (id === 'video') {
+       setPanel(null)
+       setCommunityOpen(false)
+       if (typeof (window as any).startZaloVideoCall === 'function') {
+@@ -636,7 +686,11 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
+ 
+   return (
+     <main className={`game-shell theme-${theme}`}>
++      <OnboardingGate open={!profileReady} onComplete={completeOnboarding} />
++      <OrientationGuard active={profileReady} />
+       <TempleScene
++        key={zone}
++        zone={zone}
+         theme={theme}
+         playerName={playerName}
+         level={level}
+@@ -658,13 +712,13 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
+       <div className="atmosphere" aria-hidden="true" />
+ 
+       <header className="topbar">
+-        <button className="brand glass" onClick={() => setPanel('rooms')}>
++        <button className="brand glass" onClick={() => setZoneOpen(true)}>
+           <span className="lotus-mark">
+             <Icon name="lotus" size={17} />
+           </span>
+-          <strong>Chùa An Nhiên</strong>
++          <strong>{TEMPLE_ZONES[zone].shortName}</strong>
+           <span className="online-dot" />
+-          <span className="room-name">Phòng {room}</span>
++          <span className="room-name">Bản đồ</span>
+           <Icon name="chevron" size={14} />
+         </button>
+ 
+@@ -905,6 +959,12 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
+           </button>
+         </div>
+       )}
++      <ZoneNavigator
++        open={zoneOpen}
++        current={zone}
++        onClose={() => setZoneOpen(false)}
++        onTravel={travelToZone}
++      />
+       <CommunityOverlay
+         playerName={playerName}
+         open={communityOpen}
+diff --git a/src/app/(frontend)/CommunityOverlay.tsx b/src/app/(frontend)/CommunityOverlay.tsx
+index 1d665b5..7c7aff8 100644
+--- a/src/app/(frontend)/CommunityOverlay.tsx
++++ b/src/app/(frontend)/CommunityOverlay.tsx
+@@ -241,7 +241,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }:
+ 
+   return (
+     <div
+-      className="fixed inset-0 z-[70] grid place-items-center bg-[#080402]/60 p-3 backdrop-blur-md sm:p-6"
++      className="fixed inset-0 z-[70] grid place-items-center bg-[#080402]/60 p-3 backdrop-blur-md sm:p-6 [@media(max-height:560px)]:p-1.5"
+       role="presentation"
+       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+     >
+@@ -249,22 +249,22 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }:
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="community-title"
+-        className="relative flex h-[min(720px,calc(100svh-32px))] w-[min(980px,100%)] flex-col overflow-hidden rounded-[22px] border border-[#e2bd6e]/55 bg-[radial-gradient(circle_at_50%_0%,rgba(137,44,18,.32),transparent_45%),linear-gradient(160deg,#35150c,#1d0b06_62%,#140704)] text-[#f8eddb] shadow-[0_35px_100px_rgba(0,0,0,.7),0_0_0_5px_rgba(30,12,6,.9),0_0_0_6px_rgba(226,189,110,.2)]"
++        className="relative flex h-[min(720px,calc(100dvh-32px))] w-[min(980px,100%)] flex-col overflow-hidden rounded-[22px] [@media(max-height:560px)]:h-[calc(100dvh-12px)] [@media(max-height:560px)]:rounded-[16px] border border-[#e2bd6e]/55 bg-[radial-gradient(circle_at_50%_0%,rgba(137,44,18,.32),transparent_45%),linear-gradient(160deg,#35150c,#1d0b06_62%,#140704)] text-[#f8eddb] shadow-[0_35px_100px_rgba(0,0,0,.7),0_0_0_5px_rgba(30,12,6,.9),0_0_0_6px_rgba(226,189,110,.2)]"
+       >
+-        <header className="flex min-h-[66px] items-center gap-3 border-b border-[#e2bd6e]/25 px-4 sm:px-5">
+-          <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/50 bg-[#a75b16]/25 text-[#f5cf76] shadow-[0_0_18px_rgba(226,189,110,.2)]">
++        <header className="flex min-h-[66px] items-center gap-3 border-b border-[#e2bd6e]/25 px-4 sm:px-5 [@media(max-height:560px)]:min-h-[52px] [@media(max-height:560px)]:gap-2 [@media(max-height:560px)]:px-3">
++          <span className="grid size-10 shrink-0 place-items-center rounded-full [@media(max-height:560px)]:size-8 border border-[#e2bd6e]/50 bg-[#a75b16]/25 text-[#f5cf76] shadow-[0_0_18px_rgba(226,189,110,.2)]">
+             <Glyph name="bell" size={19} />
+           </span>
+           <div className="min-w-0 flex-1">
+             <div className="flex flex-wrap items-center gap-2">
+-              <h2 id="community-title" className="font-display text-lg font-bold text-[#ffe5aa]">
++              <h2 id="community-title" className="font-display text-lg font-bold text-[#ffe5aa] [@media(max-height:560px)]:text-base">
+                 Đạo Tràng Chung
+               </h2>
+-              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
++              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300 [@media(max-height:560px)]:hidden">
+                 {1 + onlineDevotees.length} Đồng Tu Trực Tuyến
+               </span>
+             </div>
+-            <p className="truncate text-xs text-[#cbb28f]">Cùng niệm Phật · Cùng gieo lời lành</p>
++            <p className="truncate text-xs text-[#cbb28f] [@media(max-height:560px)]:hidden">Cùng niệm Phật · Cùng gieo lời lành</p>
+           </div>
+           <button
+             type="button"
+@@ -276,7 +276,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }:
+                 onCall()
+               }
+             }}
+-            className="hidden h-9 items-center gap-2 rounded-full border border-emerald-300/50 bg-emerald-600/80 px-4 text-xs font-bold text-white shadow-[0_5px_18px_rgba(5,150,105,.22)] transition hover:bg-emerald-500 sm:flex"
++            className="hidden h-9 items-center gap-2 rounded-full border border-emerald-300/50 bg-emerald-600/80 px-4 text-xs font-bold text-white shadow-[0_5px_18px_rgba(5,150,105,.22)] transition hover:bg-emerald-500 sm:flex [@media(max-height:560px)]:h-8 [@media(max-height:560px)]:px-3"
+           >
+             <Glyph name="camera" size={15} /> Gọi Video
+           </button>
+@@ -284,7 +284,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }:
+             type="button"
+             onClick={toggleMic}
+             aria-pressed={micReady}
+-            className={`hidden h-9 items-center gap-2 rounded-full border px-4 text-xs font-bold transition sm:flex ${
++            className={`hidden h-9 items-center gap-2 rounded-full border px-4 text-xs font-bold transition sm:flex [@media(max-height:560px)]:h-8 [@media(max-height:560px)]:px-3 ${
+               micReady
+                 ? 'border-emerald-300/40 bg-emerald-600/25 text-emerald-200'
+                 : 'border-[#e2bd6e]/35 bg-black/20 text-[#e7d2a9] hover:bg-[#e2bd6e]/10'
+@@ -303,7 +303,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }:
+         </header>
+ 
+         <nav
+-          className="flex shrink-0 overflow-x-auto border-b border-[#e2bd6e]/18 bg-black/10 px-3"
++          className="flex shrink-0 overflow-x-auto border-b border-[#e2bd6e]/18 bg-black/10 px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+           aria-label="Khu vực Đạo Tràng"
+         >
+           {[
+@@ -315,7 +315,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }:
+               key={id}
+               type="button"
+               onClick={() => setTab(id as typeof tab)}
+-              className={`flex h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-xs font-bold transition ${
++              className={`flex h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-xs font-bold transition [@media(max-height:560px)]:h-9 [@media(max-height:560px)]:px-3 ${
+                 tab === id
+                   ? 'border-[#f2c766] bg-[#e2bd6e]/10 text-[#ffe5a3]'
+                   : 'border-transparent text-[#bba889] hover:text-white'
+@@ -324,23 +324,23 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }:
+               <Glyph name={icon as GlyphName} size={14} /> {label}
+             </button>
+           ))}
+-          <span className="ml-auto hidden items-center gap-2 self-center px-3 text-[11px] text-emerald-300 sm:flex">
++          <span className="ml-auto hidden items-center gap-2 self-center px-3 text-[11px] text-emerald-300 sm:flex [@media(max-height:560px)]:hidden">
+             <i className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" /> Cục bộ
+           </span>
+         </nav>
+ 
+-        <div className="grid min-h-0 flex-1 md:grid-cols-[1fr_270px]">
+-          <div className="flex min-h-0 flex-col border-[#e2bd6e]/18 md:border-r">
++        <div className="grid min-h-0 flex-1 md:grid-cols-[1fr_270px] [@media(max-height:560px)]:grid-cols-1">
++          <div className="flex min-h-0 flex-col border-[#e2bd6e]/18 md:border-r [@media(max-height:560px)]:border-r-0">
+             {tab === 'common' && (
+               <>
+-                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-5">
+-                  <p className="flex items-center gap-2 border-b border-[#e2bd6e]/15 pb-3 text-xs font-bold text-[#e4c47f]">
++                <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-5 [@media(max-height:560px)]:space-y-2 [@media(max-height:560px)]:p-3">
++                  <p className="flex items-center gap-2 border-b border-[#e2bd6e]/15 pb-3 text-xs [@media(max-height:560px)]:pb-2 font-bold text-[#e4c47f]">
+                     <Glyph name="users" size={14} /> Đạo hữu cùng thực tập
+                   </p>
+                   {messages.map((message) => (
+                     <article
+                       key={message.id}
+-                      className={`ml-auto max-w-[88%] rounded-2xl border p-3.5 ${
++                      className={`ml-auto max-w-[88%] rounded-2xl border p-3.5 [@media(max-height:560px)]:max-w-[94%] [@media(max-height:560px)]:p-2.5 ${
+                         message.system
+                           ? 'mr-auto ml-0 border-[#e2bd6e]/20 bg-[#e2bd6e]/[.07]'
+                           : 'border-[#f0b849]/55 bg-gradient-to-br from-[#a86218] to-[#6c310e] shadow-[0_8px_22px_rgba(91,42,10,.24)]'
+@@ -354,8 +354,8 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }:
+                     </article>
+                   ))}
+                 </div>
+-                <div className="border-t border-[#e2bd6e]/18 bg-black/10 p-3">
+-                  <div className="mb-2 flex gap-1.5 overflow-x-auto pb-0.5">
++                <div className="border-t border-[#e2bd6e]/18 bg-black/10 p-3 [@media(max-height:560px)]:p-2">
++                  <div className="mb-2 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [@media(max-height:560px)]:mb-1">
+                     {quickPhrases.map((phrase) => (
+                       <button
+                         type="button"
+@@ -490,7 +490,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }:
+             )}
+           </div>
+ 
+-          <aside className="hidden min-h-0 overflow-y-auto bg-black/10 p-4 md:block">
++          <aside className="hidden min-h-0 overflow-y-auto bg-black/10 p-4 md:block [@media(max-height:560px)]:hidden">
+             <h3 className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#ebcf91]">
+               Đạo hữu hiện diện
+             </h3>
+diff --git a/src/app/(frontend)/OnboardingGate.tsx b/src/app/(frontend)/OnboardingGate.tsx
+new file mode 100644
+index 0000000..0275e41
+--- /dev/null
++++ b/src/app/(frontend)/OnboardingGate.tsx
+@@ -0,0 +1,172 @@
++'use client'
++
++import { useMemo, useState, type FormEvent } from 'react'
++
++export const PROFILE_STORAGE_KEY = 'chua_an_nhien_user_profile'
++
++export type DevoteeProfile = {
++  registered: true
++  fullName: string
++  birthDate: string
++  hometown: string
++  age: number
++  dharmaName: string
++  assignedSeatNo: number | null
++  avatarType: 'monk'
++  meritScore: number
++  wish: string
++}
++
++export function calculateAge(birthDate: string, today = new Date()) {
++  if (!birthDate) return null
++  const date = new Date(`${birthDate}T00:00:00`)
++  if (Number.isNaN(date.getTime()) || date > today) return null
++  let age = today.getFullYear() - date.getFullYear()
++  const month = today.getMonth() - date.getMonth()
++  if (month < 0 || (month === 0 && today.getDate() < date.getDate())) age--
++  return age >= 0 && age <= 130 ? age : null
++}
++
++export function loadDevoteeProfile(): DevoteeProfile | null {
++  try {
++    const raw = localStorage.getItem(PROFILE_STORAGE_KEY)
++    if (!raw) return null
++    const data = JSON.parse(raw)
++    if (!data?.registered || !data.fullName || !data.birthDate || !data.hometown) return null
++    const age = calculateAge(data.birthDate)
++    if (age === null) return null
++    return { ...data, age }
++  } catch {
++    return null
++  }
++}
++
++export default function OnboardingGate({
++  open,
++  onComplete,
++}: {
++  open: boolean
++  onComplete: (profile: DevoteeProfile) => void
++}) {
++  const [fullName, setFullName] = useState('')
++  const [birthDate, setBirthDate] = useState('')
++  const [hometown, setHometown] = useState('')
++  const [error, setError] = useState('')
++  const age = useMemo(() => calculateAge(birthDate), [birthDate])
++
++  if (!open) return null
++
++  const submit = async (event: FormEvent) => {
++    event.preventDefault()
++    const name = fullName.trim().replace(/\s+/g, ' ')
++    const home = hometown.trim().replace(/\s+/g, ' ')
++    if (name.length < 2) return setError('Vui lòng nhập đầy đủ họ và tên.')
++    if (age === null) return setError('Ngày sinh không hợp lệ hoặc nằm trong tương lai.')
++    if (home.length < 2) return setError('Vui lòng nhập quê quán.')
++
++    const profile: DevoteeProfile = {
++      registered: true,
++      fullName: name,
++      birthDate,
++      hometown: home,
++      age,
++      dharmaName: '',
++      assignedSeatNo: (window as any).pickBestAvailableSeat?.(null) ?? null,
++      avatarType: 'monk',
++      meritScore: 0,
++      wish: '',
++    }
++    try {
++      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile))
++      sessionStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile))
++    } catch {
++      // The session still works if storage is blocked.
++    }
++    ;(window as any).currentUserProfile = profile
++    if (profile.assignedSeatNo) (window as any).assignUserToSeat?.(profile.assignedSeatNo)
++    onComplete(profile)
++
++    // Fullscreen and orientation lock are only valid inside this user gesture.
++    try {
++      if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.()
++    } catch {}
++    try {
++      await (screen.orientation as any)?.lock?.('landscape')
++    } catch {}
++  }
++
++  return (
++    <div className="fixed inset-0 z-[100] grid place-items-center overflow-y-auto bg-[radial-gradient(circle_at_50%_20%,rgba(113,42,17,.72),rgba(10,4,2,.96)_68%)] p-4 backdrop-blur-xl">
++      <form
++        onSubmit={submit}
++        aria-labelledby="onboarding-title"
++        className="my-auto w-[min(560px,100%)] overflow-hidden rounded-[24px] border border-[#e2bd6e]/55 bg-[linear-gradient(160deg,#3c180e,#1e0b06_64%,#130704)] text-[#f8eddb] shadow-[0_30px_100px_rgba(0,0,0,.7),0_0_0_5px_rgba(30,12,6,.9),0_0_0_6px_rgba(226,189,110,.2)]"
++      >
++        <header className="border-b border-[#e2bd6e]/25 px-5 py-5 text-center sm:px-8">
++          <span className="mx-auto grid size-12 place-items-center rounded-full border border-[#e2bd6e]/45 bg-[#e2bd6e]/10 text-2xl">✦</span>
++          <p className="mt-3 text-[10px] font-bold uppercase tracking-[.22em] text-[#d7b86f]">Sớ ghi danh</p>
++          <h1 id="onboarding-title" className="mt-1 text-xl font-extrabold text-[#ffe6aa] sm:text-2xl">
++            Kính chào đạo hữu đến Chùa Yên Phúc
++          </h1>
++          <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-[#c1ad90]">
++            Thông tin được lưu trên trình duyệt này để lần sau bạn vào thẳng Chánh Điện.
++          </p>
++        </header>
++        <div className="grid gap-4 px-5 py-5 sm:px-8">
++          <label className="grid gap-1.5 text-xs font-bold text-[#e4cc9b]">
++            Họ và tên <span className="sr-only">bắt buộc</span>
++            <input
++              required
++              autoFocus
++              autoComplete="name"
++              value={fullName}
++              onChange={(event) => setFullName(event.target.value)}
++              placeholder="Ví dụ: Nguyễn Bá Ngọc"
++              maxLength={60}
++              className="h-12 rounded-xl border border-[#e2bd6e]/30 bg-black/25 px-4 text-sm font-normal text-white outline-none placeholder:text-white/30 focus:border-[#f2c766]"
++            />
++          </label>
++          <div className="grid gap-4 sm:grid-cols-[1fr_120px]">
++            <label className="grid gap-1.5 text-xs font-bold text-[#e4cc9b]">
++              Ngày tháng năm sinh
++              <input
++                required
++                type="date"
++                autoComplete="bday"
++                value={birthDate}
++                max={new Date().toISOString().slice(0, 10)}
++                onChange={(event) => setBirthDate(event.target.value)}
++                className="h-12 rounded-xl border border-[#e2bd6e]/30 bg-black/25 px-4 text-sm font-normal text-white outline-none focus:border-[#f2c766]"
++              />
++            </label>
++            <div className="grid gap-1.5 text-xs font-bold text-[#e4cc9b]">
++              Tuổi
++              <output className="grid h-12 place-items-center rounded-xl border border-[#e2bd6e]/25 bg-[#e2bd6e]/[.07] text-base text-[#ffe29e]">
++                {age ?? '—'}
++              </output>
++            </div>
++          </div>
++          <label className="grid gap-1.5 text-xs font-bold text-[#e4cc9b]">
++            Quê quán
++            <input
++              required
++              autoComplete="address-level1"
++              value={hometown}
++              onChange={(event) => setHometown(event.target.value)}
++              placeholder="Ví dụ: Thái Bình"
++              maxLength={80}
++              className="h-12 rounded-xl border border-[#e2bd6e]/30 bg-black/25 px-4 text-sm font-normal text-white outline-none placeholder:text-white/30 focus:border-[#f2c766]"
++            />
++          </label>
++          {error && <p role="alert" className="rounded-xl border border-red-300/25 bg-red-500/10 px-3 py-2 text-xs text-red-200">{error}</p>}
++          <button className="mt-1 h-12 rounded-full bg-gradient-to-b from-[#f7d783] to-[#d69b2c] text-sm font-extrabold text-[#2c1508] shadow-[0_8px_24px_rgba(215,160,50,.25)]">
++            Ghi danh và vào Chánh Điện
++          </button>
++          <p className="text-center text-[10px] leading-relaxed text-white/40">
++            Trên điện thoại và tablet, hệ thống sẽ yêu cầu xoay ngang sau khi ghi danh.
++          </p>
++        </div>
++      </form>
++    </div>
++  )
++}
+diff --git a/src/app/(frontend)/OrientationGuard.tsx b/src/app/(frontend)/OrientationGuard.tsx
+new file mode 100644
+index 0000000..d11ec48
+--- /dev/null
++++ b/src/app/(frontend)/OrientationGuard.tsx
+@@ -0,0 +1,52 @@
++'use client'
++
++import { useEffect, useState } from 'react'
++
++export default function OrientationGuard({ active }: { active: boolean }) {
++  const [blocked, setBlocked] = useState(false)
++
++  useEffect(() => {
++    if (!active) return
++    const update = () => {
++      const portrait = matchMedia('(orientation: portrait)').matches
++      const mobileOrTablet = matchMedia('(pointer: coarse)').matches || innerWidth < 1024
++      setBlocked(portrait && mobileOrTablet)
++    }
++    update()
++    window.addEventListener('resize', update)
++    screen.orientation?.addEventListener?.('change', update)
++    return () => {
++      window.removeEventListener('resize', update)
++      screen.orientation?.removeEventListener?.('change', update)
++    }
++  }, [active])
++
++  if (!active || !blocked) return null
++
++  const enterLandscape = async () => {
++    try {
++      if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.()
++    } catch {}
++    try {
++      await (screen.orientation as any)?.lock?.('landscape')
++    } catch {}
++  }
++
++  return (
++    <section className="fixed inset-0 z-[110] grid place-items-center bg-[radial-gradient(circle_at_50%_40%,#4a1b0d,#120604_70%)] p-6 text-center text-[#f8eddb]">
++      <div className="max-w-sm">
++        <div className="mx-auto flex h-24 w-16 animate-[pulse_2s_ease-in-out_infinite] items-center justify-center rounded-2xl border-2 border-[#e2bd6e]/70 bg-[#e2bd6e]/10 text-[#f4d17e] shadow-[0_0_35px_rgba(226,189,110,.2)]">
++          <span className="rotate-90 text-3xl">↻</span>
++        </div>
++        <p className="mt-6 text-[10px] font-bold uppercase tracking-[.22em] text-[#d9b86e]">Không gian Chánh Điện</p>
++        <h2 className="mt-2 text-xl font-extrabold text-[#ffe5aa]">Vui lòng xoay ngang thiết bị</h2>
++        <p className="mt-3 text-sm leading-relaxed text-[#c2ae91]">
++          Giao diện tu tập được thiết kế ưu tiên chế độ ngang để nhìn trọn bản đồ và thanh nghi lễ.
++        </p>
++        <button onClick={enterLandscape} className="mt-6 h-12 w-full rounded-full bg-gradient-to-b from-[#f6d47d] to-[#d89b2a] text-sm font-extrabold text-[#2a1408]">
++          Xoay ngang và bật toàn màn hình
++        </button>
++      </div>
++    </section>
++  )
++}
+diff --git a/src/app/(frontend)/TempleScene.tsx b/src/app/(frontend)/TempleScene.tsx
+index 5f90590..5b60960 100644
+--- a/src/app/(frontend)/TempleScene.tsx
++++ b/src/app/(frontend)/TempleScene.tsx
+@@ -4,6 +4,7 @@ import { useEffect, useRef, type MutableRefObject } from 'react'
+ import * as THREE from 'three'
+ import { appFontFamily, whenAppFontReady } from './app-font'
+ import { SEAT_AISLE, SEAT_LANE_Z, SEATS } from './temple-data'
++import { DEFAULT_ZONE, TEMPLE_ZONES, type TempleZoneId } from './temple-zones'
+ 
+ /** Imperative controls the HUD uses to drive the player inside the scene. */
+ export type SceneApi = {
+@@ -149,17 +150,20 @@ function canvasTexture(
+ 
+ export default function TempleScene({
+   theme = 'xanh',
++  zone = DEFAULT_ZONE,
+   playerName,
+   level,
+   apiRef,
+   onSeatChange,
+ }: {
+   theme?: string
++  zone?: TempleZoneId
+   playerName: string
+   level: number
+   apiRef?: MutableRefObject<SceneApi | null>
+   onSeatChange?: (seat: number | null) => void
+ }) {
++  const zoneConfig = TEMPLE_ZONES[zone]
+   const mountRef = useRef<HTMLDivElement>(null)
+   const labelRefs = useRef<(HTMLDivElement | null)[]>([])
+   const labelsContainerRef = useRef<HTMLDivElement>(null)
+@@ -195,21 +199,21 @@ export default function TempleScene({
+     renderer.outputColorSpace = THREE.SRGBColorSpace
+     renderer.toneMapping = THREE.ACESFilmicToneMapping
+     renderer.toneMappingExposure = 1.05
+-    renderer.domElement.setAttribute('aria-label', 'Không gian 3D sân Chùa An Nhiên')
++    renderer.domElement.setAttribute('aria-label', `Không gian 3D ${zoneConfig.name}`)
+     mount.appendChild(renderer.domElement)
+     mount.classList.add('is-webgl')
+ 
+     const scene = new THREE.Scene()
+     scene.background = canvasTexture(4, 256, (ctx) => {
+       const gradient = ctx.createLinearGradient(0, 0, 0, 256)
+-      gradient.addColorStop(0, '#4f8fd8')
+-      gradient.addColorStop(0.45, '#8fc0ea')
+-      gradient.addColorStop(0.62, '#cfe3ef')
++      gradient.addColorStop(0, zoneConfig.skyTop)
++      gradient.addColorStop(0.45, zoneConfig.skyMid)
++      gradient.addColorStop(0.62, '#cfe3df')
+       gradient.addColorStop(1, '#e8efe9')
+       ctx.fillStyle = gradient
+       ctx.fillRect(0, 0, 4, 256)
+     })
+-    scene.fog = new THREE.Fog('#d9e7ee', 60, 210)
++    scene.fog = new THREE.Fog(zoneConfig.fog, 60, 210)
+ 
+     const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.1, 260)
+     // Portrait screens need a wider lens to keep the temple and the player in frame.
+@@ -248,9 +252,9 @@ export default function TempleScene({
+       wallCap: std('#6e6862'),
+       cream: std('#eadcbf'),
+       wood: std('#6b3524'),
+-      red: std('#a8291f', { roughness: 0.6 }),
++      red: std(zoneConfig.roof, { roughness: 0.6 }),
+       redDark: std('#7c2119'),
+-      yellow: std('#e2b33c', { roughness: 0.55 }),
++      yellow: std(zoneConfig.accent, { roughness: 0.55 }),
+       gold: std('#d9a93a', { metalness: 0.55, roughness: 0.35 }),
+       bronze: std('#a37d3a', { metalness: 0.6, roughness: 0.4 }),
+       trunk: std('#6e5a47', { flatShading: true }),
+@@ -268,7 +272,7 @@ export default function TempleScene({
+       256,
+       256,
+       (ctx) => {
+-        ctx.fillStyle = '#93452f'
++        ctx.fillStyle = zoneConfig.roof
+         ctx.fillRect(0, 0, 256, 256)
+         for (let x = 0; x < 256; x += 16) {
+           ctx.fillStyle = 'rgba(70, 24, 14, .55)'
+@@ -322,6 +326,36 @@ export default function TempleScene({
+       return mesh
+     }
+ 
++    // Each destination keeps the shared interaction system but has a distinct landmark.
++    const landmarkMaterial = std(zoneConfig.accent, { roughness: 0.55 })
++    if (zoneConfig.landmark === 'gate') {
++      for (const x of [-10, 10]) {
++        cylinder(0.35, 0.45, 7, 10, [x, 3.5, 7], mat.stone)
++        box([5, 0.5, 0.8], [x, 7, 7], landmarkMaterial)
++      }
++    } else if (zoneConfig.landmark === 'lotus') {
++      const pond = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.5, 0.14, 40), std('#397c91', { roughness: 0.2 }))
++      pond.position.set(-17, 0.08, 5)
++      world.add(pond)
++      for (let i = 0; i < 9; i++) {
++        const angle = (i / 9) * Math.PI * 2
++        cylinder(0.35, 0.5, 0.08, 16, [-17 + Math.cos(angle) * (2 + (i % 3)), 0.2, 5 + Math.sin(angle) * (2 + (i % 3))], landmarkMaterial)
++      }
++    } else if (zoneConfig.landmark === 'tower') {
++      for (const x of [-17, 17]) {
++        for (let i = 0; i < 4; i++) {
++          box([4.5 - i * 0.55, 1.2, 4.5 - i * 0.55], [x, 0.7 + i * 1.25, -4], i % 2 ? mat.cream : mat.stone)
++        }
++        cylinder(0.12, 0.12, 2, 8, [x, 6, -4], mat.gold)
++      }
++    } else if (zoneConfig.landmark === 'bamboo') {
++      for (let i = 0; i < 18; i++) {
++        const x = (i < 9 ? -1 : 1) * (14 + (i % 3) * 1.4)
++        const z = -2 + (i % 9) * 2.8
++        cylinder(0.12, 0.16, 7 + (i % 4), 8, [x, 3.5 + (i % 4) * 0.5, z], std(i % 2 ? '#517947' : '#6e9254'))
++      }
++    }
++
+     // Ground: grass, tiled courtyard and the grey stone path to the main hall.
+     const grass = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), mat.grass)
+     grass.rotation.x = -Math.PI / 2
+@@ -642,7 +676,7 @@ export default function TempleScene({
+       ctx.font = `800 56px ${appFontFamily()}`
+       ctx.textAlign = 'center'
+       ctx.textBaseline = 'middle'
+-      ctx.fillText('CHÙA YÊN PHÚC', 256, 60, 470)
++      ctx.fillText(zoneConfig.name.toUpperCase(), 256, 60, 470)
+     }
+     const signTexture = canvasTexture(512, 116, drawSign)
+     // Redraw once the web font is ready so the plaque never keeps a fallback face.
+@@ -1669,6 +1703,7 @@ export default function TempleScene({
+     let onArrive: (() => void) | null = null
+     let action: Action | null = null
+     let seated: number | null = initialSeat ? initialSeat.no : null
++    let thresholdBowDone = false
+     const laneZ = SEAT_LANE_Z
+     const lastBroadcastPos = {
+       x: spawnX,
+@@ -1748,8 +1783,16 @@ export default function TempleScene({
+             duration: 2.8,
+             done: () => {
+               incenseUntil = clock.elapsedTime + 25
+-              onOffered()
+-              if (returnSeat !== null) sit(returnSeat)
++              // Bow toward the altar after placing the incense, then return.
++              action = {
++                kind: 'bow',
++                start: clock.elapsedTime,
++                duration: 2.4,
++                done: () => {
++                  onOffered()
++                  if (returnSeat !== null) sit(returnSeat)
++                },
++              }
+             },
+           }
+         }
+@@ -1786,7 +1829,17 @@ export default function TempleScene({
+         }
+       },
+       ringBell: () => {
+-        bellStart = clock.elapsedTime
++        if (route.length) return
++        heading = Math.PI
++        player.group.rotation.y = Math.PI
++        action = {
++          kind: 'bow',
++          start: clock.elapsedTime,
++          duration: 2.2,
++          done: () => {
++            bellStart = clock.elapsedTime
++          },
++        }
+       },
+       setMove: (x, y) => {
+         stick.x = x
+@@ -1872,12 +1925,21 @@ export default function TempleScene({
+           id: key,
+           targetRig,
+           element: el,
+-          expiresAt: clock.elapsedTime + 6.5,
++          expiresAt: clock.elapsedTime + 5,
+         }
+         speechBubbles.set(key, bubble)
+       }
+-      bubble.expiresAt = clock.elapsedTime + 6.5
+-      bubble.element.innerHTML = `<span class="bubble-tail"></span><strong class="bubble-author">${authorName}:</strong> <span>${text}</span>`
++      bubble.expiresAt = clock.elapsedTime + 5
++      // User chat is untrusted: build text nodes instead of assigning innerHTML.
++      bubble.element.replaceChildren()
++      const tail = document.createElement('span')
++      tail.className = 'bubble-tail'
++      const author = document.createElement('strong')
++      author.className = 'bubble-author'
++      author.textContent = `${authorName}:`
++      const content = document.createElement('span')
++      content.textContent = ` ${text}`
++      bubble.element.append(tail, author, content)
+       bubble.element.style.opacity = '1'
+     }
+ 
+@@ -2010,6 +2072,22 @@ export default function TempleScene({
+         const turn = Math.atan2(Math.sin(target - heading), Math.cos(target - heading))
+         heading += turn * Math.min(1, delta * 12)
+       }
++      // First manual approach to the central front of the temple: stop and bow.
++      if (
++        manual &&
++        !thresholdBowDone &&
++        !route.length &&
++        !action &&
++        seated === null &&
++        Math.abs(position.x) < 3.2 &&
++        position.z < -3.8
++      ) {
++        thresholdBowDone = true
++        heading = Math.PI
++        player.group.rotation.y = Math.PI
++        action = { kind: 'bow', start: clock.elapsedTime, duration: 2.4 }
++      }
++
+       position.x = THREE.MathUtils.clamp(position.x, -26, 26)
+       position.z = THREE.MathUtils.clamp(position.z, -7.4, 30)
+       for (const collider of colliders) {
+diff --git a/src/app/(frontend)/ZoneNavigator.tsx b/src/app/(frontend)/ZoneNavigator.tsx
+new file mode 100644
+index 0000000..81606a7
+--- /dev/null
++++ b/src/app/(frontend)/ZoneNavigator.tsx
+@@ -0,0 +1,45 @@
++'use client'
++
++import { TEMPLE_ZONE_LIST, type TempleZoneId } from './temple-zones'
++
++export default function ZoneNavigator({
++  open,
++  current,
++  onClose,
++  onTravel,
++}: {
++  open: boolean
++  current: TempleZoneId
++  onClose: () => void
++  onTravel: (zone: TempleZoneId) => void
++}) {
++  if (!open) return null
++  return (
++    <div className="fixed inset-0 z-[75] grid place-items-center bg-[#080402]/65 p-3 backdrop-blur-md" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
++      <section role="dialog" aria-modal="true" aria-labelledby="zone-title" className="w-[min(920px,100%)] max-h-[calc(100svh-24px)] overflow-y-auto rounded-[24px] border border-[#e2bd6e]/50 bg-[linear-gradient(160deg,#37160d,#1c0b06_65%,#120604)] p-4 text-[#f8eddb] shadow-[0_30px_100px_rgba(0,0,0,.7)] sm:p-6">
++        <header className="flex items-start gap-4 border-b border-[#e2bd6e]/20 pb-4">
++          <div className="min-w-0 flex-1">
++            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#d7b76c]">Bản đồ hành hương</p>
++            <h2 id="zone-title" className="mt-1 text-xl font-extrabold text-[#ffe5aa]">Năm khu tu tập</h2>
++            <p className="mt-1 text-xs text-[#bda98b]">Chọn khu để dịch chuyển. Tiến trình công đức được giữ nguyên.</p>
++          </div>
++          <button type="button" onClick={onClose} aria-label="Đóng bản đồ" className="grid size-9 place-items-center rounded-full border border-[#e2bd6e]/30 text-[#e5c989]">×</button>
++        </header>
++        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
++          {TEMPLE_ZONE_LIST.map((zone) => {
++            const active = zone.id === current
++            return (
++              <button key={zone.id} type="button" disabled={active} onClick={() => onTravel(zone.id)} className={`group min-h-48 rounded-2xl border p-4 text-left transition ${active ? 'border-[#f2c766]/70 bg-[#e2bd6e]/15' : 'border-[#e2bd6e]/20 bg-black/20 hover:-translate-y-1 hover:border-[#e2bd6e]/55'}`}>
++                <span className="grid size-10 place-items-center rounded-full border border-current/30 text-lg" style={{ color: zone.accent }}>✦</span>
++                <strong className="mt-4 block text-sm text-[#ffe9bc]">{zone.name}</strong>
++                <span className="mt-1 block text-[10px] font-bold uppercase tracking-wider" style={{ color: zone.accent }}>{zone.subtitle}</span>
++                <p className="mt-3 text-[11px] leading-relaxed text-[#a99374]">{zone.description}</p>
++                <span className="mt-4 block text-[10px] font-bold text-[#e2bd6e]">{active ? 'Đang ở đây' : 'Dịch chuyển →'}</span>
++              </button>
++            )
++          })}
++        </div>
++      </section>
++    </div>
++  )
++}
+diff --git a/src/app/(frontend)/temple-zones.ts b/src/app/(frontend)/temple-zones.ts
+new file mode 100644
+index 0000000..d527d2c
+--- /dev/null
++++ b/src/app/(frontend)/temple-zones.ts
+@@ -0,0 +1,56 @@
++export type TempleZoneId = 'central' | 'yen-phuc' | 'phuc-duyen' | 'thien-phu' | 'tinh-gia'
++
++export type TempleZone = {
++  id: TempleZoneId
++  name: string
++  shortName: string
++  subtitle: string
++  description: string
++  accent: string
++  roof: string
++  skyTop: string
++  skyMid: string
++  fog: string
++  landmark: 'gate' | 'lantern' | 'lotus' | 'tower' | 'bamboo'
++}
++
++export const DEFAULT_ZONE: TempleZoneId = 'yen-phuc'
++
++export const TEMPLE_ZONES: Record<TempleZoneId, TempleZone> = {
++  central: {
++    id: 'central', name: 'Sân Đạo Tràng Trung Tâm', shortName: 'Đạo Tràng',
++    subtitle: 'Nơi kết nối bốn ngôi chùa',
++    description: 'Quảng trường rộng, cổng đá bốn hướng và trạm dịch chuyển tới các chùa.',
++    accent: '#d5a84c', roof: '#7f3024', skyTop: '#537fba', skyMid: '#a8c9df', fog: '#dce7e8', landmark: 'gate',
++  },
++  'yen-phuc': {
++    id: 'yen-phuc', name: 'Chùa Yên Phúc', shortName: 'Yên Phúc',
++    subtitle: 'Chánh điện trang nghiêm',
++    description: 'Mái ngói đỏ, đèn sen và sân lễ Phật trung tâm.',
++    accent: '#e2b33c', roof: '#a8291f', skyTop: '#4f8fd8', skyMid: '#8fc0ea', fog: '#d9e7ee', landmark: 'lantern',
++  },
++  'phuc-duyen': {
++    id: 'phuc-duyen', name: 'Chùa Phúc Duyên', shortName: 'Phúc Duyên',
++    subtitle: 'Hồ sen và cầu nguyện',
++    description: 'Không gian hồ sen, đá xanh và cảnh quan nuôi dưỡng thiện duyên.',
++    accent: '#e8a6b8', roof: '#8a3e50', skyTop: '#6d8fc5', skyMid: '#c2b9d5', fog: '#e6dce6', landmark: 'lotus',
++  },
++  'thien-phu': {
++    id: 'thien-phu', name: 'Chùa Thiên Phú', shortName: 'Thiên Phú',
++    subtitle: 'Tháp chuông trên đồi',
++    description: 'Hai tháp chuông cao, sân đá sáng và tầm nhìn rộng về núi.',
++    accent: '#e3c469', roof: '#7b4e24', skyTop: '#557dae', skyMid: '#c2d2df', fog: '#dce5e6', landmark: 'tower',
++  },
++  'tinh-gia': {
++    id: 'tinh-gia', name: 'Chùa Tịnh Gia', shortName: 'Tịnh Gia',
++    subtitle: 'Rừng trúc thiền hành',
++    description: 'Lối thiền hành giữa rừng trúc, màu xanh trầm tĩnh và yên lặng.',
++    accent: '#8fb66b', roof: '#3f6044', skyTop: '#517d77', skyMid: '#aac7b6', fog: '#d5e3da', landmark: 'bamboo',
++  },
++}
++
++export const TEMPLE_ZONE_LIST = Object.values(TEMPLE_ZONES)
++
++export function isTempleZone(value: unknown): value is TempleZoneId {
++  return typeof value === 'string' && value in TEMPLE_ZONES
++}

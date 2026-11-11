@@ -3,16 +3,20 @@
 import { useEffect, useRef, type MutableRefObject } from 'react'
 import * as THREE from 'three'
 import { appFontFamily, whenAppFontReady } from './app-font'
-import { SEAT_AISLE, SEAT_LANE_Z, SEATS } from './temple-data'
-import { DEFAULT_ZONE, TEMPLE_ZONES, type TempleZoneId } from './temple-zones'
+import { SEAT_AISLE, SEAT_LANE_Z, SEATS, SEAT_OCCUPANTS } from './temple-data'
+import { TEMPLE_SITES, templeSiteById } from './temple-world'
+import { seatManager, type ManagedSeat } from './seat-manager'
 
 /** Imperative controls the HUD uses to drive the player inside the scene. */
 export type SceneApi = {
-  sit: (seat: number) => void
+  sit: (seat: number) => boolean
+  sitNearest: () => boolean
+  hasNearestSeat: () => boolean
   stand: () => void
   offerIncense: (onOffered: () => void) => void
   bow: () => void
   ringBell: () => void
+  travelTo: (siteId: number) => void
   /** Analog movement from the touch joystick: x = right, y = forward, each -1..1. */
   setMove: (x: number, y: number) => void
 }
@@ -100,25 +104,12 @@ const RESIDENTS: Resident[] = [
   },
 ]
 
-export const ROBE_COLORS: Record<string, string> = {
-  xanh: '#3b72b8', // Lam xanh
-  nau: '#7a4b33',  // Nâu thiền
-  vang: '#c08a35', // Vàng đất
-  xam: '#7a8288',  // Lam xám
-  do: '#9a3f33',   // Đỏ trầm
-  trang: '#e6ebed', // Bạch y (Trắng thanh tịnh)
-  bach: '#e6ebed',
-  lam: '#3b72b8',
-}
-
-export function resolveRobeColor(theme?: string, color?: string): string {
-  if (color && typeof color === 'string' && (color.startsWith('#') || color.startsWith('rgb'))) {
-    return color
-  }
-  if (theme && ROBE_COLORS[theme]) {
-    return ROBE_COLORS[theme]
-  }
-  return ROBE_COLORS.xanh
+const ROBE_COLORS: Record<string, string> = {
+  xanh: '#3b72b8',
+  nau: '#7a4b33',
+  vang: '#c08a35',
+  xam: '#7a8288',
+  do: '#9a3f33',
 }
 
 function seeded(seed: number) {
@@ -150,23 +141,23 @@ function canvasTexture(
 
 export default function TempleScene({
   theme = 'xanh',
-  zone = DEFAULT_ZONE,
   playerName,
   level,
+  siteId = 1,
   apiRef,
   onSeatChange,
+  onSiteChange,
 }: {
   theme?: string
-  zone?: TempleZoneId
   playerName: string
   level: number
+  siteId?: number
   apiRef?: MutableRefObject<SceneApi | null>
   onSeatChange?: (seat: number | null) => void
+  onSiteChange?: (siteId: number) => void
 }) {
-  const zoneConfig = TEMPLE_ZONES[zone]
   const mountRef = useRef<HTMLDivElement>(null)
   const labelRefs = useRef<(HTMLDivElement | null)[]>([])
-  const labelsContainerRef = useRef<HTMLDivElement>(null)
   const needleRef = useRef<HTMLSpanElement>(null)
   const robeRef = useRef<((color: string) => void) | null>(null)
   const resetViewRef = useRef<(() => void) | null>(null)
@@ -180,6 +171,10 @@ export default function TempleScene({
     themeRef.current = theme
     robeRef.current?.(ROBE_COLORS[theme] ?? ROBE_COLORS.xanh)
   }, [theme])
+
+  useEffect(() => {
+    apiRef?.current?.travelTo(siteId)
+  }, [apiRef, siteId])
 
   useEffect(() => {
     const mount = mountRef.current
@@ -199,21 +194,21 @@ export default function TempleScene({
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.05
-    renderer.domElement.setAttribute('aria-label', `Không gian 3D ${zoneConfig.name}`)
+    renderer.domElement.setAttribute('aria-label', 'Không gian 3D sân Chùa An Nhiên')
     mount.appendChild(renderer.domElement)
     mount.classList.add('is-webgl')
 
     const scene = new THREE.Scene()
     scene.background = canvasTexture(4, 256, (ctx) => {
       const gradient = ctx.createLinearGradient(0, 0, 0, 256)
-      gradient.addColorStop(0, zoneConfig.skyTop)
-      gradient.addColorStop(0.45, zoneConfig.skyMid)
-      gradient.addColorStop(0.62, '#cfe3df')
+      gradient.addColorStop(0, '#4f8fd8')
+      gradient.addColorStop(0.45, '#8fc0ea')
+      gradient.addColorStop(0.62, '#cfe3ef')
       gradient.addColorStop(1, '#e8efe9')
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, 4, 256)
     })
-    scene.fog = new THREE.Fog(zoneConfig.fog, 60, 210)
+    scene.fog = new THREE.Fog('#d9e7ee', 60, 210)
 
     const camera = new THREE.PerspectiveCamera(50, mount.clientWidth / mount.clientHeight, 0.1, 260)
     // Portrait screens need a wider lens to keep the temple and the player in frame.
@@ -236,7 +231,9 @@ export default function TempleScene({
     sun.shadow.camera.far = 120
     sun.shadow.bias = -0.0004
     sun.shadow.normalBias = 0.03
-    scene.add(sun)
+    const sunTarget = new THREE.Object3D()
+    scene.add(sun, sunTarget)
+    sun.target = sunTarget
 
     const world = new THREE.Group()
     scene.add(world)
@@ -252,9 +249,9 @@ export default function TempleScene({
       wallCap: std('#6e6862'),
       cream: std('#eadcbf'),
       wood: std('#6b3524'),
-      red: std(zoneConfig.roof, { roughness: 0.6 }),
+      red: std('#a8291f', { roughness: 0.6 }),
       redDark: std('#7c2119'),
-      yellow: std(zoneConfig.accent, { roughness: 0.55 }),
+      yellow: std('#e2b33c', { roughness: 0.55 }),
       gold: std('#d9a93a', { metalness: 0.55, roughness: 0.35 }),
       bronze: std('#a37d3a', { metalness: 0.6, roughness: 0.4 }),
       trunk: std('#6e5a47', { flatShading: true }),
@@ -272,7 +269,7 @@ export default function TempleScene({
       256,
       256,
       (ctx) => {
-        ctx.fillStyle = zoneConfig.roof
+        ctx.fillStyle = '#93452f'
         ctx.fillRect(0, 0, 256, 256)
         for (let x = 0; x < 256; x += 16) {
           ctx.fillStyle = 'rgba(70, 24, 14, .55)'
@@ -326,38 +323,27 @@ export default function TempleScene({
       return mesh
     }
 
-    // Each destination keeps the shared interaction system but has a distinct landmark.
-    const landmarkMaterial = std(zoneConfig.accent, { roughness: 0.55 })
-    if (zoneConfig.landmark === 'gate') {
-      for (const x of [-10, 10]) {
-        cylinder(0.35, 0.45, 7, 10, [x, 3.5, 7], mat.stone)
-        box([5, 0.5, 0.8], [x, 7, 7], landmarkMaterial)
-      }
-    } else if (zoneConfig.landmark === 'lotus') {
-      const pond = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.5, 0.14, 40), std('#397c91', { roughness: 0.2 }))
-      pond.position.set(-17, 0.08, 5)
-      world.add(pond)
-      for (let i = 0; i < 9; i++) {
-        const angle = (i / 9) * Math.PI * 2
-        cylinder(0.35, 0.5, 0.08, 16, [-17 + Math.cos(angle) * (2 + (i % 3)), 0.2, 5 + Math.sin(angle) * (2 + (i % 3))], landmarkMaterial)
-      }
-    } else if (zoneConfig.landmark === 'tower') {
-      for (const x of [-17, 17]) {
-        for (let i = 0; i < 4; i++) {
-          box([4.5 - i * 0.55, 1.2, 4.5 - i * 0.55], [x, 0.7 + i * 1.25, -4], i % 2 ? mat.cream : mat.stone)
+    // A lightly mottled lawn keeps the large world from reading as a flat green plane.
+    const grassTexture = canvasTexture(
+      512,
+      512,
+      (ctx) => {
+        const r = seeded(31)
+        ctx.fillStyle = '#809c5e'
+        ctx.fillRect(0, 0, 512, 512)
+        for (let i = 0; i < 900; i++) {
+          const light = 37 + r() * 12
+          ctx.fillStyle = `hsla(${78 + r() * 22}, 32%, ${light}%, ${0.16 + r() * 0.15})`
+          const size = 2 + r() * 9
+          ctx.fillRect(r() * 512, r() * 512, size, size)
         }
-        cylinder(0.12, 0.12, 2, 8, [x, 6, -4], mat.gold)
-      }
-    } else if (zoneConfig.landmark === 'bamboo') {
-      for (let i = 0; i < 18; i++) {
-        const x = (i < 9 ? -1 : 1) * (14 + (i % 3) * 1.4)
-        const z = -2 + (i % 9) * 2.8
-        cylinder(0.12, 0.16, 7 + (i % 4), 8, [x, 3.5 + (i % 4) * 0.5, z], std(i % 2 ? '#517947' : '#6e9254'))
-      }
-    }
-
-    // Ground: grass, tiled courtyard and the grey stone path to the main hall.
-    const grass = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), mat.grass)
+      },
+      [26, 26],
+    )
+    const grass = new THREE.Mesh(
+      new THREE.PlaneGeometry(420, 420),
+      new THREE.MeshStandardMaterial({ map: grassTexture, roughness: 1 }),
+    )
     grass.rotation.x = -Math.PI / 2
     grass.receiveShadow = true
     world.add(grass)
@@ -420,15 +406,19 @@ export default function TempleScene({
       },
       [1.2, 7],
     )
-    const path = new THREE.Mesh(
-      new THREE.PlaneGeometry(6.4, 40),
-      new THREE.MeshStandardMaterial({ map: pathTexture, roughness: 0.9 }),
-    )
+    const pathMaterial = new THREE.MeshStandardMaterial({ map: pathTexture, roughness: 0.9 })
+    const path = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 108), pathMaterial)
     path.rotation.x = -Math.PI / 2
-    path.position.set(0, 0.04, 12)
+    path.position.set(0, 0.04, 40)
     path.receiveShadow = true
     world.add(path)
-    for (const side of [-1, 1]) box([0.3, 0.12, 40], [side * 3.35, 0.06, 12], mat.darkStone)
+    for (const side of [-1, 1]) box([0.3, 0.12, 108], [side * 3.35, 0.06, 40], mat.darkStone)
+    const crossPath = new THREE.Mesh(new THREE.PlaneGeometry(130, 6.4), pathMaterial)
+    crossPath.rotation.x = -Math.PI / 2
+    crossPath.position.set(0, 0.045, 14)
+    crossPath.receiveShadow = true
+    world.add(crossPath)
+    for (const side of [-1, 1]) box([130, 0.12, 0.3], [0, 0.06, 14 + side * 3.35], mat.darkStone)
 
     // Hip roof with a gently concave slope and lifted corners.
     function hipRoof(
@@ -676,7 +666,7 @@ export default function TempleScene({
       ctx.font = `800 56px ${appFontFamily()}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText(zoneConfig.name.toUpperCase(), 256, 60, 470)
+      ctx.fillText('CHÙA YÊN PHÚC', 256, 60, 470)
     }
     const signTexture = canvasTexture(512, 116, drawSign)
     // Redraw once the web font is ready so the plaque never keeps a fallback face.
@@ -786,8 +776,273 @@ export default function TempleScene({
       world.add(ember)
     }
 
-    type Collider = { x: number; z: number; r: number }
-    const colliders: Collider[] = [{ x: 0, z: -6.4, r: 1.2 }]
+    type Collider = { x: number; z: number; r: number; seatIds?: number[] }
+    type RectCollider = { x: number; z: number; halfX: number; halfZ: number }
+    type WorldSeat = {
+      id: number
+      x: number
+      z: number
+      heading: number
+      kind: 'cushion' | 'bench'
+    }
+    const colliders: Collider[] = [
+      { x: 0, z: -6.4, r: 1.2 },
+      { x: -5.3, z: -8.6, r: 0.9 },
+      { x: 5.3, z: -8.6, r: 0.9 },
+    ]
+    const rectColliders: RectCollider[] = []
+    const worldSeats: WorldSeat[] = []
+    let nextBenchSeatId = 500
+    const remoteBellPivots: { siteId: number; pivot: THREE.Group }[] = []
+    const addRectCollider = (x: number, z: number, width: number, depth: number) => {
+      rectColliders.push({ x, z, halfX: width / 2, halfZ: depth / 2 })
+    }
+    // Main and side halls of Chùa Yên Phúc.
+    addRectCollider(0, -17.5, 21, 7)
+    addRectCollider(-20.5, -17, 11, 6)
+    addRectCollider(20.5, -17, 11, 6)
+    const remoteCushionMaterial = std('#8b3a2a', { roughness: 0.75 })
+    const remoteCushionTop = std('#c9a24a', { roughness: 0.5 })
+
+    // Four distant compounds and the central gathering plaza extend the scene
+    // far beyond the original courtyard while keeping every route walkable.
+    const makeSiteSign = (site: (typeof TEMPLE_SITES)[number], y: number, z: number) => {
+      const texture = canvasTexture(512, 104, (ctx) => {
+        ctx.fillStyle = site.accent
+        ctx.fillRect(0, 0, 512, 104)
+        ctx.strokeStyle = '#e7c46f'
+        ctx.lineWidth = 8
+        ctx.strokeRect(7, 7, 498, 90)
+        ctx.fillStyle = '#ffe39a'
+        ctx.font = `800 46px ${appFontFamily()}`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(site.name.toUpperCase(), 256, 53, 470)
+      })
+      const sign = new THREE.Mesh(
+        new THREE.PlaneGeometry(6.8, 1.38),
+        new THREE.MeshStandardMaterial({ map: texture, roughness: 0.58 }),
+      )
+      sign.position.set(site.center[0], y, z)
+      world.add(sign)
+    }
+
+    const buildRemoteTemple = (site: (typeof TEMPLE_SITES)[number]) => {
+      const [x, z] = site.center
+      const courtyard = new THREE.Mesh(
+        new THREE.PlaneGeometry(42, 35),
+        new THREE.MeshStandardMaterial({ map: courtyardTexture, roughness: 0.96 }),
+      )
+      courtyard.rotation.x = -Math.PI / 2
+      courtyard.position.set(x, 0.035, z + 7)
+      courtyard.receiveShadow = true
+      world.add(courtyard)
+
+      box([27, 0.8, 13], [x, 0.4, z], mat.stone)
+      box([20, 5.2, 7.4], [x, 3.4, z - 2], mat.cream)
+      box([18.5, 3.6, 0.35], [x, 3.1, z + 1.85], mat.wood)
+      for (const doorX of [-6, -3, 0, 3, 6]) {
+        box([2.35, 3.15, 0.16], [x + doorX, 3.05, z + 2.05], mat.redDark)
+        for (const bar of [-0.7, 0, 0.7])
+          box([0.07, 2.7, 0.03], [x + doorX + bar, 3.05, z + 2.15], mat.gold)
+      }
+      for (const columnX of [-8, -4, 0, 4, 8]) {
+        cylinder(0.28, 0.32, 4.7, 12, [x + columnX, 3.2, z + 2], mat.red)
+      }
+      hipRoof(24, 11, 2.5, 0.82, [x, 6, z - 1.5], true)
+      makeSiteSign(site, 5.15, z + 2.22)
+      const remoteBuddha = new THREE.Group()
+      const remoteBuddhaMaterial = std('#e4b84d', {
+        metalness: 0.55,
+        roughness: 0.32,
+        emissive: '#6f4208',
+        emissiveIntensity: 0.25,
+      })
+      const remoteBuddhaBody = new THREE.Mesh(
+        new THREE.LatheGeometry(
+          [
+            new THREE.Vector2(0.001, 0),
+            new THREE.Vector2(0.62, 0),
+            new THREE.Vector2(0.58, 0.34),
+            new THREE.Vector2(0.36, 0.68),
+            new THREE.Vector2(0.2, 1.05),
+            new THREE.Vector2(0.001, 1.08),
+          ],
+          18,
+        ),
+        remoteBuddhaMaterial,
+      )
+      const remoteBuddhaHead = new THREE.Mesh(
+        new THREE.SphereGeometry(0.27, 16, 12),
+        remoteBuddhaMaterial,
+      )
+      remoteBuddhaHead.position.y = 1.32
+      const remoteHalo = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.045, 7, 24), mat.gold)
+      remoteHalo.position.set(0, 1.32, -0.12)
+      remoteBuddha.add(remoteBuddhaBody, remoteBuddhaHead, remoteHalo)
+      remoteBuddha.position.set(x, 1.25, z + 2.35)
+      world.add(remoteBuddha)
+
+      const stupaX = x - 11
+      const stupaZ = z - 7
+      cylinder(0.72, 0.92, 1.05, 12, [stupaX, 0.53, stupaZ], mat.wall)
+      const remoteDome = new THREE.Mesh(new THREE.SphereGeometry(0.65, 14, 9), mat.wall)
+      remoteDome.position.set(stupaX, 1.4, stupaZ)
+      const remoteSpire = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.25, 9), mat.gold)
+      remoteSpire.position.set(stupaX, 2.42, stupaZ)
+      world.add(remoteDome, remoteSpire)
+      colliders.push({ x: stupaX, z: stupaZ, r: 0.9 })
+
+      // Side halls, enclosing walls and a ceremonial gate make each remote
+      // destination read as a complete compound rather than a lone building.
+      for (const side of [-1, 1]) {
+        box([7.5, 3.4, 8], [x + side * 16, 1.7, z + 2], mat.cream)
+        for (const offset of [-2.4, 0, 2.4])
+          cylinder(0.18, 0.2, 3.2, 10, [x + side * 16 + offset, 1.8, z + 6.1], mat.red)
+        hipRoof(9.5, 10, 1.7, 0.58, [x + side * 16, 3.5, z + 2])
+        addRectCollider(x + side * 16, z + 2, 7.5, 8)
+      }
+      for (const side of [-1, 1]) {
+        box([0.45, 2.3, 22], [x + side * 21, 1.15, z - 1], mat.wall)
+        box([0.45, 2.3, 4], [x + side * 21, 1.15, z + 20], mat.wall)
+      }
+      for (const side of [-1, 1]) box([17, 2.3, 0.45], [x + side * 12.5, 1.15, z - 12], mat.wall)
+      for (const side of [-1, 1]) box([15, 2.3, 0.45], [x + side * 13.5, 1.15, z + 22], mat.wall)
+      for (const gateX of [-4.4, 4.4]) box([1.1, 5.4, 1.1], [x + gateX, 2.7, z + 21.7], mat.red)
+      box([10.5, 0.5, 1.2], [x, 5.25, z + 21.7], mat.redDark)
+      hipRoof(13, 4.8, 1.6, 0.65, [x, 5.4, z + 21.7], true)
+      addRectCollider(x, z - 2, 20, 7.4)
+      for (const side of [-1, 1]) {
+        addRectCollider(x + side * 21, z - 1, 0.45, 22)
+        addRectCollider(x + side * 21, z + 20, 0.45, 4)
+        addRectCollider(x + side * 12.5, z - 12, 17, 0.45)
+      }
+      addRectCollider(x - 13.5, z + 22, 15, 0.45)
+      addRectCollider(x + 13.5, z + 22, 15, 0.45)
+      addRectCollider(x - 4.4, z + 21.7, 1.1, 1.1)
+      addRectCollider(x + 4.4, z + 21.7, 1.1, 1.1)
+
+      for (const side of [-1, 1]) {
+        lotusLamp(x + side * 8.8, z + 8)
+        lotusLamp(x + side * 8.8, z + 17)
+      }
+
+      // Every temple has the same core practice facilities as Yên Phúc:
+      // incense altar, meditation cushions, bonsai, a sacred tree and bell pavilion.
+      cylinder(0.72, 0.86, 0.85, 18, [x, 0.72, z + 5], mat.bronze)
+      for (let incense = -1; incense <= 1; incense++)
+        cylinder(0.018, 0.018, 0.62, 5, [x + incense * 0.12, 1.45, z + 5], mat.redDark)
+      colliders.push({ x, z: z + 5, r: 1.05 })
+      for (const seat of SEATS) {
+        const seatX = x + seat.x
+        const seatZ = z + 9 + seat.row * 3.15
+        cylinder(0.46, 0.52, 0.17, 18, [seatX, 0.1, seatZ], remoteCushionMaterial)
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.03, 6, 20), remoteCushionTop)
+        ring.rotation.x = -Math.PI / 2
+        ring.position.set(seatX, 0.19, seatZ)
+        world.add(ring)
+        worldSeats.push({
+          id: site.id * 100 + seat.no,
+          x: seatX,
+          z: seatZ,
+          heading: Math.PI,
+          kind: 'cushion',
+        })
+      }
+      for (const side of [-1, 1]) {
+        const potX = x + side * 6.2
+        cylinder(0.55, 0.42, 0.5, 14, [potX, 0.3, z + 5.8], mat.pot)
+        cylinder(0.07, 0.1, 1.1, 7, [potX, 1.0, z + 5.8], mat.bark)
+        const crown = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(0.78, 1),
+          side < 0 ? mat.leaf : mat.leafLight,
+        )
+        crown.position.set(potX, 1.75, z + 5.8)
+        crown.scale.y = 0.72
+        crown.castShadow = true
+        world.add(crown)
+        colliders.push({ x: potX, z: z + 5.8, r: 0.75 })
+      }
+      roundTree(x - 13, z + 13, 1.15)
+
+      const bellX = x + 13
+      const bellZ = z + 14
+      box([6.5, 0.5, 6.5], [bellX, 0.25, bellZ], mat.stone)
+      for (const sx of [-1, 1])
+        for (const sz of [-1, 1])
+          cylinder(0.2, 0.24, 4.3, 10, [bellX + sx * 2.15, 2.4, bellZ + sz * 2.15], mat.red)
+      hipRoof(7.8, 7.8, 1.4, 0.55, [bellX, 4.55, bellZ])
+      const remoteBellPivot = new THREE.Group()
+      remoteBellPivot.position.set(bellX, 3.5, bellZ)
+      const remoteBell = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.62, 0.92, 1.7, 20, 1, true),
+        mat.bronze,
+      )
+      remoteBell.position.y = -0.85
+      remoteBell.castShadow = true
+      remoteBellPivot.add(remoteBell)
+      world.add(remoteBellPivot)
+      remoteBellPivots.push({ siteId: site.id, pivot: remoteBellPivot })
+      const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.72, 0.75, 20), mat.red)
+      drum.rotation.x = Math.PI / 2
+      drum.position.set(bellX - 1.25, 1.45, bellZ)
+      drum.castShadow = true
+      world.add(drum)
+      colliders.push({ x: bellX, z: bellZ, r: 3.4 })
+
+      // Each destination has a recognisable landmark.
+      if (site.id === 2) {
+        const water = new THREE.Mesh(
+          new THREE.CircleGeometry(6.8, 40),
+          std('#4c9eaa', { metalness: 0.08, roughness: 0.28 }),
+        )
+        water.rotation.x = -Math.PI / 2
+        water.scale.y = 0.72
+        water.position.set(x - 28, 0.08, z + 8)
+        world.add(water)
+        for (let i = 0; i < 13; i++) {
+          const angle = (i / 13) * Math.PI * 2
+          const pad = new THREE.Mesh(new THREE.CircleGeometry(0.35 + (i % 3) * 0.12, 14), mat.leaf)
+          pad.rotation.x = -Math.PI / 2
+          pad.position.set(
+            x - 28 + Math.cos(angle) * (2 + (i % 4)),
+            0.12,
+            z + 8 + Math.sin(angle) * 3,
+          )
+          world.add(pad)
+        }
+        colliders.push({ x: x - 28, z: z + 8, r: 7.2 })
+      } else if (site.id === 3) {
+        for (let tier = 0; tier < 4; tier++) {
+          const y = 1 + tier * 2.2
+          box([6 - tier * 0.7, 1.7, 6 - tier * 0.7], [x + 28, y, z + 8], mat.cream)
+          hipRoof(8 - tier * 0.8, 8 - tier * 0.8, 1.2, 0.48, [x + 28, y + 0.9, z + 8])
+        }
+        cylinder(0.1, 0.2, 2.4, 8, [x + 28, 10.4, z + 8], mat.gold)
+        addRectCollider(x + 28, z + 8, 6, 6)
+      } else if (site.id === 4) {
+        for (let i = 0; i < 20; i++) {
+          const side = i % 2 === 0 ? -1 : 1
+          const bx = x + side * (25 + (i % 4) * 1.2)
+          const bz = z + 5 + Math.floor(i / 4) * 3
+          cylinder(0.1, 0.14, 5 + (i % 3), 8, [bx, 2.6, bz], mat.leafDark)
+          for (const leafSide of [-1, 1]) {
+            const leaf = new THREE.Mesh(
+              new THREE.PlaneGeometry(0.35, 1.8),
+              std('#5d9444', { side: THREE.DoubleSide }),
+            )
+            leaf.position.set(bx + leafSide * 0.45, 4 + (i % 2), bz)
+            leaf.rotation.set(0.2, 0, leafSide * 0.9)
+            world.add(leaf)
+          }
+        }
+      }
+      for (const side of [-1, 1]) {
+        roundTree(x + side * 24, z - 7, 1.1)
+        roundTree(x + side * 25, z + 15, 0.95)
+      }
+      colliders.push({ x, z: z - 1.5, r: 7.5 })
+    }
 
     // Lotus-base stone lamps.
     const lanternTexture = canvasTexture(128, 128, (ctx) => {
@@ -841,6 +1096,64 @@ export default function TempleScene({
       world.add(group)
       colliders.push({ x, z, r: 1.4 })
     }
+    TEMPLE_SITES.filter((site) => site.kind === 'temple' && site.id !== 1).forEach(
+      buildRemoteTemple,
+    )
+
+    const plaza = templeSiteById(5)
+    {
+      const [x, z] = plaza.center
+      const plazaFloor = new THREE.Mesh(
+        new THREE.CircleGeometry(17, 48),
+        new THREE.MeshStandardMaterial({ color: '#a58a68', roughness: 0.92 }),
+      )
+      plazaFloor.rotation.x = -Math.PI / 2
+      plazaFloor.position.set(x, 0.035, z)
+      plazaFloor.receiveShadow = true
+      world.add(plazaFloor)
+      cylinder(2.8, 3.4, 0.6, 12, [x, 0.3, z], mat.stone)
+      cylinder(0.7, 1.15, 4.2, 12, [x, 2.7, z], mat.gold)
+      const lotus = new THREE.Mesh(new THREE.OctahedronGeometry(1.25, 1), mat.gold)
+      lotus.position.set(x, 5.35, z)
+      lotus.rotation.y = Math.PI / 4
+      world.add(lotus)
+      makeSiteSign(plaza, 2.2, z + 16)
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2
+        const px = x + Math.cos(angle) * 12
+        const pz = z + Math.sin(angle) * 12
+        const seatId = nextBenchSeatId++
+        cylinder(0.34, 0.48, 0.55, 10, [px, 0.28, pz], mat.stone)
+        box([2.2, 0.2, 0.65], [px, 0.72, pz], mat.wood).rotation.y = -angle
+        colliders.push({ x: px, z: pz, r: 1.25, seatIds: [seatId] })
+        worldSeats.push({
+          id: seatId,
+          x: px - Math.cos(angle) * 0.35,
+          z: pz - Math.sin(angle) * 0.35,
+          heading: Math.atan2(-Math.cos(angle), -Math.sin(angle)),
+          kind: 'bench',
+        })
+      }
+      const flagAngle = Math.atan2(10, 16)
+      for (const side of [-1, 1])
+        cylinder(0.14, 0.18, 7, 10, [x + side * 8, 3.5, z + side * 5], mat.redDark)
+      colliders.push({ x: x - 8, z: z - 5, r: 0.42 }, { x: x + 8, z: z + 5, r: 0.42 })
+      const flagRope = cylinder(0.025, 0.025, Math.hypot(16, 10), 6, [x, 6.55, z], mat.wood)
+      flagRope.rotation.z = Math.PI / 2
+      flagRope.rotation.y = -flagAngle
+      const flagMaterials = [
+        std('#b8262e', { side: THREE.DoubleSide }),
+        std('#e2b33c', { side: THREE.DoubleSide }),
+      ]
+      for (let i = 0; i < 7; i++) {
+        const t = (i + 1) / 8
+        const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.72), flagMaterials[i % 2])
+        flag.position.set(x - 8 + t * 16, 6.35 - Math.sin(t * Math.PI) * 0.55, z - 5 + t * 10)
+        flag.rotation.y = -flagAngle
+        world.add(flag)
+      }
+      colliders.push({ x, z, r: 3.5 })
+    }
     // The row nearest the hall was removed to make room for the cushion rows.
     for (const z of [13, 4.5]) {
       lotusLamp(-5.2, z)
@@ -887,6 +1200,13 @@ export default function TempleScene({
       ring.rotation.x = -Math.PI / 2
       ring.position.set(seat.x, 0.185, seat.z)
       world.add(ring)
+      worldSeats.push({
+        id: seat.no,
+        x: seat.x,
+        z: seat.z,
+        heading: Math.PI,
+        kind: 'cushion',
+      })
     }
 
     // Banyan tree with aerial roots and prayer ribbons.
@@ -1006,14 +1326,18 @@ export default function TempleScene({
     }
 
     // Compound walls.
+    // Side walls have openings aligned with the east/west inter-temple path.
     const wallSegments: [number, number, number, number][] = [
       [0, -27, 56, 0.6],
-      [-28, 2, 0.6, 58],
-      [28, 2, 0.6, 58],
+      [-28, -9, 0.6, 36],
+      [28, -9, 0.6, 36],
+      [-28, 25, 0.6, 12],
+      [28, 25, 0.6, 12],
     ]
     for (const [x, z, w, d] of wallSegments) {
       box([w, 2, d], [x, 1, z], mat.wall)
       box([w + 0.3, 0.3, d + 0.3], [x, 2.1, z], mat.wallCap)
+      addRectCollider(x, z, w, d)
     }
 
     // Trees inside and outside the walls.
@@ -1036,6 +1360,7 @@ export default function TempleScene({
         group.add(crown)
       }
       world.add(group)
+      colliders.push({ x, z, r: Math.max(0.75, 1.15 * scale) })
     }
     function palm(x: number, z: number, height: number) {
       const group = new THREE.Group()
@@ -1056,6 +1381,7 @@ export default function TempleScene({
         group.add(pivot)
       }
       world.add(group)
+      colliders.push({ x, z, r: 0.65 })
     }
     for (const [x, z, s] of [
       [-24.5, -23.5, 1.2],
@@ -1080,6 +1406,242 @@ export default function TempleScene({
       roundTree(Math.cos(angle) * radius * 1.3, -Math.sin(angle) * radius + 6, 1.3 + rand() * 1.2)
     }
 
+    // Fill the land between compounds with distinct gardens and rest areas.
+    // These low-cost layers keep every travel route visually populated without
+    // repeating another main hall or turning the open world into a maze.
+    const groundPatch = (x: number, z: number, radius: number, color: string, squash = 1) => {
+      const patch = new THREE.Mesh(
+        new THREE.CircleGeometry(radius, 32),
+        std(color, { roughness: 1, polygonOffset: true, polygonOffsetFactor: -1 }),
+      )
+      patch.rotation.x = -Math.PI / 2
+      patch.scale.y = squash
+      patch.position.set(x, 0.012, z)
+      patch.receiveShadow = true
+      world.add(patch)
+    }
+    for (const [x, z, radius, color, squash] of [
+      [-39, 42, 19, '#76965b', 0.65],
+      [39, 42, 18, '#89a765', 0.7],
+      [-38, 72, 18, '#738e56', 0.75],
+      [38, 72, 19, '#91a968', 0.7],
+      [-54, 42, 16, '#8ca764', 0.62],
+      [54, 42, 15, '#718c55', 0.7],
+      [-35, -13, 13, '#91a967', 0.7],
+      [35, -13, 13, '#759157', 0.7],
+    ] as const)
+      groundPatch(x, z, radius, color, squash)
+
+    function gardenLantern(x: number, z: number, rotation = 0) {
+      const group = new THREE.Group()
+      group.position.set(x, 0, z)
+      group.rotation.y = rotation
+      cylinder(0.42, 0.56, 0.28, 8, [0, 0.14, 0], mat.darkStone, group)
+      cylinder(0.14, 0.2, 1.75, 8, [0, 1.1, 0], mat.lampStone, group)
+      box([0.8, 0.72, 0.8], [0, 2.05, 0], lampMaterial, group)
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(0.72, 0.42, 4), mat.darkStone)
+      cap.position.y = 2.62
+      cap.rotation.y = Math.PI / 4
+      group.add(cap)
+      world.add(group)
+      colliders.push({ x, z, r: 0.62 })
+    }
+    for (let z = 24; z <= 92; z += 11) {
+      gardenLantern(-6.4, z)
+      gardenLantern(6.4, z, Math.PI)
+    }
+    for (let x = -50; x <= 50; x += 10) {
+      if (Math.abs(x) < 8) continue
+      gardenLantern(x, 8.2, Math.PI / 2)
+      gardenLantern(x, 19.8, -Math.PI / 2)
+    }
+
+    function restPavilion(x: number, z: number, accent: THREE.Material) {
+      groundPatch(x, z, 7.2, '#9e957d', 0.82)
+      cylinder(4.8, 5.2, 0.42, 12, [x, 0.21, z], mat.stone)
+      for (const sx of [-1, 1])
+        for (const sz of [-1, 1]) {
+          cylinder(0.2, 0.23, 3.8, 10, [x + sx * 2.7, 2.25, z + sz * 2.2], accent)
+          colliders.push({ x: x + sx * 2.7, z: z + sz * 2.2, r: 0.46 })
+        }
+      hipRoof(8.8, 7.8, 1.55, 0.62, [x, 4.2, z], true)
+      for (const side of [-1, 1]) {
+        const seatIds = [nextBenchSeatId++, nextBenchSeatId++]
+        const bench = box([3.2, 0.28, 0.8], [x, 0.78, z + side * 2.1], mat.wood)
+        bench.rotation.y = 0
+        colliders.push({ x, z: z + side * 2.1, r: 1.7, seatIds })
+        seatIds.forEach((id, index) => {
+          worldSeats.push({
+            id,
+            x: x + (index === 0 ? -0.82 : 0.82),
+            z: z + side * 2.1,
+            heading: side > 0 ? Math.PI : 0,
+            kind: 'bench',
+          })
+        })
+      }
+    }
+    restPavilion(-34, 35, mat.red)
+    restPavilion(34, 35, mat.redDark)
+    restPavilion(-34, 68, mat.wood)
+    restPavilion(34, 68, mat.red)
+
+    function landscapePond(x: number, z: number, radius: number) {
+      const bank = new THREE.Mesh(new THREE.CircleGeometry(radius + 1.4, 40), mat.stone)
+      bank.rotation.x = -Math.PI / 2
+      bank.scale.y = 0.62
+      bank.position.set(x, 0.035, z)
+      world.add(bank)
+      const water = new THREE.Mesh(
+        new THREE.CircleGeometry(radius, 40),
+        std('#438b9a', { metalness: 0.1, roughness: 0.22 }),
+      )
+      water.rotation.x = -Math.PI / 2
+      water.scale.y = 0.62
+      water.position.set(x, 0.075, z)
+      world.add(water)
+      for (let i = 0; i < 16; i++) {
+        const angle = (i / 16) * Math.PI * 2
+        const distance = radius * (0.3 + (i % 4) * 0.15)
+        const pad = new THREE.Mesh(new THREE.CircleGeometry(0.25 + (i % 3) * 0.12, 12), mat.leaf)
+        pad.rotation.x = -Math.PI / 2
+        pad.position.set(
+          x + Math.cos(angle) * distance,
+          0.11,
+          z + Math.sin(angle) * distance * 0.62,
+        )
+        world.add(pad)
+      }
+      for (const side of [-1, 1]) {
+        for (let i = -2; i <= 2; i++) {
+          const reedX = x + side * (radius - 0.4)
+          const reedZ = z + i * 0.8
+          cylinder(0.025, 0.035, 1.5 + (i % 2) * 0.25, 5, [reedX, 0.78, reedZ], mat.leafDark)
+        }
+      }
+    }
+    landscapePond(-51, 51, 8)
+    landscapePond(51, 51, 7.4)
+
+    // Perimeter woodland and inner groves hide the flat world edge and provide
+    // a continuous foreground/background layer from every temple.
+    for (let z = -18; z <= 98; z += 8) {
+      roundTree(-77 + rand() * 5, z + rand() * 3, 0.85 + rand() * 0.45)
+      roundTree(77 - rand() * 5, z + rand() * 3, 0.85 + rand() * 0.45)
+    }
+    for (let x = -68; x <= 68; x += 8) {
+      roundTree(x + rand() * 3, 98 - rand() * 5, 0.9 + rand() * 0.5)
+    }
+    for (const [cx, cz] of [
+      [-54, 30],
+      [54, 30],
+      [-18, 52],
+      [18, 52],
+      [-58, 74],
+      [58, 74],
+    ] as const) {
+      for (let i = 0; i < 7; i++) {
+        const angle = (i / 7) * Math.PI * 2
+        roundTree(
+          cx + Math.cos(angle) * (5 + rand() * 4),
+          cz + Math.sin(angle) * (4 + rand() * 3),
+          0.65 + rand() * 0.35,
+        )
+      }
+    }
+
+    // Instanced flowers, shrubs and rocks add close-range detail with only
+    // three draw calls. Keep paths and temple compounds clear for walking.
+    const isOpenGarden = (x: number, z: number) => {
+      if (Math.abs(x) < 8 || Math.abs(z - 14) < 7) return false
+      if (
+        TEMPLE_SITES.some(
+          (site) => Math.abs(x - site.center[0]) < 25 && Math.abs(z - site.center[1]) < 24,
+        )
+      )
+        return false
+      return true
+    }
+    const flowerCount = 460
+    const flowerMesh = new THREE.InstancedMesh(
+      new THREE.OctahedronGeometry(0.13, 0),
+      std('#ffffff', { roughness: 0.75 }),
+      flowerCount,
+    )
+    const flowerColors = ['#f2cf5b', '#ef9daf', '#f4eee0', '#a8cce9', '#d99ad8']
+    const flowerDummy = new THREE.Object3D()
+    let flowersPlaced = 0
+    let flowerAttempts = 0
+    while (flowersPlaced < flowerCount && flowerAttempts++ < 5000) {
+      const x = -72 + rand() * 144
+      const z = -6 + rand() * 100
+      if (!isOpenGarden(x, z)) continue
+      const scale = 0.65 + rand() * 0.85
+      flowerDummy.position.set(x, 0.22 + scale * 0.06, z)
+      flowerDummy.rotation.set(rand() * 0.3, rand() * Math.PI, rand() * 0.3)
+      flowerDummy.scale.setScalar(scale)
+      flowerDummy.updateMatrix()
+      flowerMesh.setMatrixAt(flowersPlaced, flowerDummy.matrix)
+      flowerMesh.setColorAt(
+        flowersPlaced,
+        new THREE.Color(flowerColors[flowersPlaced % flowerColors.length]),
+      )
+      flowersPlaced++
+    }
+    flowerMesh.count = flowersPlaced
+    flowerMesh.instanceMatrix.needsUpdate = true
+    if (flowerMesh.instanceColor) flowerMesh.instanceColor.needsUpdate = true
+    world.add(flowerMesh)
+
+    const shrubCount = 150
+    const shrubMesh = new THREE.InstancedMesh(
+      new THREE.IcosahedronGeometry(0.55, 1),
+      mat.leaf,
+      shrubCount,
+    )
+    const shrubDummy = new THREE.Object3D()
+    let shrubsPlaced = 0
+    let shrubAttempts = 0
+    while (shrubsPlaced < shrubCount && shrubAttempts++ < 3000) {
+      const x = -72 + rand() * 144
+      const z = 22 + rand() * 72
+      if (!isOpenGarden(x, z)) continue
+      const scale = 0.55 + rand() * 0.75
+      shrubDummy.position.set(x, scale * 0.45, z)
+      shrubDummy.rotation.y = rand() * Math.PI
+      shrubDummy.scale.set(scale, scale * 0.72, scale)
+      shrubDummy.updateMatrix()
+      shrubMesh.setMatrixAt(shrubsPlaced++, shrubDummy.matrix)
+    }
+    shrubMesh.count = shrubsPlaced
+    shrubMesh.instanceMatrix.needsUpdate = true
+    shrubMesh.castShadow = true
+    world.add(shrubMesh)
+
+    const rockCount = 54
+    const rockMesh = new THREE.InstancedMesh(
+      new THREE.DodecahedronGeometry(0.75, 0),
+      mat.darkStone,
+      rockCount,
+    )
+    const rockDummy = new THREE.Object3D()
+    for (let i = 0; i < rockCount; i++) {
+      const side = i % 2 === 0 ? -1 : 1
+      const x = side * (20 + rand() * 48)
+      const z = 24 + rand() * 70
+      const scale = 0.45 + rand() * 0.9
+      rockDummy.position.set(x, scale * 0.35, z)
+      rockDummy.rotation.set(rand(), rand() * Math.PI, rand() * 0.4)
+      rockDummy.scale.set(scale, scale * (0.55 + rand() * 0.3), scale)
+      rockDummy.updateMatrix()
+      rockMesh.setMatrixAt(i, rockDummy.matrix)
+      colliders.push({ x, z, r: Math.max(0.45, scale * 0.65) })
+    }
+    rockMesh.instanceMatrix.needsUpdate = true
+    rockMesh.castShadow = true
+    rockMesh.receiveShadow = true
+    world.add(rockMesh)
+
     // White stupa.
     cylinder(0.9, 1.1, 1.4, 12, [10, 0.7, -21.5], mat.wall)
     const dome = new THREE.Mesh(new THREE.SphereGeometry(0.85, 16, 10), mat.wall)
@@ -1088,15 +1650,81 @@ export default function TempleScene({
     spire.position.set(10, 3.2, -21.5)
     world.add(dome, spire)
 
-    // Distant hazy mountains and clouds.
-    for (let i = 0; i < 16; i++) {
-      const angle = Math.PI * (0.02 + (i / 15) * 0.96)
-      const radius = 150 + rand() * 30
+    // A dense 360-degree scenic belt sits outside the playable bounds. It is
+    // especially important beside the east/west temples, where looking away
+    // from the central path previously exposed an empty grass horizon.
+    const backdropTreeCount = 280
+    const backdropTrunks = new THREE.InstancedMesh(
+      new THREE.CylinderGeometry(0.32, 0.52, 1, 7),
+      mat.trunk,
+      backdropTreeCount,
+    )
+    const backdropCrowns = new THREE.InstancedMesh(
+      new THREE.IcosahedronGeometry(1, 1),
+      std('#ffffff', { flatShading: true }),
+      backdropTreeCount,
+    )
+    const backdropDummy = new THREE.Object3D()
+    const backdropColors = ['#315f2d', '#3e7132', '#4c8138', '#5b8c40']
+    for (let i = 0; i < backdropTreeCount; i++) {
+      const verticalSide = i < 160
+      const side = i % 2 === 0 ? -1 : 1
+      const x = verticalSide ? side * (91 + rand() * 25) : -102 + rand() * 204
+      const z = verticalSide ? -34 + rand() * 168 : side < 0 ? -38 - rand() * 18 : 112 + rand() * 24
+      const height = 5.5 + rand() * 8
+      backdropDummy.position.set(x, height / 2, z)
+      backdropDummy.rotation.set(0, rand() * Math.PI, 0)
+      backdropDummy.scale.set(0.8 + rand() * 0.7, height, 0.8 + rand() * 0.7)
+      backdropDummy.updateMatrix()
+      backdropTrunks.setMatrixAt(i, backdropDummy.matrix)
+
+      const crownWidth = 2.5 + rand() * 2.8
+      backdropDummy.position.set(
+        x + (rand() - 0.5) * 1.8,
+        height + crownWidth * 0.55,
+        z + (rand() - 0.5) * 1.8,
+      )
+      backdropDummy.rotation.set(rand() * 0.25, rand() * Math.PI, rand() * 0.18)
+      backdropDummy.scale.set(crownWidth, crownWidth * (0.75 + rand() * 0.25), crownWidth)
+      backdropDummy.updateMatrix()
+      backdropCrowns.setMatrixAt(i, backdropDummy.matrix)
+      backdropCrowns.setColorAt(i, new THREE.Color(backdropColors[i % backdropColors.length]))
+    }
+    backdropTrunks.instanceMatrix.needsUpdate = true
+    backdropCrowns.instanceMatrix.needsUpdate = true
+    if (backdropCrowns.instanceColor) backdropCrowns.instanceColor.needsUpdate = true
+    world.add(backdropTrunks, backdropCrowns)
+
+    // Low wooded hills bridge the visual gap between the tree belt and the
+    // distant mountains, preventing a straight, empty horizon line.
+    const hillMaterials = [
+      std('#668455', { flatShading: true }),
+      std('#728e60', { flatShading: true }),
+      std('#58754d', { flatShading: true }),
+    ]
+    for (let i = 0; i < 32; i++) {
+      const angle = (i / 32) * Math.PI * 2 + rand() * 0.12
+      const radiusX = 118 + rand() * 22
+      const radiusZ = 104 + rand() * 24
+      const hill = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2), hillMaterials[i % 3])
+      const width = 13 + rand() * 16
+      hill.scale.set(width, 5 + rand() * 7, width * (0.7 + rand() * 0.35))
+      hill.position.set(Math.cos(angle) * radiusX, 1.5, 38 + Math.sin(angle) * radiusZ)
+      hill.rotation.y = rand() * Math.PI
+      hill.receiveShadow = true
+      world.add(hill)
+    }
+
+    // Distant hazy mountains and clouds now wrap the entire world, rather than
+    // occupying only the original temple's rear hemisphere.
+    for (let i = 0; i < 30; i++) {
+      const angle = (i / 30) * Math.PI * 2 + rand() * 0.08
+      const radius = 164 + rand() * 28
       const mountain = new THREE.Mesh(
-        new THREE.ConeGeometry(30 + rand() * 25, 28 + rand() * 26, 6),
+        new THREE.ConeGeometry(22 + rand() * 27, 24 + rand() * 34, 6),
         mat.mountain,
       )
-      mountain.position.set(Math.cos(angle) * radius, 10, -Math.sin(angle) * radius + 10)
+      mountain.position.set(Math.cos(angle) * radius, 8, 38 + Math.sin(angle) * radius)
       mountain.rotation.y = rand() * Math.PI
       world.add(mountain)
     }
@@ -1114,7 +1742,7 @@ export default function TempleScene({
         ctx.fillRect(0, 0, 128, 64)
       }
     })
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 26; i++) {
       const cloud = new THREE.Sprite(
         new THREE.SpriteMaterial({
           map: cloudTexture,
@@ -1123,10 +1751,10 @@ export default function TempleScene({
           depthWrite: false,
         }),
       )
-      const angle = Math.PI * (rand() * 1.2 - 0.1)
-      const radius = 170 + rand() * 40
-      cloud.position.set(Math.cos(angle) * radius, 45 + rand() * 40, -Math.sin(angle) * radius)
-      cloud.scale.set(60 + rand() * 40, 26 + rand() * 12, 1)
+      const angle = rand() * Math.PI * 2
+      const radius = 130 + rand() * 70
+      cloud.position.set(Math.cos(angle) * radius, 32 + rand() * 42, 38 + Math.sin(angle) * radius)
+      cloud.scale.set(48 + rand() * 52, 22 + rand() * 14, 1)
       world.add(cloud)
     }
 
@@ -1161,8 +1789,6 @@ export default function TempleScene({
       robe: THREE.MeshStandardMaterial
       pose: Pose
       phase: number
-      isWalking?: boolean
-      action?: { kind: 'bow' | 'knock'; start: number; duration: number }
     }
     const skin = std('#e2bb92', { roughness: 0.62 })
     const trim = std('#f3eee3')
@@ -1307,37 +1933,73 @@ export default function TempleScene({
       }
     }
 
-    const initialSeatNo = (window as any).currentUserProfile?.assignedSeatNo
-    const initialSeat = initialSeatNo ? SEATS.find((s) => s.no === initialSeatNo) : null
-    const spawnX = initialSeat ? initialSeat.x : 0
-    const spawnZ = initialSeat ? initialSeat.z : -3.0
-    const spawnPose: Pose = initialSeat ? 'sit' : 'stand'
-
-    const player = character(spawnX, spawnZ, ROBE_COLORS[themeRef.current] ?? ROBE_COLORS.xanh, spawnPose, 0)
-    if (initialSeat) {
-      player.group.rotation.set(0, Math.PI, 0)
-    }
-    const rigs = [player]
-
-    type ResidentAgent = {
-      resident: Resident
+    type Wanderer = {
+      id: string
+      name: string
       rig: CharacterRig
-      labelIndex: number
-      mode: 'patrol' | 'bell' | 'meditate'
-      waypoints?: { x: number; z: number }[]
-      wpIndex: number
-      state: 'walking' | 'pausing' | 'acting'
-      pauseUntil: number
+      points: THREE.Vector2[]
+      point: number
+      wait: number
       speed: number
-      heading: number
-      bellStage?: 'home' | 'to_bell' | 'at_bell' | 'return'
-      nextActionTime: number
-      homeSeat?: { x: number; z: number; no: number }
-      altarStep?: 'sitting' | 'to_altar' | 'offering' | 'return'
+      mode: 'walking' | 'going-to-seat' | 'sitting'
+      targetSeatId: number | null
+      occupiedSeatId: number | null
+    }
+    const wanderers: Wanderer[] = []
+    const worldTourPoints: [number, number][] = [
+      [0, 14],
+      [-30, 14],
+      [-62, 14],
+      [-42, 14],
+      [-20, 14],
+      [0, 14],
+      [30, 14],
+      [62, 14],
+      [42, 14],
+      [20, 14],
+      [0, 28],
+      [-34, 35],
+      [0, 36],
+      [34, 35],
+      [0, 48],
+      [-34, 68],
+      [0, 70],
+      [34, 68],
+      [0, 84],
+      [0, 70],
+      [0, 48],
+      [0, 36],
+    ]
+    let nextWandererIdx = 0
+    const addWanderer = (rig: CharacterRig, points: [number, number][], offset = 0, name?: string) => {
+      const tour = offset % 2 === 0 ? worldTourPoints : [...worldTourPoints].reverse()
+      const itinerary = [...points, ...tour].map(([x, z]) => new THREE.Vector2(x, z))
+      const nearestPoint = itinerary.reduce(
+        (nearest, point, index) => {
+          const distance = point.distanceToSquared(
+            new THREE.Vector2(rig.group.position.x, rig.group.position.z),
+          )
+          return distance < nearest.distance ? { index, distance } : nearest
+        },
+        { index: 0, distance: Number.POSITIVE_INFINITY },
+      ).index
+      nextWandererIdx++
+      wanderers.push({
+        id: `npc-wanderer-${nextWandererIdx}`,
+        name: name || `Thiện hữu ${nextWandererIdx}`,
+        rig,
+        points: itinerary,
+        point: (nearestPoint + offset) % itinerary.length,
+        wait: rand() * 2,
+        speed: 0.9 + rand() * 0.65,
+        mode: 'walking',
+        targetSeatId: null,
+        occupiedSeatId: null,
+      })
     }
 
-    const residentAgents: ResidentAgent[] = []
-
+    const player = character(0, 17, ROBE_COLORS[themeRef.current] ?? ROBE_COLORS.xanh, 'stand', 0)
+    const rigs = [player]
     RESIDENTS.forEach((resident, index) => {
       const rig = character(
         resident.x,
@@ -1348,329 +2010,140 @@ export default function TempleScene({
       )
       rig.group.lookAt(resident.face[0], 0, resident.face[1])
       rigs.push(rig)
-
-      let agent: ResidentAgent
-      if (resident.id === 'phuc-an-nhien') {
-        agent = {
-          resident,
-          rig,
-          labelIndex: index + 1,
-          mode: 'patrol',
-          waypoints: [
-            { x: 1.25, z: 14.4 },
-            { x: 4.2, z: 8.5 },
-            { x: 5.0, z: 2.5 },
-            { x: 0.0, z: 1.5 },
-            { x: -5.0, z: 2.5 },
-            { x: -4.2, z: 8.5 },
-          ],
-          wpIndex: 0,
-          state: 'pausing',
-          pauseUntil: 3.0,
-          speed: 1.35,
-          heading: Math.PI,
-          nextActionTime: 6.0,
-        }
-      } else if (resident.id === 'tam-an') {
-        agent = {
-          resident,
-          rig,
-          labelIndex: index + 1,
-          mode: 'patrol',
-          waypoints: [
-            { x: -1.7, z: 13.4 },
-            { x: -6.2, z: 10.5 },
-            { x: -9.5, z: 5.0 },
-            { x: -6.5, z: 0.8 },
-            { x: -2.8, z: 6.0 },
-          ],
-          wpIndex: 0,
-          state: 'pausing',
-          pauseUntil: 5.0,
-          speed: 1.25,
-          heading: Math.PI,
-          nextActionTime: 8.0,
-        }
-      } else if (resident.id === 'minh-tam') {
-        agent = {
-          resident,
-          rig,
-          labelIndex: index + 1,
-          mode: 'bell',
-          waypoints: [
-            { x: 13.2, z: 5.6 },
-            { x: 13.5, z: 1.0 },
-            { x: 14.0, z: -2.0 },
-          ],
-          wpIndex: 0,
-          state: 'pausing',
-          pauseUntil: 6.0,
-          speed: 1.4,
-          heading: Math.PI,
-          bellStage: 'home',
-          nextActionTime: 10.0,
-        }
-      } else {
-        // Meditating monks: an-hien, dao-dao, tu-be
-        agent = {
-          resident,
-          rig,
-          labelIndex: index + 1,
-          mode: 'meditate',
-          wpIndex: 0,
-          state: 'pausing',
-          pauseUntil: 0,
-          speed: 1.2,
-          heading: Math.PI,
-          homeSeat: { x: resident.x, z: resident.z, no: index },
-          nextActionTime: 8 + index * 6,
-          altarStep: 'sitting',
-        }
+      if (resident.pose === 'stand') {
+        const route =
+          index === 0
+            ? ([
+                [1, 14],
+                [0, 22],
+                [0, 14],
+                [-18, 14],
+                [-32, 14],
+                [-18, 14],
+              ] as [number, number][])
+            : index === 1
+              ? ([
+                  [-2, 13],
+                  [0, 14],
+                  [20, 14],
+                  [38, 14],
+                  [20, 14],
+                  [0, 14],
+                ] as [number, number][])
+              : ([
+                  [13, 6],
+                  [20, 14],
+                  [40, 14],
+                  [20, 14],
+                  [10, 10],
+                ] as [number, number][])
+        addWanderer(rig, route, index)
       }
-      residentAgents.push(agent)
     })
-    robeRef.current = (color) => player.robe.color.set(color)
-    const clock = new THREE.Clock()
 
-    // Remote devotees synchronization (Supabase Realtime Presence).
-    type RemoteDevoteeEntity = {
-      id: string
-      name: string
-      dharmaName: string
-      seatNo: number | null
-      rig: CharacterRig
-      label: HTMLDivElement
-      targetX: number
-      targetZ: number
-      targetHeading: number
-      targetPose: Pose
-      isWalking: boolean
-      lastUpdate: number
-      robeTheme?: string
-      robeColor?: string
-    }
-    const remoteEntities = new Map<string, RemoteDevoteeEntity>()
-    const PALETTE = ['#3b72b8', '#7a4b33', '#c08a35', '#7a8288', '#9a3f33', '#b27a3c', '#5a6b7c', '#8c5e3d']
-
-    const syncRemoteDevotees = (devoteeList: any[]) => {
-      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
-      const currentIds = new Set<string>()
-
-      if (Array.isArray(devoteeList)) {
-        devoteeList.forEach((d) => {
-          const clientId = String(d.id || d.clientId || '')
-          if (!clientId || clientId === myId) return
-          currentIds.add(clientId)
-
-          const devoteeName = d.name || d.fullName || 'Đồng Tu'
-          const dharmaName = d.dharma || d.dharmaName || 'Tịnh Niệm'
-          const rawSeat = typeof d.seatNo === 'number' ? d.seatNo : d.assignedSeatNo
-          const seatNo = rawSeat ? Number(rawSeat) : null
-
-          const remoteTheme = d.robeTheme || d.theme || 'xanh'
-          const remoteColor = resolveRobeColor(remoteTheme, d.robeColor)
-
-          if (remoteEntities.has(clientId)) {
-            const entity = remoteEntities.get(clientId)!
-            if (entity.robeColor !== remoteColor) {
-              entity.robeTheme = remoteTheme
-              entity.robeColor = remoteColor
-              entity.rig.robe.color.set(remoteColor)
-            }
-            const isRecentLive = (performance.now() - entity.lastUpdate) < 6000 || entity.isWalking || entity.seatNo === null
-            if (!isRecentLive && entity.seatNo !== seatNo && seatNo !== null) {
-              entity.seatNo = seatNo
-              if (seatNo && SEATS.find((s) => s.no === seatNo)) {
-                const s = SEATS.find((s) => s.no === seatNo)!
-                entity.targetX = s.x
-                entity.targetZ = s.z
-                entity.targetHeading = Math.PI
-                entity.targetPose = 'sit'
-              }
-              entity.label.innerHTML = `<strong>${devoteeName}<span class="scene-label__level">Bồ đoàn #${seatNo || 'Sân'}</span></strong><small>${dharmaName}</small>`
-            }
-          } else {
-            let x = 0
-            let z = 0
-            let pose: Pose = 'stand'
-            if (seatNo && SEATS.find((s) => s.no === seatNo)) {
-              const s = SEATS.find((s) => s.no === seatNo)!
-              x = s.x
-              z = s.z
-              pose = 'sit'
-            } else if (typeof d.x === 'number' && typeof d.z === 'number') {
-              x = d.x
-              z = d.z
-              pose = d.pose || 'stand'
-            } else {
-              let hash = 0
-              for (let i = 0; i < clientId.length; i++) hash = (hash * 31 + clientId.charCodeAt(i)) & 0xfffff
-              x = ((hash % 11) - 5) * 1.6
-              z = 2 + (hash % 7) * 1.4
-            }
-            const rig = character(x, z, remoteColor, pose, Math.random() * 2)
-            if (pose === 'sit') {
-              rig.group.rotation.set(0, Math.PI, 0)
-            } else {
-              rig.group.lookAt(x, 0, -20)
-            }
-            rigs.push(rig)
-
-            const label = document.createElement('div')
-            label.className = 'scene-label scene-label--remote'
-            label.innerHTML = `<strong>${devoteeName}<span class="scene-label__level">Bồ đoàn #${seatNo || 'Sân'}</span></strong><small>${dharmaName}</small>`
-            labelsContainerRef.current?.appendChild(label)
-
-            remoteEntities.set(clientId, {
-              id: clientId,
-              name: devoteeName,
-              dharmaName,
-              seatNo,
-              rig,
-              label,
-              targetX: x,
-              targetZ: z,
-              targetHeading: pose === 'sit' ? Math.PI : Math.atan2(0 - x, -20 - z),
-              targetPose: pose,
-              isWalking: false,
-              lastUpdate: performance.now(),
-              robeTheme: remoteTheme,
-              robeColor: remoteColor,
-            })
-          }
-        })
-      }
-
-      remoteEntities.forEach((entity, clientId) => {
-        const isRecentLive = (performance.now() - entity.lastUpdate) < 6000 || entity.isWalking
-        if (!currentIds.has(clientId) && !isRecentLive) {
-          world.remove(entity.rig.group)
-          const idx = rigs.indexOf(entity.rig)
-          if (idx !== -1) rigs.splice(idx, 1)
-          if (entity.label.parentNode) {
-            entity.label.parentNode.removeChild(entity.label)
-          }
-          remoteEntities.delete(clientId)
-        }
-      })
-    }
-
-
-    // Listen to real-time movements, walking & actions from remote devotees
-    (window as any).handleRemoteDevoteeWalking = (payload: any) => {
-      if (!payload) return
-      const clientId = String(payload.senderId || payload.clientId || '')
-      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
-      if (!clientId || clientId === myId) return
-
-      let entity = remoteEntities.get(clientId)
-      if (!entity) {
-        const devoteeName = payload.senderName || payload.name || payload.fullName || 'Đồng Tu'
-        const dharmaName = payload.dharmaName || payload.dharma || 'Tịnh Tâm'
-        const rawSeat = typeof payload.seatNo === 'number' ? payload.seatNo : null
-        let spawnX = typeof payload.x === 'number' ? payload.x : 0
-        let spawnZ = typeof payload.z === 'number' ? payload.z : 0
-        const pose: Pose = payload.pose || (rawSeat ? 'sit' : 'stand')
-
-        if (rawSeat && SEATS.find((s) => s.no === rawSeat) && typeof payload.x !== 'number') {
-          const s = SEATS.find((s) => s.no === rawSeat)!
-          spawnX = s.x
-          spawnZ = s.z
-        }
-
-        const remoteTheme = payload.theme || payload.robeTheme || 'xanh'
-        const remoteColor = resolveRobeColor(remoteTheme, payload.robeColor)
-        const rig = character(spawnX, spawnZ, remoteColor, pose, Math.random() * 2)
-        if (typeof payload.heading === 'number') {
-          rig.group.rotation.set(0, payload.heading, 0)
-        } else if (pose === 'sit') {
-          rig.group.rotation.set(0, Math.PI, 0)
-        }
+    // Populate every temple and the central plaza so distant areas feel as
+    // inhabited as Yên Phúc. Seated visitors align with the shared cushion rows.
+    const crowdColors = ['#77838a', '#9a6648', '#c08a35', '#4976ad', '#8c5260', '#e6e0d4']
+    let crowdPhase = RESIDENTS.length + 1
+    for (const site of TEMPLE_SITES.filter((item) => item.kind === 'temple' && item.id !== 1)) {
+      const [x, z] = site.center
+      const offsets: [number, number, Pose][] = [
+        [-10.1, 9, 'sit'],
+        [10.1, 9, 'sit'],
+        [-5.4, 12.15, 'sit'],
+        [-6.8, 18.2, 'stand'],
+        [6.8, 18.2, 'stand'],
+      ]
+      offsets.forEach(([dx, dz, pose], index) => {
+        const rig = character(
+          x + dx,
+          z + dz,
+          crowdColors[(site.id * 2 + index) % crowdColors.length],
+          pose,
+          crowdPhase++ * 0.73,
+        )
+        rig.group.lookAt(x, 0, z - 4)
         rigs.push(rig)
-
-        const label = document.createElement('div')
-        label.className = 'scene-label scene-label--remote'
-        label.innerHTML = `<strong>${devoteeName}<span class="scene-label__level">Bồ đoàn #${rawSeat || 'Sân'}</span></strong><small>${dharmaName}</small>`
-        labelsContainerRef.current?.appendChild(label)
-
-        entity = {
-          id: clientId,
-          name: devoteeName,
-          dharmaName,
-          seatNo: rawSeat,
-          rig,
-          label,
-          targetX: spawnX,
-          targetZ: spawnZ,
-          targetHeading: typeof payload.heading === 'number' ? payload.heading : rig.group.rotation.y,
-          targetPose: pose,
-          isWalking: Boolean(payload.walking),
-          lastUpdate: performance.now(),
-        }
-        remoteEntities.set(clientId, entity)
-      } else {
-        if (payload.theme || payload.robeColor) {
-          const col = payload.robeColor || ROBE_COLORS[payload.theme] || ROBE_COLORS.xanh
-          if (entity.robeColor !== col) {
-            entity.robeTheme = payload.theme
-            entity.robeColor = col
-            entity.rig.robe.color.set(col)
-          }
-        }
-        if (typeof payload.x === 'number') entity.targetX = payload.x
-        if (typeof payload.z === 'number') entity.targetZ = payload.z
-        if (typeof payload.heading === 'number') entity.targetHeading = payload.heading
-        if (payload.pose) entity.targetPose = payload.pose
-        entity.isWalking = Boolean(payload.walking)
-        entity.lastUpdate = performance.now()
-
-        if (payload.seatNo !== undefined && entity.seatNo !== payload.seatNo) {
-          entity.seatNo = payload.seatNo
-          entity.label.innerHTML = `<strong>${entity.name}<span class="scene-label__level">Bồ đoàn #${payload.seatNo || 'Sân'}</span></strong><small>${entity.dharmaName}</small>`
-        }
-
-        // Also reflect in activeDevotees so polling does not overwrite
-        if ((window as any).SupabaseSanctuary?.activeDevotees?.has(clientId)) {
-          const d = (window as any).SupabaseSanctuary.activeDevotees.get(clientId)
-          if (d) {
-            d.seatNo = payload.seatNo
-            d.x = payload.x
-            d.z = payload.z
-            d.pose = payload.pose
-            d.walking = payload.walking
-          }
-        }
-        if (payload.action === 'bow' || payload.action === 'offer') {
-          entity.rig.action = {
-            kind: 'bow',
-            start: clock.elapsedTime,
-            duration: payload.action === 'offer' ? 2.8 : 2.6,
-          }
-        }
-      }
-    }
-    const triggerAction = (target: string | number | undefined, kind: 'bow' | 'knock') => {
-      if (!target) return
-      let targetSeat: number | null = null
-      let targetClientId: string | null = null
-      if (typeof target === 'number') {
-        targetSeat = target
-      } else if (typeof target === 'string') {
-        if (target.startsWith('seat-')) {
-          targetSeat = parseInt(target.replace('seat-', ''), 10)
-        } else {
-          targetClientId = target
-        }
-      }
-      remoteEntities.forEach((entity) => {
-        if ((targetClientId && entity.id === targetClientId) || (targetSeat && entity.seatNo === targetSeat)) {
-          entity.rig.action = { kind, start: clock.elapsedTime, duration: kind === 'bow' ? 2.6 : 1.0 }
+        if (pose === 'stand') {
+          const path: [number, number][] =
+            site.id === 4
+              ? index === 4
+                ? [
+                    [x + dx, z + dz],
+                    [0, 84],
+                    [0, 58],
+                    [0, 36],
+                    [0, 14],
+                    [0, 2],
+                    [0, 14],
+                    [0, 36],
+                    [0, 58],
+                    [0, 84],
+                  ]
+                : [
+                    [x + dx, z + dz],
+                    [x, z + 14],
+                    [0, 58],
+                    [0, 46],
+                    [0, 36],
+                    [0, 46],
+                    [0, 58],
+                    [x, z + 14],
+                  ]
+              : index === 4
+                ? [
+                    [x + dx, z + dz],
+                    [x, z + 14],
+                    [x / 2, 14],
+                    [0, 14],
+                    [-x / 2, 14],
+                    [-x, 14],
+                    [-x / 2, 14],
+                    [0, 14],
+                    [x / 2, 14],
+                    [x, z + 14],
+                  ]
+                : [
+                    [x + dx, z + dz],
+                    [x, z + 14],
+                    [x / 2, 14],
+                    [0, 14],
+                    [0, 28],
+                    [0, 36],
+                    [0, 28],
+                    [0, 14],
+                    [x / 2, 14],
+                    [x, z + 14],
+                  ]
+          addWanderer(rig, path, index)
         }
       })
     }
-
-    ;(window as any).triggerDevoteeBow = (target?: string | number) => triggerAction(target, 'bow')
-    ;(window as any).triggerDevoteeKnock = (target?: string | number) => triggerAction(target, 'knock')
+    {
+      const [x, z] = templeSiteById(5).center
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2 + 0.3
+        const radius = i % 2 ? 9 : 13
+        const px = x + Math.cos(angle) * radius
+        const pz = z + Math.sin(angle) * radius
+        const rig = character(
+          px,
+          pz,
+          crowdColors[(i + 2) % crowdColors.length],
+          'stand',
+          crowdPhase++ * 0.73,
+        )
+        rig.group.lookAt(x, 0, z)
+        rigs.push(rig)
+        const loop: [number, number][] = Array.from({ length: 10 }, (_, point) => {
+          const loopAngle = (point / 10) * Math.PI * 2
+          return [x + Math.cos(loopAngle) * 14, z + Math.sin(loopAngle) * 14]
+        })
+        addWanderer(rig, loop, i)
+      }
+    }
+    const activeWanderingRigs = new Set<CharacterRig>()
+    robeRef.current = (color) => player.robe.color.set(color)
 
     // Incense smoke drifting up from the altar urn.
     const smokeTexture = canvasTexture(64, 64, (ctx) => {
@@ -1695,32 +2168,43 @@ export default function TempleScene({
       return sprite
     })
     let incenseUntil = 0
+    const incenseSource = new THREE.Vector2(0, -6.4)
     let bellStart = -100
+    let activeBellSite = 1
 
     // Player behaviour: free walking, scripted routes, sitting and rituals.
     type Action = { kind: 'offer' | 'bow'; start: number; duration: number; done?: () => void }
     let route: THREE.Vector2[] = []
     let onArrive: (() => void) | null = null
     let action: Action | null = null
-    let seated: number | null = initialSeat ? initialSeat.no : null
-    let thresholdBowDone = false
+    let seated: number | null = null
+    let targetSeatId: number | null = null
+    let lastSiteCheck = 0
+    let lastReportedSiteId = siteId
     const laneZ = SEAT_LANE_Z
-    const lastBroadcastPos = {
-      x: spawnX,
-      z: spawnZ,
-      heading: initialSeat ? Math.PI : Math.PI,
-      walking: false,
-      pose: spawnPose,
-      seatNo: seated,
-      time: 0,
-    }
-    ;(window as any).lastPlayerPos = lastBroadcastPos
+    const nearestTemple = () =>
+      TEMPLE_SITES.filter((site) => site.kind === 'temple').reduce((nearest, site) => {
+        const nearestDistance = Math.hypot(
+          player.group.position.x - nearest.center[0],
+          player.group.position.z - nearest.center[1],
+        )
+        const siteDistance = Math.hypot(
+          player.group.position.x - site.center[0],
+          player.group.position.z - site.center[1],
+        )
+        return siteDistance < nearestDistance ? site : nearest
+      })
 
     const setSeated = (seat: number | null) => {
+      if (seat === null) {
+        targetSeatId = null
+        player.group.position.y = 0
+      }
       if (seated === seat) return
       seated = seat
       player.pose = seat === null ? 'stand' : 'sit'
-      seatCallbackRef.current?.(seat)
+      const displaySeat = seat !== null && seat >= 100 && seat < 500 ? ((seat - 1) % 100) + 1 : seat
+      seatCallbackRef.current?.(displaySeat)
     }
     // Walk via the central path and the lane in front of the cushions so the
     // player never cuts through lamps, bonsai or seated practitioners.
@@ -1747,34 +2231,93 @@ export default function TempleScene({
       points.push(v(targetX, targetZ))
       return points
     }
-    const sit = (seatNo: number) => {
-      const seat = SEATS.find((item) => item.no === seatNo)
-      if (!seat || seated === seatNo) return
+    const sitAt = (seat: ManagedSeat) => {
+      if (seated === seat.id) return true
+      if (!seatManager.reserve(seat.id, 'player', 'player')) return false
       action = null
-      setSeated(null)
-      route = planRoute(seat.x, seat.z, true)
-      onArrive = () => {
-        player.group.position.set(seat.x, 0, seat.z)
-        heading = Math.PI
-        setSeated(seatNo)
+      if (seated !== null) {
+        seatManager.release(seated, 'player')
+        setSeated(null)
       }
+      targetSeatId = seat.id
+      const site = nearestTemple()
+      route =
+        site.id === 1 && seat.id < 100
+          ? planRoute(seat.x, seat.z, true)
+          : [new THREE.Vector2(seat.x, seat.z)]
+      onArrive = () => {
+        seatManager.occupy(seat.id, 'player', 'player')
+        player.group.position.set(seat.x, seat.type === 'bench' ? 0.68 : 0, seat.z)
+        heading = seat.heading
+        player.group.rotation.y = seat.heading
+        player.pose = 'sit'
+        targetSeatId = null
+        setSeated(seat.id)
+      }
+      return true
+    }
+    const isOccupied = (seatId: number) => !seatManager.isAvailable(seatId, 'player')
+    const sit = (seatNo: number) => {
+      const site = nearestTemple()
+      const seatId =
+        seatNo >= 500
+          ? seatNo
+          : seatNo <= SEATS.length && site.id !== 1
+            ? site.id * 100 + seatNo
+            : seatNo
+      const seat = seatManager.getSeat(seatId)
+      if (seat && !isOccupied(seat.id)) return sitAt(seat)
+      return false
+    }
+    const sitNearest = () => {
+      const seat = seatManager.getNearestAvailable(
+        player.group.position.x,
+        player.group.position.z,
+        10,
+        'player',
+      )
+      if (!seat) return false
+      return sitAt(seat)
+    }
+    const hasNearestSeat = () => {
+      const seat = seatManager.getNearestAvailable(
+        player.group.position.x,
+        player.group.position.z,
+        10,
+        'player',
+      )
+      return Boolean(seat)
     }
     const api: SceneApi = {
       sit,
+      sitNearest,
+      hasNearestSeat,
       stand: () => {
+        if (targetSeatId !== null) {
+          seatManager.release(targetSeatId, 'player')
+          targetSeatId = null
+        }
         route = []
         onArrive = null
         action = null
         if (seated !== null) {
+          seatManager.release(seated, 'player')
+          player.group.position.x += Math.sin(heading) * 0.75
+          player.group.position.z += Math.cos(heading) * 0.75
+          player.group.position.y = 0
+          player.pose = 'stand'
           setSeated(null)
-          player.group.position.z += 0.75
         }
       },
       offerIncense: (onOffered) => {
         const returnSeat = seated
+        const site = nearestTemple()
+        const targetX = site.center[0]
+        const targetZ = site.id === 1 ? -5 : site.center[1] + 6.35
         action = null
         setSeated(null)
-        route = planRoute(0, -5.0, false)
+        route =
+          site.id === 1 ? planRoute(targetX, targetZ, false) : [new THREE.Vector2(targetX, targetZ)]
         onArrive = () => {
           heading = Math.PI
           action = {
@@ -1783,63 +2326,39 @@ export default function TempleScene({
             duration: 2.8,
             done: () => {
               incenseUntil = clock.elapsedTime + 25
-              // Bow toward the altar after placing the incense, then return.
-              action = {
-                kind: 'bow',
-                start: clock.elapsedTime,
-                duration: 2.4,
-                done: () => {
-                  onOffered()
-                  if (returnSeat !== null) sit(returnSeat)
-                },
-              }
+              incenseSource.set(site.center[0], site.id === 1 ? -6.4 : site.center[1] + 5)
+              onOffered()
+              if (returnSeat !== null) sit(returnSeat)
             },
           }
         }
       },
       bow: () => {
         if (route.length) return
-        const pos = player.group.position
-        // 1. Nếu đang ngồi bồ đoàn: luôn quay mặt về phía chánh điện (Math.PI) để đảnh lễ
-        if (seated !== null) {
-          heading = Math.PI
-          player.group.rotation.y = Math.PI
-          action = { kind: 'bow', start: clock.elapsedTime, duration: 2.6 }
-          return
-        }
-
-        // 2. Nếu đang đứng trước lư thắp hương [0, -5.0] (trong phạm vi 2.2m)
-        const distToIncense = Math.hypot(pos.x - 0, pos.z - (-5.0))
-        if (distToIncense < 2.2) {
-          heading = Math.PI
-          player.group.rotation.y = Math.PI
-          action = { kind: 'bow', start: clock.elapsedTime, duration: 2.6 }
-          return
-        }
-
-        // 3. Nếu đang đi đứng nơi khác: tự động điều hướng về bồ đoàn đã chỉ định để an tọa trang nghiêm và đảnh lễ
-        const targetSeat = (window as any).currentUserProfile?.assignedSeatNo || 1
-        sit(targetSeat)
-        const origOnArrive = onArrive
-        onArrive = () => {
-          if (origOnArrive) origOnArrive()
-          heading = Math.PI
-          player.group.rotation.y = Math.PI
-          action = { kind: 'bow', start: clock.elapsedTime, duration: 2.6 }
-        }
+        action = { kind: 'bow', start: clock.elapsedTime, duration: 2.6 }
       },
       ringBell: () => {
-        if (route.length) return
-        heading = Math.PI
-        player.group.rotation.y = Math.PI
-        action = {
-          kind: 'bow',
-          start: clock.elapsedTime,
-          duration: 2.2,
-          done: () => {
-            bellStart = clock.elapsedTime
-          },
+        activeBellSite = nearestTemple().id
+        bellStart = clock.elapsedTime
+      },
+      travelTo: (siteId) => {
+        const site = templeSiteById(siteId)
+        if (targetSeatId !== null) {
+          seatManager.release(targetSeatId, 'player')
+          targetSeatId = null
         }
+        if (seated !== null) {
+          seatManager.release(seated, 'player')
+        }
+        route = []
+        onArrive = null
+        action = null
+        setSeated(null)
+        player.group.position.set(site.spawn[0], 0, site.spawn[1])
+        player.group.position.y = 0
+        player.pose = 'stand'
+        heading = Math.PI
+        firstFrame = true
       },
       setMove: (x, y) => {
         stick.x = x
@@ -1904,99 +2423,10 @@ export default function TempleScene({
     renderer.domElement.addEventListener('pointerup', onPointerUp)
     renderer.domElement.addEventListener('wheel', onWheel, { passive: true })
 
-    // 3D Speech bubbles system for communal chat messages
-    type SpeechBubble = {
-      id: string
-      targetRig: CharacterRig
-      element: HTMLDivElement
-      expiresAt: number
-    }
-    const speechBubbles = new Map<string, SpeechBubble>()
-
-    const showSpeechBubble = (targetRig: CharacterRig, authorName: string, text: string) => {
-      if (!labelsContainerRef.current) return
-      const key = String(targetRig.group.id)
-      let bubble = speechBubbles.get(key)
-      if (!bubble) {
-        const el = document.createElement('div')
-        el.className = 'scene-speech-bubble'
-        labelsContainerRef.current.appendChild(el)
-        bubble = {
-          id: key,
-          targetRig,
-          element: el,
-          expiresAt: clock.elapsedTime + 5,
-        }
-        speechBubbles.set(key, bubble)
-      }
-      bubble.expiresAt = clock.elapsedTime + 5
-      // User chat is untrusted: build text nodes instead of assigning innerHTML.
-      bubble.element.replaceChildren()
-      const tail = document.createElement('span')
-      tail.className = 'bubble-tail'
-      const author = document.createElement('strong')
-      author.className = 'bubble-author'
-      author.textContent = `${authorName}:`
-      const content = document.createElement('span')
-      content.textContent = ` ${text}`
-      bubble.element.append(tail, author, content)
-      bubble.element.style.opacity = '1'
-    }
-
-    const onIncomingChatMessage = (event: any) => {
-      const msg = event.detail
-      if (!msg) return
-      const text = (msg.text || msg.body || '').trim()
-      if (!text) return
-      const senderId = String(msg.senderId || msg.clientId || '')
-      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
-      const authorName = msg.name || msg.author || msg.fullName || 'Đồng Tu'
-
-      if (msg.isSelf || senderId === myId || authorName === playerName) {
-        showSpeechBubble(player, playerName, text)
-      } else if (senderId && remoteEntities.has(senderId)) {
-        const ent = remoteEntities.get(senderId)!
-        showSpeechBubble(ent.rig, ent.name, text)
-      } else {
-        let found = false
-        remoteEntities.forEach((ent) => {
-          if (!found && (ent.name === authorName || ent.dharmaName === authorName)) {
-            showSpeechBubble(ent.rig, ent.name, text)
-            found = true
-          }
-        })
-        if (!found) {
-          const res = residentAgents.find((a) => a.resident.name === authorName)
-          if (res) showSpeechBubble(res.rig, res.resident.name, text)
-        }
-      }
-    }
-    window.addEventListener('community_chat_message', onIncomingChatMessage)
-    window.addEventListener('room-realtime-message', (e: any) => {
-      if (e.detail?.type === 'ROOM_CHAT') {
-        onIncomingChatMessage(e)
-      }
-    })
-
-    const onDevoteeChangeRobe = (event: any) => {
-      const p = event.detail
-      if (!p) return
-      const cId = String(p.senderId || p.clientId || '')
-      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
-      if (!cId || cId === myId) return
-      const ent = remoteEntities.get(cId)
-      if (ent) {
-        const col = resolveRobeColor(p.theme, p.robeColor)
-        ent.robeTheme = p.theme || 'xanh'
-        ent.robeColor = col
-        ent.rig.robe.color.set(col)
-      }
-    }
-    window.addEventListener('devotee_change_robe', onDevoteeChangeRobe)
-
     const cameraTarget = new THREE.Vector3()
     const desiredCamera = new THREE.Vector3()
     const projected = new THREE.Vector3()
+    const clock = new THREE.Clock()
     let frame = 0
     let firstFrame = true
 
@@ -2031,6 +2461,17 @@ export default function TempleScene({
       const manual = moveX !== 0 || moveZ !== 0
       const position = player.group.position
       if (manual && (route.length || action || seated !== null)) {
+        if (targetSeatId !== null) {
+          seatManager.release(targetSeatId, 'player')
+          targetSeatId = null
+        }
+        if (seated !== null) {
+          seatManager.release(seated, 'player')
+          player.group.position.x += Math.sin(heading) * 0.75
+          player.group.position.z += Math.cos(heading) * 0.75
+          player.group.position.y = 0
+          player.pose = 'stand'
+        }
         route = []
         onArrive = null
         action = null
@@ -2072,67 +2513,53 @@ export default function TempleScene({
         const turn = Math.atan2(Math.sin(target - heading), Math.cos(target - heading))
         heading += turn * Math.min(1, delta * 12)
       }
-      // First manual approach to the central front of the temple: stop and bow.
-      if (
-        manual &&
-        !thresholdBowDone &&
-        !route.length &&
-        !action &&
-        seated === null &&
-        Math.abs(position.x) < 3.2 &&
-        position.z < -3.8
-      ) {
-        thresholdBowDone = true
-        heading = Math.PI
-        player.group.rotation.y = Math.PI
-        action = { kind: 'bow', start: clock.elapsedTime, duration: 2.4 }
-      }
-
-      position.x = THREE.MathUtils.clamp(position.x, -26, 26)
-      position.z = THREE.MathUtils.clamp(position.z, -7.4, 30)
+      position.x = THREE.MathUtils.clamp(position.x, -82, 82)
+      position.z = THREE.MathUtils.clamp(position.z, -7.4, 100)
       for (const collider of colliders) {
+        if (collider.seatIds?.some((seatId) => seatId === targetSeatId || seatId === seated))
+          continue
         const dx = position.x - collider.x
         const dz = position.z - collider.z
         const d = Math.hypot(dx, dz)
-        if (d < collider.r && d > 0.0001) {
-          position.x = collider.x + (dx / d) * collider.r
-          position.z = collider.z + (dz / d) * collider.r
+        if (d < collider.r) {
+          if (d > 0.0001) {
+            position.x = collider.x + (dx / d) * collider.r
+            position.z = collider.z + (dz / d) * collider.r
+          } else {
+            position.x = collider.x + collider.r
+          }
+        }
+      }
+      const playerRadius = 0.48
+      for (const collider of rectColliders) {
+        const minX = collider.x - collider.halfX - playerRadius
+        const maxX = collider.x + collider.halfX + playerRadius
+        const minZ = collider.z - collider.halfZ - playerRadius
+        const maxZ = collider.z + collider.halfZ + playerRadius
+        if (position.x <= minX || position.x >= maxX || position.z <= minZ || position.z >= maxZ)
+          continue
+        const distances = [
+          { axis: 'x' as const, value: minX, distance: position.x - minX },
+          { axis: 'x' as const, value: maxX, distance: maxX - position.x },
+          { axis: 'z' as const, value: minZ, distance: position.z - minZ },
+          { axis: 'z' as const, value: maxZ, distance: maxZ - position.z },
+        ]
+        const nearest = distances.reduce((best, edge) =>
+          edge.distance < best.distance ? edge : best,
+        )
+        if (nearest.axis === 'x') position.x = nearest.value
+        else position.z = nearest.value
+        if (route.length) {
+          route = []
+          onArrive = null
         }
       }
       player.group.rotation.y = heading
-
-      // Broadcast local movement to remote devotees via Supabase
-      const nowMs = performance.now()
-      const dX = position.x - lastBroadcastPos.x
-      const dZ = position.z - lastBroadcastPos.z
-      const movedDist = Math.hypot(dX, dZ)
-      const turnedRad = Math.abs(heading - lastBroadcastPos.heading)
-      const poseChanged = player.pose !== lastBroadcastPos.pose
-      const walkingChanged = walking !== lastBroadcastPos.walking
-      const seatChanged = seated !== lastBroadcastPos.seatNo
-      const isTime = nowMs - lastBroadcastPos.time > 80 // ~12 fps update rate
-
-      if ((walkingChanged || poseChanged || seatChanged) || (walking && isTime && (movedDist > 0.04 || turnedRad > 0.08)) || (!walking && lastBroadcastPos.walking)) {
-        lastBroadcastPos.x = position.x
-        lastBroadcastPos.z = position.z
-        lastBroadcastPos.heading = heading
-        lastBroadcastPos.walking = walking
-        lastBroadcastPos.pose = player.pose
-        lastBroadcastPos.seatNo = seated
-        lastBroadcastPos.time = nowMs
-        ;(window as any).lastPlayerPos = lastBroadcastPos
-
-        ;(window as any).SupabaseSanctuary?.broadcast?.('DEVOTEE_WALKING', {
-          x: Number(position.x.toFixed(2)),
-          z: Number(position.z.toFixed(2)),
-          heading: Number(heading.toFixed(2)),
-          pose: player.pose,
-          walking: walking,
-          seatNo: seated,
-          theme: themeRef.current,
-          robeColor: ROBE_COLORS[themeRef.current] || ROBE_COLORS.xanh,
-        })
-      }
+      // Move the daylight rig with the active area so distant temples retain
+      // the same soft shadows and depth as the original courtyard.
+      sunTarget.position.set(position.x, 0, position.z)
+      sun.position.set(position.x + 18, 34, position.z + 22)
+      sunTarget.updateMatrixWorld()
 
       desiredCamera.set(
         position.x + Math.sin(yaw) * distance,
@@ -2172,332 +2599,158 @@ export default function TempleScene({
 
       const bellAge = elapsed - bellStart
       bellPivot.rotation.z =
-        bellAge < 14 ? Math.sin(bellAge * 2.6) * 0.16 * Math.exp(-bellAge / 3.5) : 0
+        activeBellSite === 1 && bellAge < 14
+          ? Math.sin(bellAge * 2.6) * 0.16 * Math.exp(-bellAge / 3.5)
+          : 0
+      remoteBellPivots.forEach(({ siteId, pivot }) => {
+        pivot.rotation.z =
+          siteId === activeBellSite && bellAge < 14
+            ? Math.sin(bellAge * 2.6) * 0.16 * Math.exp(-bellAge / 3.5)
+            : 0
+      })
       const smokeLevel = elapsed < incenseUntil ? 1 : 0.18
       smoke.forEach((sprite, i) => {
         const life = (elapsed * 0.18 + (sprite.userData.offset as number)) % 1
         sprite.position.set(
-          Math.sin(life * 6 + i) * 0.28 * life,
+          incenseSource.x + Math.sin(life * 6 + i) * 0.28 * life,
           1.95 + life * 3.2,
-          -6.4 + Math.cos(life * 5 + i) * 0.16 * life,
+          incenseSource.y + Math.cos(life * 5 + i) * 0.16 * life,
         )
         const size = 0.25 + life * 1.1
         sprite.scale.set(size, size, 1)
         sprite.material.opacity = smokeLevel * 0.45 * Math.sin(life * Math.PI)
       })
 
-      // 1. Update remote entities: lerp position, heading, pose and walking state
-      remoteEntities.forEach((entity) => {
-        const rig = entity.rig
+      activeWanderingRigs.clear()
+      wanderers.forEach((wanderer) => {
+        if (wanderer.mode === 'sitting') {
+          wanderer.wait -= delta
+          if (wanderer.wait <= 0) {
+            if (wanderer.occupiedSeatId !== null) {
+              seatManager.release(wanderer.occupiedSeatId, wanderer.id)
+            }
+            wanderer.occupiedSeatId = null
+            wanderer.targetSeatId = null
+            wanderer.rig.pose = 'stand'
+            wanderer.rig.group.position.y = 0
+            wanderer.mode = 'walking'
+            wanderer.point = (wanderer.point + 1) % wanderer.points.length
+          }
+          return
+        }
 
-        // Smooth position interpolation
-        const curX = rig.group.position.x
-        const curZ = rig.group.position.z
-        const dx = entity.targetX - curX
-        const dz = entity.targetZ - curZ
-        const dist = Math.hypot(dx, dz)
+        if (wanderer.wait > 0) {
+          wanderer.wait -= delta
+          return
+        }
 
-        if (dist > 8) {
-          rig.group.position.x = entity.targetX
-          rig.group.position.z = entity.targetZ
-          rig.isWalking = false
-        } else if (dist > 0.02) {
-          const lerpFactor = Math.min(1, delta * 9)
-          rig.group.position.x += dx * lerpFactor
-          rig.group.position.z += dz * lerpFactor
-          rig.isWalking = true
+        let targetX = 0
+        let targetZ = 0
+        if (wanderer.mode === 'going-to-seat' && wanderer.targetSeatId !== null) {
+          const seat = seatManager.getSeat(wanderer.targetSeatId)
+          if (!seat) {
+            wanderer.mode = 'walking'
+            wanderer.targetSeatId = null
+            return
+          }
+          targetX = seat.x
+          targetZ = seat.z
         } else {
-          rig.group.position.x = entity.targetX
-          rig.group.position.z = entity.targetZ
-          rig.isWalking = entity.isWalking
+          const targetPoint = wanderer.points[wanderer.point]
+          targetX = targetPoint.x
+          targetZ = targetPoint.y
         }
 
-        // Heading rotation interpolation
-        const curHeading = rig.group.rotation.y
+        const position = wanderer.rig.group.position
+        const dx = targetX - position.x
+        const dz = targetZ - position.z
+        const distance = Math.hypot(dx, dz)
+
+        if (distance < 0.25) {
+          if (wanderer.mode === 'going-to-seat' && wanderer.targetSeatId !== null) {
+            const seat = seatManager.getSeat(wanderer.targetSeatId)
+            if (seat) {
+              seatManager.occupy(seat.id, 'npc', wanderer.id, wanderer.name)
+              position.set(seat.x, seat.type === 'bench' ? 0.68 : 0, seat.z)
+              wanderer.rig.group.rotation.y = seat.heading
+              wanderer.rig.pose = 'sit'
+              wanderer.occupiedSeatId = seat.id
+              wanderer.targetSeatId = null
+              wanderer.wait = 7 + rand() * 13
+              wanderer.mode = 'sitting'
+              return
+            }
+          }
+
+          wanderer.point = (wanderer.point + 1) % wanderer.points.length
+          const nearbySeats = seatManager.getAvailableWithin(
+            [position.x, position.z],
+            16,
+            wanderer.id,
+          )
+          if (nearbySeats.length && rand() < 0.42) {
+            const seat = nearbySeats[Math.floor(rand() * nearbySeats.length)]
+            if (seatManager.reserve(seat.id, 'npc', wanderer.id, wanderer.name)) {
+              wanderer.targetSeatId = seat.id
+              wanderer.mode = 'going-to-seat'
+            } else {
+              wanderer.wait = 0.4 + rand() * 1.8
+            }
+          } else {
+            wanderer.wait = 0.4 + rand() * 1.8
+          }
+          return
+        }
+
+        const stride = Math.min(distance, wanderer.speed * delta)
+        position.x += (dx / distance) * stride
+        position.z += (dz / distance) * stride
+        activeWanderingRigs.add(wanderer.rig)
+        const targetHeading = Math.atan2(dx, dz)
+        const currentHeading = wanderer.rig.group.rotation.y
         const turn = Math.atan2(
-          Math.sin(entity.targetHeading - curHeading),
-          Math.cos(entity.targetHeading - curHeading)
+          Math.sin(targetHeading - currentHeading),
+          Math.cos(targetHeading - currentHeading),
         )
-        rig.group.rotation.y += turn * Math.min(1, delta * 12)
-
-        // Pose transition (stand up vs sit down)
-        if (rig.pose !== entity.targetPose) {
-          rig.pose = entity.targetPose
-          rig.leftLeg.visible = rig.rightLeg.visible = entity.targetPose !== 'sit'
-          rig.body.position.y = entity.targetPose === 'sit' ? -0.14 : 0
-        }
-
-        // Custom action animations (bow, knock, etc.)
-        if (rig.action) {
-          const t = (elapsed - rig.action.start) / rig.action.duration
-          if (t >= 1) {
-            rig.action = undefined
-          } else {
-            const k = Math.sin(t * Math.PI)
-            const raise = Math.min(1, k * 1.8)
-            rig.leftArm.rotation.set(-1.25 * raise, 0, -0.38 * raise - 0.16 * (1 - raise))
-            rig.rightArm.rotation.set(-1.25 * raise, 0, 0.38 * raise + 0.16 * (1 - raise))
-            rig.body.rotation.x = rig.action.kind === 'bow' ? 0.55 * k : 0.15 * k
-            rig.body.position.y = rig.pose === 'sit' ? -0.14 : 0
-            rig.head.rotation.set(rig.action.kind === 'bow' ? 0.2 * k : 0.1 * k, 0, 0)
-          }
-        }
+        wanderer.rig.group.rotation.y += turn * Math.min(1, delta * 7)
       })
 
-      // 2. Update autonomous virtual resident agents (NPC monks & devotees)
-      residentAgents.forEach((agent) => {
-        const rig = agent.rig
-        const label = labelRefs.current[agent.labelIndex]
-        const small = label?.querySelector('small')
-
-        if (agent.mode === 'patrol' && agent.waypoints) {
-          if (agent.state === 'walking') {
-            const target = agent.waypoints[agent.wpIndex]
-            const pos = rig.group.position
-            const dx = target.x - pos.x
-            const dz = target.z - pos.z
-            const dist = Math.hypot(dx, dz)
-            const stride = agent.speed * delta
-
-            if (dist <= stride + 0.04) {
-              pos.x = target.x
-              pos.z = target.z
-              agent.state = 'pausing'
-              rig.isWalking = false
-              agent.pauseUntil = elapsed + 4 + Math.random() * 4
-              if (small) small.textContent = 'Đang tĩnh tâm quán chiếu'
-
-              // Tĩnh tâm chiêm nghiệm, không cúi đầu linh tinh khi đi dạo
-              agent.heading = Math.PI
-            } else {
-              pos.x += (dx / dist) * stride
-              pos.z += (dz / dist) * stride
-              rig.isWalking = true
-              if (small && small.textContent !== 'Thiền hành an lạc') {
-                small.textContent = 'Thiền hành an lạc'
-              }
-              const targetAngle = Math.atan2(dx, dz)
-              const turn = Math.atan2(Math.sin(targetAngle - agent.heading), Math.cos(targetAngle - agent.heading))
-              agent.heading += turn * Math.min(1, delta * 8)
-            }
-            rig.group.rotation.y = agent.heading
-          } else if (agent.state === 'pausing') {
-            rig.isWalking = false
-            if (elapsed >= agent.pauseUntil && !rig.action) {
-              agent.wpIndex = (agent.wpIndex + 1) % agent.waypoints.length
-              agent.state = 'walking'
-            }
-          }
-        } else if (agent.mode === 'bell') {
-          // Bell Monk Minh Tâm
-          const bellPos = { x: 14.0, z: -2.0 }
-          const homePos = { x: 13.2, z: 5.6 }
-          const pos = rig.group.position
-
-          if (agent.bellStage === 'home') {
-            rig.isWalking = false
-            if (small && small.textContent !== 'Chăm sóc vườn hoa') small.textContent = 'Chăm sóc vườn hoa'
-            if (elapsed >= agent.nextActionTime) {
-              agent.bellStage = 'to_bell'
-              rig.pose = 'stand'
-              if (small) small.textContent = 'Đi thỉnh Đại Hồng Chung'
-            }
-          } else if (agent.bellStage === 'to_bell') {
-            const dx = bellPos.x - pos.x
-            const dz = bellPos.z - pos.z
-            const dist = Math.hypot(dx, dz)
-            const stride = agent.speed * delta
-
-            if (dist <= stride + 0.05) {
-              pos.x = bellPos.x
-              pos.z = bellPos.z
-              agent.bellStage = 'at_bell'
-              rig.isWalking = false
-              rig.group.lookAt(17, 0, -3) // Look at the bell
-              agent.heading = rig.group.rotation.y
-              rig.action = { kind: 'bow', start: elapsed, duration: 2.8 }
-              if (small) small.textContent = 'Trang nghiêm đảnh lễ Chung'
-              agent.pauseUntil = elapsed + 3.2
-            } else {
-              pos.x += (dx / dist) * stride
-              pos.z += (dz / dist) * stride
-              rig.isWalking = true
-              const targetAngle = Math.atan2(dx, dz)
-              const turn = Math.atan2(Math.sin(targetAngle - agent.heading), Math.cos(targetAngle - agent.heading))
-              agent.heading += turn * Math.min(1, delta * 8)
-              rig.group.rotation.y = agent.heading
-            }
-          } else if (agent.bellStage === 'at_bell') {
-            rig.isWalking = false
-            if (elapsed >= agent.pauseUntil && !rig.action) {
-              // Strike the bell!
-              bellStart = elapsed
-              if (typeof window !== 'undefined' && (window as any).AudioEngine?.playTempleBell) {
-                try { (window as any).AudioEngine.playTempleBell() } catch (_) {}
-              }
-              if (small) small.textContent = '🔔 Vừa thỉnh Đại Hồng Chung'
-              // Pause in listening reverence for 12 seconds
-              agent.pauseUntil = elapsed + 12
-              agent.bellStage = 'return'
-            }
-          } else if (agent.bellStage === 'return') {
-            if (elapsed < agent.pauseUntil) {
-              rig.isWalking = false
-            } else {
-              const dx = homePos.x - pos.x
-              const dz = homePos.z - pos.z
-              const dist = Math.hypot(dx, dz)
-              const stride = agent.speed * delta
-
-              if (dist <= stride + 0.05) {
-                pos.x = homePos.x
-                pos.z = homePos.z
-                agent.bellStage = 'home'
-                rig.isWalking = false
-                rig.group.lookAt(6, 0, 18)
-                agent.heading = rig.group.rotation.y
-                agent.nextActionTime = elapsed + 30 + Math.random() * 20
-                if (small) small.textContent = 'Khai thị tâm an'
-              } else {
-                pos.x += (dx / dist) * stride
-                pos.z += (dz / dist) * stride
-                rig.isWalking = true
-                if (small && small.textContent !== 'Trở về thiền thất') small.textContent = 'Trở về thiền thất'
-                const targetAngle = Math.atan2(dx, dz)
-                const turn = Math.atan2(Math.sin(targetAngle - agent.heading), Math.cos(targetAngle - agent.heading))
-                agent.heading += turn * Math.min(1, delta * 8)
-                rig.group.rotation.y = agent.heading
-              }
-            }
-          }
-        } else if (agent.mode === 'meditate') {
-          // Meditating monks (an-hien, dao-dao, tu-be)
-          const home = agent.homeSeat || { x: agent.resident.x, z: agent.resident.z }
-          const pos = rig.group.position
-
-          if (agent.resident.id === 'an-hien') {
-            // An Hiền periodically stands up to offer incense at altar [0, -5.0]
-            if (!agent.altarStep || agent.altarStep === 'sitting') {
-              rig.pose = 'sit'
-              rig.isWalking = false
-              if (elapsed >= agent.nextActionTime) {
-                if (Math.random() < 0.65) {
-                  // Perform bow on cushion
-                  rig.action = { kind: 'bow', start: elapsed, duration: 2.8 }
-                  if (small) small.textContent = 'Chắp tay đảnh lễ Phật'
-                  agent.nextActionTime = elapsed + 18 + Math.random() * 15
-                } else {
-                  // Stand up to offer incense!
-                  agent.altarStep = 'to_altar'
-                  rig.pose = 'stand'
-                  rig.leftLeg.visible = rig.rightLeg.visible = true
-                  rig.body.position.y = 0
-                  if (small) small.textContent = 'Đứng dậy đi dâng hương'
-                }
-              }
-            } else if (agent.altarStep === 'to_altar') {
-              const altarTarget = { x: 0, z: -5.0 }
-              const dx = altarTarget.x - pos.x
-              const dz = altarTarget.z - pos.z
-              const dist = Math.hypot(dx, dz)
-              const stride = agent.speed * delta
-
-              if (dist <= stride + 0.05) {
-                pos.x = altarTarget.x
-                pos.z = altarTarget.z
-                rig.isWalking = false
-                agent.altarStep = 'offering'
-                rig.group.rotation.y = Math.PI
-                agent.heading = Math.PI
-                rig.action = { kind: 'bow', start: elapsed, duration: 3.2 }
-                incenseUntil = elapsed + 25
-                if (small) small.textContent = '🌸 Thành kính dâng hương'
-                agent.pauseUntil = elapsed + 3.5
-              } else {
-                pos.x += (dx / dist) * stride
-                pos.z += (dz / dist) * stride
-                rig.isWalking = true
-                const targetAngle = Math.atan2(dx, dz)
-                const turn = Math.atan2(Math.sin(targetAngle - agent.heading), Math.cos(targetAngle - agent.heading))
-                agent.heading += turn * Math.min(1, delta * 8)
-                rig.group.rotation.y = agent.heading
-              }
-            } else if (agent.altarStep === 'offering') {
-              rig.isWalking = false
-              if (elapsed >= agent.pauseUntil && !rig.action) {
-                agent.altarStep = 'return'
-                if (small) small.textContent = 'Trở về bồ đoàn'
-              }
-            } else if (agent.altarStep === 'return') {
-              const dx = home.x - pos.x
-              const dz = home.z - pos.z
-              const dist = Math.hypot(dx, dz)
-              const stride = agent.speed * delta
-
-              if (dist <= stride + 0.05) {
-                pos.x = home.x
-                pos.z = home.z
-                rig.isWalking = false
-                rig.pose = 'sit'
-                rig.group.rotation.y = Math.PI
-                agent.heading = Math.PI
-                agent.altarStep = 'sitting'
-                agent.nextActionTime = elapsed + 25 + Math.random() * 20
-                if (small) small.textContent = 'An tọa nhập thiền'
-              } else {
-                pos.x += (dx / dist) * stride
-                pos.z += (dz / dist) * stride
-                rig.isWalking = true
-                const targetAngle = Math.atan2(dx, dz)
-                const turn = Math.atan2(Math.sin(targetAngle - agent.heading), Math.cos(targetAngle - agent.heading))
-                agent.heading += turn * Math.min(1, delta * 8)
-                rig.group.rotation.y = agent.heading
-              }
-            }
-          } else {
-            // Dao Dao & Tu Be: serene meditation with periodic bowing
-            rig.pose = 'sit'
-            rig.isWalking = false
-            if (elapsed >= agent.nextActionTime) {
-              rig.action = { kind: 'bow', start: elapsed, duration: 2.8 }
-              if (small) small.textContent = 'Thành tâm niệm Phật'
-              agent.nextActionTime = elapsed + 15 + Math.random() * 20
-            }
-          }
+      if (elapsed - lastSiteCheck > 0.4) {
+        lastSiteCheck = elapsed
+        const currentNearest = TEMPLE_SITES.reduce((nearest, s) => {
+          const dNearest = Math.hypot(position.x - nearest.center[0], position.z - nearest.center[1])
+          const dSite = Math.hypot(position.x - s.center[0], position.z - s.center[1])
+          return dSite < dNearest ? s : nearest
+        }, TEMPLE_SITES[0])
+        if (currentNearest.id !== lastReportedSiteId) {
+          lastReportedSiteId = currentNearest.id
+          onSiteChange?.(currentNearest.id)
         }
-      })
+      }
 
-      // 3. Animate limbs & body movement for ALL rigs (Player, Residents, Remote devotees)
       rigs.forEach((rig, index) => {
-        const moving = (index === 0 && walking) || Boolean(rig.isWalking)
+        const moving = (index === 0 && walking) || activeWanderingRigs.has(rig)
         const pace = moving ? elapsed * 10 : elapsed * 1.5 + rig.phase
         const step = Math.sin(pace)
         rig.body.rotation.x = 0
         rig.leftLeg.visible = rig.rightLeg.visible = rig.pose !== 'sit'
-
-        const currentAction = index === 0 ? action : rig.action
-        if (currentAction) {
-          const t = (elapsed - currentAction.start) / currentAction.duration
+        if (index === 0 && action) {
+          const t = (elapsed - action.start) / action.duration
           if (t >= 1) {
-            if (index === 0) {
-              const done = action?.done
-              action = null
-              done?.()
-            } else {
-              rig.action = undefined
-            }
+            const done = action.done
+            action = null
+            done?.()
           } else {
             const k = Math.sin(t * Math.PI)
             const raise = Math.min(1, k * 1.8)
             rig.leftArm.rotation.set(-1.25 * raise, 0, -0.38 * raise - 0.16 * (1 - raise))
             rig.rightArm.rotation.set(-1.25 * raise, 0, 0.38 * raise + 0.16 * (1 - raise))
-            rig.body.rotation.x = currentAction.kind === 'bow' ? 0.55 * k : 0.15 * k
+            rig.body.rotation.x = action.kind === 'bow' ? 0.55 * k : 0.15 * k
             rig.body.position.y = rig.pose === 'sit' ? -0.14 : 0
-            rig.head.rotation.set(currentAction.kind === 'bow' ? 0.2 * k : 0.1 * k, 0, 0)
+            rig.head.rotation.set(action.kind === 'bow' ? 0.2 * k : 0.1 * k, 0, 0)
             return
           }
         }
-
         if (rig.pose === 'sit') {
           rig.leftArm.rotation.set(-0.95, 0, -0.35)
           rig.rightArm.rotation.set(-0.95, 0, 0.35)
@@ -2505,7 +2758,6 @@ export default function TempleScene({
           rig.head.rotation.x = 0.06 + Math.sin(pace * 0.6) * 0.02
           return
         }
-
         rig.leftArm.rotation.set(step * (moving ? 0.7 : 0.05), 0, -0.16)
         rig.rightArm.rotation.set(-step * (moving ? 0.7 : 0.05), 0, 0.16)
         rig.leftLeg.rotation.x = moving ? -step * 0.55 : 0
@@ -2515,7 +2767,7 @@ export default function TempleScene({
         rig.head.rotation.z = moving ? -step * 0.04 : Math.sin(pace * 0.5) * 0.04
       })
 
-      // 3. Keep name labels attached to all characters' heads
+      // Keep name labels attached to the characters' heads.
       const width = mount.clientWidth
       const height = mount.clientHeight
       rigs.forEach((rig, index) => {
@@ -2525,8 +2777,8 @@ export default function TempleScene({
         projected.y += rig.pose === 'sit' ? 2.3 : 2.55
         const far = camera.position.distanceTo(projected)
         projected.project(camera)
-        const visible = projected.z < 1 && far < 55 && Math.abs(projected.x) < 1.3 && Math.abs(projected.y) < 1.3
-        label.style.opacity = visible ? String(THREE.MathUtils.clamp((55 - far) / 12, 0, 1)) : '0'
+        const visible = projected.z < 1 && far < 42 && Math.abs(projected.x) < 1.1
+        label.style.opacity = visible ? String(THREE.MathUtils.clamp((42 - far) / 10, 0, 1)) : '0'
         if (visible) {
           const x = ((projected.x + 1) / 2) * width
           const y = ((1 - projected.y) / 2) * height
@@ -2534,82 +2786,15 @@ export default function TempleScene({
           label.style.zIndex = String(1000 - Math.round(far * 10))
         }
       })
-      remoteEntities.forEach((entity) => {
-        const rig = entity.rig
-        const label = entity.label
-        projected.copy(rig.group.position)
-        projected.y += rig.pose === 'sit' ? 2.3 : 2.55
-        const far = camera.position.distanceTo(projected)
-        projected.project(camera)
-        const visible = projected.z < 1 && far < 55 && Math.abs(projected.x) < 1.3 && Math.abs(projected.y) < 1.3
-        label.style.opacity = visible ? String(THREE.MathUtils.clamp((55 - far) / 12, 0, 1)) : '0'
-        if (visible) {
-          const x = ((projected.x + 1) / 2) * width
-          const y = ((1 - projected.y) / 2) * height
-          label.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -100%)`
-          label.style.zIndex = String(1000 - Math.round(far * 10))
-        }
-      })
-      // 4. Update 3D floating speech bubbles
-      speechBubbles.forEach((bubble, key) => {
-        if (elapsed > bubble.expiresAt) {
-          bubble.element.style.opacity = '0'
-          if (elapsed > bubble.expiresAt + 0.5) {
-            if (bubble.element.parentNode) bubble.element.parentNode.removeChild(bubble.element)
-            speechBubbles.delete(key)
-          }
-          return
-        }
-        projected.copy(bubble.targetRig.group.position)
-        projected.y += bubble.targetRig.pose === 'sit' ? 2.45 : 2.85
-        const far = camera.position.distanceTo(projected)
-        projected.project(camera)
-        const visible = projected.z < 1 && far < 50 && Math.abs(projected.x) < 1.3 && Math.abs(projected.y) < 1.3
-        bubble.element.style.opacity = visible ? '1' : '0'
-        if (visible) {
-          const sx = ((projected.x + 1) / 2) * width
-          const sy = ((1 - projected.y) / 2) * height
-          bubble.element.style.transform = `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0) translate(-50%, -100%)`
-          bubble.element.style.zIndex = '1500'
-        }
-      })
-
       if (needleRef.current) needleRef.current.style.transform = `rotate(${-yaw}rad)`
 
       renderer.render(scene, camera)
     }
     animate()
 
-    const onDevoteesUpdated = (event: any) => {
-      const list = event.detail || []
-      syncRemoteDevotees(list)
-    }
-    window.addEventListener('sanctuary_devotees_updated', onDevoteesUpdated)
-
-    if ((window as any).SupabaseSanctuary?.activeDevotees) {
-      const initialList = Array.from((window as any).SupabaseSanctuary.activeDevotees.values())
-      syncRemoteDevotees(initialList)
-    }
-
-    const pollInterval = setInterval(() => {
-      if ((window as any).SupabaseSanctuary?.activeDevotees) {
-        const currentList = Array.from((window as any).SupabaseSanctuary.activeDevotees.values())
-        syncRemoteDevotees(currentList)
-      }
-    }, 1200)
-
     return () => {
-      clearInterval(pollInterval)
+      seatManager.releaseAllForActor('player')
       cancelAnimationFrame(frame)
-      window.removeEventListener('sanctuary_devotees_updated', onDevoteesUpdated)
-      remoteEntities.forEach((entity) => {
-        if (entity.label.parentNode) entity.label.parentNode.removeChild(entity.label)
-        world.remove(entity.rig.group)
-      })
-      remoteEntities.clear()
-      delete (window as any).triggerDevoteeBow
-      delete (window as any).triggerDevoteeKnock
-      delete (window as any).handleRemoteDevoteeWalking
       robeRef.current = null
       resetViewRef.current = null
       if (apiHolderRef.current) apiHolderRef.current.current = null
@@ -2692,7 +2877,7 @@ export default function TempleScene({
         <Chibi variant="monk" />
       </div>
 
-      <div className="scene-labels" aria-hidden="true" ref={labelsContainerRef}>
+      <div className="scene-labels" aria-hidden="true">
         <div
           className="scene-label scene-label--self"
           ref={(element) => {

@@ -3,6 +3,8 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { appFontFamily, whenAppFontReady } from './app-font'
 import { LEVELS, SEATS, SEAT_OCCUPANTS, levelFor } from './temple-data'
+import { templeSiteById } from './temple-world'
+import { seatManager } from './seat-manager'
 
 export type PracticePanelId =
   | 'seats'
@@ -15,7 +17,7 @@ export type PracticePanelId =
   | 'release'
 
 export const practicePanelTitles: Record<PracticePanelId, string> = {
-  seats: `Sơ đồ ${SEATS.length} bồ đoàn`,
+  seats: 'Chỗ ngồi an tịnh',
   breath: 'Thiền thở 4 · 2 · 6',
   teaching: 'Lời Phật dạy theo tâm trạng',
   petition: 'Sớ cầu an · cầu siêu',
@@ -44,6 +46,7 @@ export type PracticeContext = {
   knocks: number
   beads: number
   seat: number | null
+  siteId: number
   petitions: Petition[]
   onSeat: (seat: number) => void
   onStand: () => void
@@ -53,6 +56,7 @@ export type PracticeContext = {
   onMerit: (amount: number, message: string) => void
   onWish: (wish: string) => void
   onNavigate: (panel: 'wardrobe' | 'meditate' | 'seats' | 'certificate') => void
+  onToast?: (msg: string) => void
   onClose: () => void
 }
 
@@ -100,16 +104,138 @@ export default function PracticeBody({
 }
 
 function SeatsView({ ctx }: { ctx: PracticeContext }) {
-  const [, setTick] = useState(0)
+  const site = templeSiteById(ctx.siteId)
+  const [, setVersion] = useState(0)
+
   useEffect(() => {
-    const onUpdate = () => setTick((t) => t + 1)
-    window.addEventListener('sanctuary_devotees_updated', onUpdate)
-    return () => window.removeEventListener('sanctuary_devotees_updated', onUpdate)
+    const onChange = () => setVersion((v) => v + 1)
+    seatManager.addEventListener('change', onChange)
+    return () => seatManager.removeEventListener('change', onChange)
   }, [])
+
+  if (site.kind === 'plaza') {
+    const benches = Array.from({ length: 12 }, (_, index) => {
+      const id = 500 + index
+      const managed = seatManager.getSeat(id)
+      return {
+        no: index + 1,
+        id,
+        managed,
+      }
+    })
+
+    const freeCount = benches.filter((b) => seatManager.isAvailable(b.id, 'player')).length
+
+    return (
+      <div className="grid gap-4">
+        <div className="rounded-2xl border border-[#f2c766]/25 bg-gradient-to-b from-[#8a3214]/55 to-[#8a3214]/5 px-4 py-3 text-center">
+          <p className="font-serif text-sm font-bold text-[#ffe09a]">{site.name}</p>
+          <p className="mt-0.5 text-[13px] text-white/60">
+            Chọn một ghế trống quanh đài sen để ngồi nghỉ
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {benches.map((bench) => {
+            const managed = bench.managed
+            const isMine = ctx.seat === bench.id || managed?.occupantType === 'player'
+            const isReserved = Boolean(managed?.reservedBy && managed?.reservedBy !== 'player')
+            const isOccupied = Boolean(managed?.occupantId && managed?.occupantId !== 'player')
+            const disabled = isMine || isReserved || isOccupied
+
+            let statusLabel = 'Trống'
+            if (isMine) statusLabel = 'Bạn'
+            else if (isReserved) statusLabel = 'Đang đến'
+            else if (isOccupied)
+              statusLabel = managed?.occupantName ? managed.occupantName.replace('Thích ', '') : 'Có người'
+
+            return (
+              <button
+                key={bench.id}
+                type="button"
+                disabled={disabled}
+                aria-label={`Ghế số ${bench.no}, ${isMine ? 'bạn đang ngồi' : isReserved ? 'một thiện hữu đang đi tới' : isOccupied ? 'đã có người' : 'còn trống'}`}
+                onClick={() => {
+                  if (!seatManager.reserve(bench.id, 'player', 'player')) {
+                    ctx.onToast?.('Chỗ này vừa có người chọn. Mời bạn chọn chỗ khác.')
+                    return
+                  }
+                  ctx.onSeat(bench.no)
+                  ctx.onClose()
+                }}
+                className={`flex min-h-[68px] flex-col items-center justify-center gap-1 rounded-xl border px-2 py-2 transition ${
+                  isMine
+                    ? 'border-[#f2c766]/70 bg-[#f2c766]/15'
+                    : isReserved
+                      ? 'cursor-not-allowed border-amber-400/30 bg-amber-500/10 opacity-75'
+                      : isOccupied
+                        ? 'cursor-not-allowed border-white/8 bg-white/[.03] opacity-70'
+                        : 'border-[#e2bd6e]/25 bg-[#e2bd6e]/[.06] hover:border-[#f2c766]/50 hover:bg-[#e2bd6e]/15'
+                }`}
+              >
+                <span className="text-xs font-semibold text-white/55">Ghế {bench.no}</span>
+                <span
+                  className={`h-2.5 w-9 rounded-sm shadow-[inset_0_-2px_0_rgba(0,0,0,.28)] ${
+                    isMine
+                      ? 'bg-[#c9a24a]'
+                      : isReserved
+                        ? 'bg-[#966b44]'
+                        : isOccupied
+                          ? 'bg-[#614535]'
+                          : 'bg-[#8b5838]'
+                  }`}
+                />
+                <span
+                  className={`text-[11px] font-semibold ${
+                    isMine
+                      ? gold
+                      : isReserved
+                        ? 'text-amber-300/80'
+                        : isOccupied
+                          ? 'text-white/45'
+                          : 'text-white/50'
+                  }`}
+                >
+                  {statusLabel}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        <p className="text-center text-[13px] text-white/55" aria-live="polite">
+          {freeCount} ghế còn trống · nhấn F khi đứng gần một ghế để ngồi nhanh.
+        </p>
+        {ctx.seat !== null && (
+          <button
+            type="button"
+            className={`${ghostButton} justify-self-center`}
+            onClick={() => {
+              ctx.onStand()
+              ctx.onClose()
+            }}
+          >
+            Đứng dậy rời ghế
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  const cushions = SEATS.map((seat) => {
+    const seatId = site.id === 1 ? seat.no : site.id * 100 + seat.no
+    const managed = seatManager.getSeat(seatId)
+    return {
+      seat,
+      seatId,
+      managed,
+    }
+  })
+
+  const freeCushionCount = cushions.filter((c) => seatManager.isAvailable(c.seatId, 'player')).length
+
   return (
     <div className="grid gap-4">
       <div className="rounded-2xl border border-[#f2c766]/25 bg-gradient-to-b from-[#8a3214]/55 to-[#8a3214]/5 px-4 py-3 text-center">
-        <p className="font-serif text-sm font-bold text-[#ffe09a]">Tam Bảo · Chánh Điện</p>
+        <p className="font-serif text-sm font-bold text-[#ffe09a]">{site.name} · Chánh Điện</p>
         <p className="mt-0.5 text-[13px] text-white/60">Bàn thờ Phật · Lư hương · Đèn nến</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr]">
@@ -125,62 +251,91 @@ function SeatsView({ ctx }: { ctx: PracticeContext }) {
                 {side === 'left' ? 'Dãy tả' : 'Dãy hữu'}
               </p>
               <div className="grid grid-cols-4 gap-1.5">
-                {SEATS.filter((seat) => (side === 'left' ? seat.x < 0 : seat.x > 0)).map((seat) => {
-                  const remoteDevotees = (window as any).sanctuarySeats || []
-                  const remoteSeat = remoteDevotees.find((s: any) => s.seatNo === seat.no)
-                  const remoteOccupant = (remoteSeat && remoteSeat.occupied && !remoteSeat.isUser && remoteSeat.remoteClientId)
-                    ? (remoteSeat.name || 'Đồng Tu')
-                    : null
-                  const occupant = SEAT_OCCUPANTS[seat.no] || remoteOccupant
-                  const mine = ctx.seat === seat.no
-                  return (
-                    <button
-                      key={seat.no}
-                      type="button"
-                      disabled={Boolean(occupant) || mine}
-                      aria-label={`Bồ đoàn số ${seat.no}, hàng ${seat.row + 1}${
-                        mine
-                          ? ', bạn đang ngồi'
-                          : occupant
-                            ? `, ${occupant} đang ngồi`
-                            : ', còn trống'
-                      }`}
-                      onClick={() => {
-                        ctx.onSeat(seat.no)
-                        ctx.onClose()
-                      }}
-                      className={`flex min-h-[68px] flex-col items-center justify-center gap-1 rounded-xl border px-1 py-1.5 transition ${
-                        mine
-                          ? 'border-[#f2c766]/70 bg-[#f2c766]/15'
-                          : occupant
-                            ? 'cursor-default border-white/8 bg-white/[.03] opacity-70'
-                            : 'border-[#e2bd6e]/25 bg-[#e2bd6e]/[.06] hover:border-[#f2c766]/50 hover:bg-[#e2bd6e]/15'
-                      }`}
-                    >
-                      <span className="text-xs font-semibold text-white/55">#{seat.no}</span>
-                      <span
-                        className={`h-3.5 w-7 rounded-[50%] shadow-[inset_0_-3px_0_rgba(0,0,0,.25)] ${
-                          occupant ? 'bg-[#6d3a2c]' : 'bg-[#a8453a]'
+                {cushions
+                  .filter((item) => (side === 'left' ? item.seat.x < 0 : item.seat.x > 0))
+                  .map(({ seat, seatId, managed }) => {
+                    const isMine = ctx.seat === seatId || managed?.occupantType === 'player'
+                    const isReserved = Boolean(managed?.reservedBy && managed?.reservedBy !== 'player')
+                    const isResident = managed?.occupantType === 'resident'
+                    const isOccupied = isResident || Boolean(managed?.occupantId && managed?.occupantId !== 'player')
+                    const disabled = isMine || isReserved || isOccupied
+
+                    let statusLabel = 'Trống'
+                    if (isMine) statusLabel = 'Bạn'
+                    else if (isReserved) statusLabel = 'Đang đến'
+                    else if (isOccupied)
+                      statusLabel = managed?.occupantName
+                        ? managed.occupantName.replace('Thích ', '')
+                        : 'Có người'
+
+                    return (
+                      <button
+                        key={seatId}
+                        type="button"
+                        disabled={disabled}
+                        aria-label={`Bồ đoàn số ${seat.no}, hàng ${seat.row + 1}, ${
+                          isMine
+                            ? 'bạn đang ngồi'
+                            : isReserved
+                              ? 'một thiện hữu đang đi tới'
+                              : isOccupied
+                                ? `${managed?.occupantName || 'có người'} đang ngồi`
+                                : 'còn trống'
                         }`}
-                      />
-                      <span
-                        className={`max-w-full truncate px-0.5 text-[11px] font-semibold ${
-                          mine ? gold : occupant ? 'text-white/75' : 'text-white/50'
+                        onClick={() => {
+                          if (!seatManager.reserve(seatId, 'player', 'player')) {
+                            ctx.onToast?.('Chỗ này vừa có người chọn. Mời bạn chọn chỗ khác.')
+                            return
+                          }
+                          ctx.onSeat(seat.no)
+                          ctx.onClose()
+                        }}
+                        className={`flex min-h-[68px] flex-col items-center justify-center gap-1 rounded-xl border px-1 py-1.5 transition ${
+                          isMine
+                            ? 'border-[#f2c766]/70 bg-[#f2c766]/15'
+                            : isReserved
+                              ? 'cursor-not-allowed border-amber-400/30 bg-amber-500/10 opacity-75'
+                              : isOccupied
+                                ? 'cursor-not-allowed border-white/8 bg-white/[.03] opacity-70'
+                                : 'border-[#e2bd6e]/25 bg-[#e2bd6e]/[.06] hover:border-[#f2c766]/50 hover:bg-[#e2bd6e]/15'
                         }`}
                       >
-                        {mine ? 'Bạn' : occupant ? occupant.replace('Thích ', '') : 'Trống'}
-                      </span>
-                    </button>
-                  )
-                })}
+                        <span className="text-xs font-semibold text-white/55">#{seat.no}</span>
+                        <span
+                          className={`h-3.5 w-7 rounded-[50%] shadow-[inset_0_-3px_0_rgba(0,0,0,.25)] ${
+                            isMine
+                              ? 'bg-[#c9a24a]'
+                              : isReserved
+                                ? 'bg-[#966b44]'
+                                : isOccupied
+                                  ? 'bg-[#6d3a2c]'
+                                  : 'bg-[#a8453a]'
+                          }`}
+                        />
+                        <span
+                          className={`max-w-full truncate px-0.5 text-[11px] font-semibold ${
+                            isMine
+                              ? gold
+                              : isReserved
+                                ? 'text-amber-300/80'
+                                : isOccupied
+                                  ? 'text-white/60'
+                                  : 'text-white/50'
+                          }`}
+                        >
+                          {statusLabel}
+                        </span>
+                      </button>
+                    )
+                  })}
               </div>
             </section>
           </Fragment>
         ))}
       </div>
-      <p className="text-center text-[13px] text-white/55">
-        {SEATS.length - Object.keys(SEAT_OCCUPANTS).length - (ctx.seat ? 1 : 0)} bồ đoàn còn trống ·
-        hàng trên cùng gần Tam Bảo nhất. Di chuyển (phím hoặc cần điều khiển) để đứng dậy.
+      <p className="text-center text-[13px] text-white/55" aria-live="polite">
+        {freeCushionCount} bồ đoàn còn trống · hàng trên cùng gần Tam Bảo nhất. Nhấn F khi đứng gần
+        một bồ đoàn để ngồi nhanh.
       </p>
       {ctx.seat !== null && (
         <button
@@ -191,7 +346,7 @@ function SeatsView({ ctx }: { ctx: PracticeContext }) {
             ctx.onClose()
           }}
         >
-          Đứng dậy rời bồ đoàn #{ctx.seat}
+          {ctx.seat >= 500 ? 'Đứng dậy rời ghế' : `Đứng dậy rời bồ đoàn #${ctx.seat}`}
         </button>
       )}
     </div>

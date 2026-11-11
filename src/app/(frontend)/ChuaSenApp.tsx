@@ -1,13 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import TempleScene, { type SceneApi, ROBE_COLORS } from './TempleScene'
+import TempleScene, { type SceneApi } from './TempleScene'
+import { templeSiteById } from './temple-world'
 import SystemPanel, { type PanelId } from './SystemPanel'
 import TouchJoystick from './TouchJoystick'
-import OnboardingGate, { loadDevoteeProfile, type DevoteeProfile } from './OnboardingGate'
-import OrientationGuard from './OrientationGuard'
-import ZoneNavigator from './ZoneNavigator'
-import { DEFAULT_ZONE, TEMPLE_ZONES, isTempleZone, type TempleZoneId } from './temple-zones'
 import CommunityOverlay, { VideoCallOverlay } from './CommunityOverlay'
 import type { PracticeContext, Petition } from './PracticePanels'
 import { levelFor } from './temple-data'
@@ -317,17 +314,14 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const [collapsed, setCollapsed] = useState(true)
   const [muted, setMuted] = useState(false)
   const [meditating, setMeditating] = useState(false)
-  const [ambientOn, setAmbientOn] = useState(true)
+  const [ambientOn, setAmbientOn] = useState(false)
   const [activeAction, setActiveAction] = useState<ActionId>('knock')
   const [done, setDone] = useState<Record<string, number>>({})
   const [toast, setToast] = useState('')
   const [panel, setPanel] = useState<PanelId | null>(null)
   const [communityOpen, setCommunityOpen] = useState(false)
   const [callOpen, setCallOpen] = useState(false)
-  const [zoneOpen, setZoneOpen] = useState(false)
-  const [zone, setZone] = useState<TempleZoneId>(DEFAULT_ZONE)
-  const [profileReady, setProfileReady] = useState(false)
-  const [playerName, setPlayerName] = useState('Đạo hữu')
+  const [playerName, setPlayerName] = useState('Tuệ Phúc')
   const [dharmaName, setDharmaName] = useState('')
   const [merit, setMerit] = useState(0)
   const [beads, setBeads] = useState(0)
@@ -336,13 +330,11 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const [autoKnock, setAutoKnock] = useState(false)
   const [wishes, setWishes] = useState<string[]>([])
   const [petitions, setPetitions] = useState<Petition[]>([])
-  const [room, setRoom] = useState(4)
+  const [room, setRoom] = useState(1)
   const [theme, setTheme] = useState('xanh')
   const [phrase, setPhrase] = useState('')
   const [seat, setSeat] = useState<number | null>(null)
-  const [onlineCount, setOnlineCount] = useState(1)
-  const seatRef = useRef(seat)
-  seatRef.current = seat
+  const [hasNearSeat, setHasNearSeat] = useState(false)
   const [hydrated, setHydrated] = useState(false)
   const sceneRef = useRef<SceneApi | null>(null)
   const moveScene = useCallback((x: number, y: number) => sceneRef.current?.setMove(x, y), [])
@@ -353,81 +345,6 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const knocksRef = useRef(knocks)
   knocksRef.current = knocks
 
-  useEffect(() => {
-    const updateCount = (e?: any) => {
-      const list = e?.detail || ((window as any).SupabaseSanctuary?.activeDevotees
-        ? Array.from((window as any).SupabaseSanctuary.activeDevotees.values())
-        : [])
-      setOnlineCount(1 + list.length)
-    }
-    window.addEventListener('sanctuary_devotees_updated', updateCount)
-    updateCount()
-    const timer = setInterval(updateCount, 2000)
-    return () => {
-      window.removeEventListener('sanctuary_devotees_updated', updateCount)
-      clearInterval(timer)
-    }
-  }, [])
-  useEffect(() => {
-    const prof = loadDevoteeProfile() ?? (window as any).currentUserProfile
-    if (!prof?.registered) return
-    ;(window as any).currentUserProfile = prof
-    if (prof.fullName) setPlayerName(prof.fullName)
-    if (prof.dharmaName) setDharmaName(prof.dharmaName)
-    if (typeof prof.assignedSeatNo === 'number') setSeat(prof.assignedSeatNo)
-    setProfileReady(true)
-  }, [])
-
-  const completeOnboarding = useCallback((profile: DevoteeProfile) => {
-    ;(window as any).currentUserProfile = profile
-    setPlayerName(profile.fullName)
-    setDharmaName(profile.dharmaName)
-    setSeat(profile.assignedSeatNo)
-    if (profile.assignedSeatNo) sceneRef.current?.sit(profile.assignedSeatNo)
-    setProfileReady(true)
-    ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
-  }, [])
-
-  useEffect(() => {
-    const prof = (window as any).currentUserProfile
-    if (prof) {
-      prof.fullName = playerName
-      prof.dharmaName = dharmaName
-      ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
-    }
-  }, [playerName, dharmaName])
-
-  useEffect(() => {
-    const saved = localStorage.getItem('chua_an_nhien_zone')
-    if (isTempleZone(saved)) setZone(saved)
-  }, [])
-
-  const travelToZone = useCallback((nextZone: TempleZoneId) => {
-    setZone(nextZone)
-    setZoneOpen(false)
-    setSeat(null)
-    localStorage.setItem('chua_an_nhien_zone', nextZone)
-    const profile = (window as any).currentUserProfile
-    if (profile) {
-      profile.zoneId = nextZone
-      profile.assignedSeatNo = null
-      try {
-        localStorage.setItem('chua_an_nhien_user_profile', JSON.stringify(profile))
-      } catch {}
-    }
-    const clientId = (window as any).SANCTUARY_CLIENT_ID
-    ;((window as any).sanctuarySeats ?? []).forEach((item: any) => {
-      if (item.isUser || (clientId && item.remoteClientId === clientId)) {
-        item.isUser = false
-        item.occupied = false
-        item.remoteClientId = null
-      }
-    })
-    setToast(`Đã dịch chuyển tới ${TEMPLE_ZONES[nextZone].name}`)
-    ;(window as any).SupabaseSanctuary?.broadcast?.('CHANGE_ZONE', { zoneId: nextZone })
-    ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
-  }, [])
-
   const completed = useMemo(() => Object.values(done).filter(Boolean).length, [done])
   const rank = levelFor(merit)
   const level = rank.level
@@ -437,6 +354,15 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     const timer = window.setTimeout(() => setToast(''), 2600)
     return () => window.clearTimeout(timer)
   }, [toast])
+
+  useEffect(() => {
+    const check = () => {
+      const near = Boolean(sceneRef.current?.hasNearestSeat?.())
+      setHasNearSeat((prev) => (prev !== near ? near : prev))
+    }
+    const interval = window.setInterval(check, 400)
+    return () => window.clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     try {
@@ -451,21 +377,8 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
         if (saved.done) setDone(saved.done)
         if (Array.isArray(saved.wishes)) setWishes(saved.wishes)
         if (Array.isArray(saved.petitions)) setPetitions(saved.petitions.slice(-20))
-        if (typeof saved.room === 'number') setRoom(saved.room)
-        if (saved.theme) {
-          const t = saved.theme;
-          setTheme(t);
-          const col = ROBE_COLORS[t] || ROBE_COLORS.xanh;
-          if ((window as any).currentUserProfile) {
-            ;(window as any).currentUserProfile.robeTheme = t;
-            ;(window as any).currentUserProfile.robeColor = col;
-          }
-          ;(window as any).SupabaseSanctuary?.broadcast?.('CHANGE_ROBE', {
-            theme: t,
-            robeColor: col,
-          });
-          ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.();
-        }
+        if (typeof saved.room === 'number') setRoom(templeSiteById(saved.room).id)
+        if (saved.theme) setTheme(saved.theme === 'nau' ? 'xanh' : saved.theme)
         if (typeof saved.muted === 'boolean') setMuted(saved.muted)
       }
     } catch {
@@ -511,11 +424,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       setAmbientOn(false)
     }
   }, [muted, ambientOn])
-  useEffect(() => {
-    // Tự động bật nhạc thiền nền khi vào trang
-    setAmbient(true, 0.3)
-    return () => setAmbient(false)
-  }, [])
+  useEffect(() => () => setAmbient(false), [])
 
   const addMerit = useCallback((amount: number, message: string) => {
     if (amount) setMerit((current) => current + amount)
@@ -533,10 +442,6 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       setMerit((current) => current + 10)
       setToast(`Đã gõ ${next} tiếng mõ · +10 công đức`)
     }
-    ;(window as any).SupabaseSanctuary?.broadcast?.('WOODEN_FISH', {
-      seatNo: seatRef.current,
-      phrase: 'Nam Mô A Di Đà Phật',
-    })
   }, [])
 
   useEffect(() => {
@@ -561,9 +466,6 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       addMerit(20, 'Đã dâng 3 nén tâm hương lên Tam Bảo · +20 công đức')
       completeTask('incense', 1, 'Dâng một nén hương')
     }
-    ;(window as any).SupabaseSanctuary?.broadcast?.('OFFER_INCENSE', {
-      seatNo: seatRef.current,
-    })
     if (scene) {
       setToast('Đang đi lên bàn thờ dâng hương…')
       scene.offerIncense(award)
@@ -573,9 +475,6 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const bow = useCallback(() => {
     sceneRef.current?.bow()
     if (!mutedRef.current) playTempleBell()
-    ;(window as any).SupabaseSanctuary?.broadcast?.('BOW_BUDDHA', {
-      seatNo: seatRef.current,
-    })
     addMerit(5, 'Thành kính đảnh lễ Tam Bảo · +5 công đức')
     completeTask('buddha', 1, 'Lạy Phật một lạy')
   }, [addMerit, completeTask])
@@ -583,15 +482,19 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const ringBell = useCallback(() => {
     sceneRef.current?.ringBell()
     if (!mutedRef.current) playTempleBell()
-    ;(window as any).SupabaseSanctuary?.broadcast?.('TEMPLE_BELL', {
-      seatNo: seatRef.current,
-    })
     addMerit(5, 'Tiếng chuông ngân xa, thân tâm an trú · +5 công đức')
   }, [addMerit])
 
   const toggleSeat = useCallback(() => {
-    if (seat !== null) sceneRef.current?.stand()
-    else setPanel('seats')
+    if (seat !== null) {
+      sceneRef.current?.stand()
+      return
+    }
+    if (sceneRef.current?.sitNearest()) {
+      setToast('Đang đi tới chỗ ngồi gần nhất…')
+      return
+    }
+    setPanel('seats')
   }, [seat])
 
   useEffect(() => {
@@ -633,17 +536,10 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     else if (id === 'bow') bow()
     else if (id === 'incense') offerIncense()
     else if (id === 'bell') ringBell()
-    else if (id === 'chant') {
-      if (seat !== null) sceneRef.current?.bow()
-      setPanel('chant')
-    } else if (id === 'video') {
+    else if (id === 'video') {
       setPanel(null)
       setCommunityOpen(false)
-      if (typeof (window as any).startZaloVideoCall === 'function') {
-        ;(window as any).startZaloVideoCall()
-      } else {
-        setCallOpen(true)
-      }
+      setCallOpen(true)
     } else setPanel(id)
   }
 
@@ -666,10 +562,19 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     knocks,
     beads,
     seat,
+    siteId: room,
     petitions,
     onSeat: (no) => {
-      sceneRef.current?.sit(no)
-      setToast(`Đang đi tới bồ đoàn #${no}…`)
+      const site = templeSiteById(room)
+      const seatId = site.kind === 'plaza' ? 499 + no : site.id === 1 ? no : site.id * 100 + no
+      const ok = sceneRef.current?.sit(seatId)
+      if (ok !== false) {
+        setToast(
+          site.kind === 'plaza'
+            ? `Đang đi tới ghế số ${no} tại Đạo Tràng…`
+            : `Đang đi tới bồ đoàn #${no} tại ${site.shortName}…`,
+        )
+      }
     },
     onStand: () => sceneRef.current?.stand(),
     onName: setPlayerName,
@@ -681,44 +586,41 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     onMerit: addMerit,
     onWish: (wish) => setWishes((current) => [...current, wish].slice(-20)),
     onNavigate: setPanel,
+    onToast: setToast,
     onClose: () => setPanel(null),
   }
 
   return (
     <main className={`game-shell theme-${theme}`}>
-      <OnboardingGate open={!profileReady} onComplete={completeOnboarding} />
-      <OrientationGuard active={profileReady} />
       <TempleScene
-        key={zone}
-        zone={zone}
         theme={theme}
         playerName={playerName}
         level={level}
+        siteId={room}
         apiRef={sceneRef}
+        onSiteChange={(nextSiteId) => {
+          if (nextSiteId !== room) setRoom(nextSiteId)
+        }}
         onSeatChange={(next) => {
           setSeat(next)
-          if ((window as any).currentUserProfile) {
-            ;(window as any).currentUserProfile.assignedSeatNo = next
-          }
-          if (next !== null) {
-            setToast(`Đã an tọa bồ đoàn #${next}. Nam mô A Di Đà Phật`)
-            ;(window as any).SupabaseSanctuary?.broadcast?.('SANCTUARY_SIT_DOWN', { seatNo: next })
-          } else {
-            ;(window as any).SupabaseSanctuary?.broadcast?.('SANCTUARY_STAND_UP', {})
-          }
-          ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
+          if (next !== null)
+            setToast(
+              next >= 500
+                ? 'Đã ngồi nghỉ. Thân thư thái, tâm thảnh thơi.'
+                : `Đã an tọa bồ đoàn #${next}. Nam mô A Di Đà Phật`,
+            )
         }}
       />
       <div className="atmosphere" aria-hidden="true" />
 
       <header className="topbar">
-        <button className="brand glass" onClick={() => setZoneOpen(true)}>
+        <button className="brand glass" onClick={() => setPanel('rooms')}>
           <span className="lotus-mark">
             <Icon name="lotus" size={17} />
           </span>
-          <strong>{TEMPLE_ZONES[zone].shortName}</strong>
+          <strong>Chùa An Nhiên</strong>
           <span className="online-dot" />
-          <span className="room-name">Bản đồ</span>
+          <span className="room-name">{templeSiteById(room).shortName}</span>
           <Icon name="chevron" size={14} />
         </button>
 
@@ -730,7 +632,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
               aria-label="Xem người trong chùa"
               onClick={() => setPanel('people')}
             >
-              <Icon name="users" size={16} /> {onlineCount}
+              <Icon name="users" size={16} /> 12
             </button>
             <span className="divider" />
             <button type="button" aria-label="Hồ sơ tu tập" onClick={() => setPanel('profile')}>
@@ -874,8 +776,17 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       <TouchJoystick onMove={moveScene} />
 
       <div className="hud-chips">
-        <button type="button" className="hud-chip glass" onClick={toggleSeat}>
-          <kbd>F</kbd> {seat !== null ? `Đứng dậy · #${seat}` : 'Chọn bồ đoàn'}
+        <button id="seat-quick-action" type="button" className="hud-chip glass" onClick={toggleSeat}>
+          <kbd>F</kbd>{' '}
+          <span data-seat-label>
+            {seat !== null
+              ? seat >= 500
+                ? 'Đứng dậy'
+                : `Đứng dậy · #${seat}`
+              : hasNearSeat
+                ? 'Ngồi gần đây'
+                : 'Xem chỗ ngồi'}
+          </span>
         </button>
         <button
           type="button"
@@ -959,12 +870,6 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
           </button>
         </div>
       )}
-      <ZoneNavigator
-        open={zoneOpen}
-        current={zone}
-        onClose={() => setZoneOpen(false)}
-        onTravel={travelToZone}
-      />
       <CommunityOverlay
         playerName={playerName}
         open={communityOpen}
@@ -1001,20 +906,10 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
           onBeads={updateBeads}
           onName={setPlayerName}
           onMuted={setMuted}
-          onRoom={setRoom}
-          onTheme={(newTheme) => {
-            setTheme(newTheme)
-            const color = ROBE_COLORS[newTheme] || ROBE_COLORS.xanh
-            if ((window as any).currentUserProfile) {
-              ;(window as any).currentUserProfile.robeTheme = newTheme
-              ;(window as any).currentUserProfile.robeColor = color
-            }
-            ;(window as any).SupabaseSanctuary?.broadcast?.('CHANGE_ROBE', {
-              theme: newTheme,
-              robeColor: color,
-            })
-            ;(window as any).SupabaseSanctuary?.trackCurrentUserPresence?.()
+          onRoom={(nextRoom) => {
+            setRoom(nextRoom)
           }}
+          onTheme={setTheme}
           onWish={(wish) => setWishes((current) => [...current, wish].slice(-20))}
           onPhrase={setPhrase}
           onKnock={knock}

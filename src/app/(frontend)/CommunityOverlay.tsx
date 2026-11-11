@@ -105,25 +105,13 @@ const quickPhrases = ['A Di Đà Phật', 'Tùy hỷ công đức', 'Thân tâm 
 const presentPeople = [
   ['T', 'Thích Đào Đào', 'Đang thiền'],
   ['A', 'An Hiền', 'An tọa'],
+  ['B', 'Thích Từ Bế', 'Đang niệm Phật'],
 ]
 
 export default function CommunityOverlay({ playerName, open, onClose, onCall }: Props) {
   const [tab, setTab] = useState<'common' | 'private' | 'people'>('common')
   const [draft, setDraft] = useState('')
   const [micReady, setMicReady] = useState(false)
-  const [onlineDevotees, setOnlineDevotees] = useState<any[]>([])
-
-  useEffect(() => {
-    const updateList = (e?: any) => {
-      const list = e?.detail || ((window as any).SupabaseSanctuary?.activeDevotees
-        ? Array.from((window as any).SupabaseSanctuary.activeDevotees.values())
-        : [])
-      setOnlineDevotees(list)
-    }
-    window.addEventListener('sanctuary_devotees_updated', updateList)
-    updateList()
-    return () => window.removeEventListener('sanctuary_devotees_updated', updateList)
-  }, [])
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -159,15 +147,15 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
     }
     const onRoomRealtime = (e: any) => {
       if (e.detail?.type === 'ROOM_CHAT') {
-        onIncoming(e);
+        onIncoming(e)
       }
-    };
-    window.addEventListener('community_chat_message', onIncoming);
-    window.addEventListener('room-realtime-message', onRoomRealtime);
+    }
+    window.addEventListener('community_chat_message', onIncoming)
+    window.addEventListener('room-realtime-message', onRoomRealtime)
     return () => {
-      window.removeEventListener('community_chat_message', onIncoming);
-      window.removeEventListener('room-realtime-message', onRoomRealtime);
-    };
+      window.removeEventListener('community_chat_message', onIncoming)
+      window.removeEventListener('room-realtime-message', onRoomRealtime)
+    }
   }, [])
   const micRef = useRef<MediaStream | null>(null)
 
@@ -214,6 +202,15 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
     window.dispatchEvent(new CustomEvent('room-realtime-message', { detail: { type: 'ROOM_CHAT', ...msg } }))
   }
 
+  const handleStartCall = () => {
+    if (typeof (window as any).startZaloVideoCall === 'function') {
+      (window as any).startZaloVideoCall()
+      onClose()
+    } else {
+      onCall()
+    }
+  }
+
   const toggleMic = async () => {
     if (micReady) {
       micRef.current?.getTracks().forEach((track) => track.stop())
@@ -248,34 +245,32 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
         role="dialog"
         aria-modal="true"
         aria-labelledby="community-title"
-        className="relative flex h-[min(720px,calc(100dvh-32px))] w-[min(980px,100%)] flex-col overflow-hidden rounded-[22px] [@media(max-height:560px)]:h-[calc(100dvh-12px)] [@media(max-height:560px)]:rounded-[16px] border border-[#e2bd6e]/55 bg-[radial-gradient(circle_at_50%_0%,rgba(137,44,18,.32),transparent_45%),linear-gradient(160deg,#35150c,#1d0b06_62%,#140704)] text-[#f8eddb] shadow-[0_35px_100px_rgba(0,0,0,.7),0_0_0_5px_rgba(30,12,6,.9),0_0_0_6px_rgba(226,189,110,.2)]"
+        className="relative flex h-[min(720px,calc(100dvh-32px))] [@media(max-height:560px)]:h-[calc(100dvh-12px)] w-[min(980px,100%)] flex-col overflow-hidden rounded-[22px] [@media(max-height:560px)]:rounded-[16px] border border-[#e2bd6e]/55 bg-[radial-gradient(circle_at_50%_0%,rgba(137,44,18,.32),transparent_45%),linear-gradient(160deg,#35150c,#1d0b06_62%,#140704)] text-[#f8eddb] shadow-[0_35px_100px_rgba(0,0,0,.7),0_0_0_5px_rgba(30,12,6,.9),0_0_0_6px_rgba(226,189,110,.2)]"
       >
-        <header className="flex min-h-[66px] items-center gap-3 border-b border-[#e2bd6e]/25 px-4 sm:px-5 [@media(max-height:560px)]:min-h-[52px] [@media(max-height:560px)]:gap-2 [@media(max-height:560px)]:px-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-full [@media(max-height:560px)]:size-8 border border-[#e2bd6e]/50 bg-[#a75b16]/25 text-[#f5cf76] shadow-[0_0_18px_rgba(226,189,110,.2)]">
+        <header className="flex min-h-[66px] items-center gap-3 [@media(max-height:560px)]:min-h-[52px] [@media(max-height:560px)]:gap-2 border-b border-[#e2bd6e]/25 px-4 sm:px-5 [@media(max-height:560px)]:px-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full border [@media(max-height:560px)]:size-8 border-[#e2bd6e]/50 bg-[#a75b16]/25 text-[#f5cf76] shadow-[0_0_18px_rgba(226,189,110,.2)]">
             <Glyph name="bell" size={19} />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 id="community-title" className="font-display text-lg font-bold text-[#ffe5aa] [@media(max-height:560px)]:text-base">
+              <h2
+                id="community-title"
+                className="font-display text-lg font-bold text-[#ffe5aa] [@media(max-height:560px)]:text-base"
+              >
                 Đạo Tràng Chung
               </h2>
-              <span className="rounded-full border border-[#f2c766]/50 bg-[#f2c766]/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#ffe09a] [@media(max-height:560px)]:hidden">
-                PHIÊN CÁ NHÂN
+              <span className="rounded-full border border-[#e2bd6e]/30 bg-[#e2bd6e]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#e2bd6e] [@media(max-height:560px)]:hidden">
+                Phiên cá nhân
               </span>
             </div>
-            <p className="truncate text-xs text-[#cbb28f] [@media(max-height:560px)]:hidden">Cùng niệm Phật · Cùng gieo lời lành</p>
+            <p className="truncate text-xs text-[#cbb28f] [@media(max-height:560px)]:hidden">
+              Cùng niệm Phật · Cùng gieo lời lành
+            </p>
           </div>
           <button
             type="button"
-            onClick={() => {
-              if (typeof (window as any).startZaloVideoCall === 'function') {
-                (window as any).startZaloVideoCall()
-                onClose()
-              } else {
-                onCall()
-              }
-            }}
-            className="hidden h-9 items-center gap-2 rounded-full border border-emerald-400/50 bg-[#107c41] px-4 text-xs font-bold text-white shadow-[0_5px_18px_rgba(5,150,105,.22)] transition hover:bg-[#15803d] sm:flex [@media(max-height:560px)]:h-8 [@media(max-height:560px)]:px-3"
+            onClick={handleStartCall}
+            className="hidden h-9 items-center gap-2 rounded-full border border-emerald-300/50 bg-emerald-600/80 px-4 text-xs font-bold text-white shadow-[0_5px_18px_rgba(5,150,105,.22)] transition hover:bg-emerald-500 sm:flex [@media(max-height:560px)]:h-8 [@media(max-height:560px)]:px-3"
           >
             <Glyph name="camera" size={15} /> Gọi Video
           </button>
@@ -308,7 +303,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
           {[
             ['common', 'Đạo Tràng Chung', 'chat'],
             ['private', 'Nhắn tin riêng', 'shield'],
-            ['people', `Hiện diện (${onlineDevotees.length + presentPeople.length + 1})`, 'users'],
+            ['people', `Hiện diện (${presentPeople.length + 1})`, 'users'],
           ].map(([id, label, icon]) => (
             <button
               key={id}
@@ -333,7 +328,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
             {tab === 'common' && (
               <>
                 <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-5 [@media(max-height:560px)]:space-y-2 [@media(max-height:560px)]:p-3">
-                  <p className="flex items-center gap-2 border-b border-[#e2bd6e]/15 pb-3 text-xs [@media(max-height:560px)]:pb-2 font-bold text-[#e4c47f]">
+                  <p className="flex items-center gap-2 border-b border-[#e2bd6e]/15 pb-3 text-xs font-bold [@media(max-height:560px)]:pb-2 text-[#e4c47f]">
                     <Glyph name="users" size={14} /> Đạo hữu cùng thực tập
                   </p>
                   {messages.map((message) => (
@@ -410,81 +405,26 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
             )}
             {tab === 'people' && (
               <div className="grid content-start gap-2 overflow-y-auto p-4 sm:p-5">
-                {/* Local user */}
-                <article className="flex items-center gap-3 rounded-2xl border border-[#e2bd6e]/40 bg-[#e2bd6e]/[.08] p-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/50 bg-[#7a3515] font-bold text-[#f4d17f]">
-                    {playerName.slice(0, 1).toUpperCase()}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <strong className="block truncate text-sm text-[#fff0ce]">{playerName}</strong>
-                    <p className="mt-0.5 text-xs text-[#a99474]">Đang tu tập tại chùa · Bản thân</p>
-                  </div>
-                  <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-bold text-emerald-300">
-                    <i className="size-1.5 rounded-full bg-emerald-400" /> Bạn
-                  </span>
-                </article>
-
-                {/* Remote live devotees */}
-                {onlineDevotees.map((devotee: any) => {
-                  const dName = devotee.name || devotee.fullName || 'Đồng Tu'
-                  const dDharma = devotee.dharma || devotee.dharmaName || 'Tịnh Niệm'
-                  const dSeat = devotee.seatNo || devotee.assignedSeatNo
-                  const dId = devotee.id || devotee.clientId
-                  return (
+                {[['B', playerName, 'Bạn đang ở đây'], ...presentPeople].map(
+                  ([initial, name, status], index) => (
                     <article
-                      key={dId || dName}
-                      className="flex items-center gap-3 rounded-2xl border border-[#e2bd6e]/18 bg-[#e2bd6e]/[.05] p-3 hover:bg-[#e2bd6e]/[.08]"
+                      key={name}
+                      className="flex items-center gap-3 rounded-2xl border border-[#e2bd6e]/18 bg-[#e2bd6e]/[.05] p-3"
                     >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/30 bg-[#5c2810] font-bold text-[#f4d17f]">
-                        {dName.slice(0, 1).toUpperCase()}
+                      <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/30 bg-[#7a3515] font-bold text-[#f4d17f]">
+                        {initial}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <strong className="block truncate text-sm text-[#fff0ce]">{dName}</strong>
-                        <p className="mt-0.5 text-xs text-[#a99474]">
-                          {dDharma ? `PD: ${dDharma} · ` : ''}
-                          {dSeat ? `Bồ đoàn #${dSeat}` : 'Sân Chùa'}
-                        </p>
+                        <strong className="block truncate text-sm text-[#fff0ce]">{name}</strong>
+                        <p className="mt-0.5 text-xs text-[#a99474]">{status}</p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (typeof (window as any).startZaloVideoCall === 'function') {
-                            (window as any).startZaloVideoCall({
-                              id: dId,
-                              name: dName,
-                              dharma: dDharma,
-                              location: 'Việt Nam'
-                            })
-                          } else {
-                            onCall()
-                          }
-                        }}
-                        className="flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-600/75 px-3 py-1 text-xs font-bold text-white transition hover:bg-emerald-500"
-                        title={`Gọi video cùng ${dName}`}
-                      >
-                        <Glyph name="camera" size={13} />
-                        Gọi Video
-                      </button>
+                      <span className="flex items-center gap-1.5 text-[11px] text-emerald-300">
+                        <i className="size-1.5 rounded-full bg-emerald-400" />{' '}
+                        {index ? 'Trong cảnh' : 'Bạn'}
+                      </span>
                     </article>
-                  )
-                })}
-
-                {/* Resident monks */}
-                {presentPeople.map(([initial, name, status]) => (
-                  <article
-                    key={name}
-                    className="flex items-center gap-3 rounded-2xl border border-[#e2bd6e]/10 bg-black/20 p-3 opacity-75"
-                  >
-                    <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/20 bg-[#421c0b] text-xs font-bold text-[#d8b86d]">
-                      {initial}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <strong className="block truncate text-sm text-[#e8dcc4]">{name}</strong>
-                      <p className="mt-0.5 text-xs text-[#8a775d]">{status}</p>
-                    </div>
-                    <span className="text-[11px] text-amber-200/60">Tịnh tu</span>
-                  </article>
-                ))}
+                  ),
+                )}
               </div>
             )}
           </div>
@@ -497,50 +437,29 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
               Những nhân vật đang hiện diện trong cảnh Chánh Điện.
             </p>
             <div className="mt-4 space-y-2">
-              {onlineDevotees.map((d: any) => {
-                const name = d.name || d.fullName || 'Đồng Tu'
-                const seatStr = d.seatNo ? `Bồ đoàn #${d.seatNo}` : 'Sân Chùa'
-                return (
-                  <div key={d.clientId || d.id || name} className="flex items-center gap-2.5">
-                    <span className="grid size-8 place-items-center rounded-full border border-[#f2c766]/30 bg-[#5c2810] text-xs font-bold text-[#f1c86d]">
-                      {name.slice(0, 1).toUpperCase()}
-                    </span>
-                    <div className="min-w-0">
-                      <strong className="block truncate text-xs text-[#f5e4c5]">{name}</strong>
-                      <span className="text-[10px] text-emerald-300">Trực tuyến · {seatStr}</span>
-                    </div>
-                  </div>
-                )
-              })}
-              {presentPeople.slice(0, Math.max(1, 2 - onlineDevotees.length)).map(([initial, name, status]) => (
+              {presentPeople.slice(0, 2).map(([initial, name, status]) => (
                 <div key={name} className="flex items-center gap-2.5">
-                  <span className="grid size-8 place-items-center rounded-full bg-[#7a3515] text-xs font-bold text-[#f1c86d]">
+                  <span className="grid size-8 place-items-center rounded-full bg-[#6f3013] text-xs font-bold text-[#f1c86d]">
                     {initial}
                   </span>
                   <div className="min-w-0">
                     <strong className="block truncate text-xs text-[#f5e4c5]">{name}</strong>
-                    <span className="text-[10px] text-emerald-400">{status}</span>
+                    <span className="text-[10px] text-emerald-300">{status}</span>
                   </div>
                 </div>
               ))}
             </div>
             <button
               type="button"
-              onClick={() => {
-                if (typeof (window as any).startZaloVideoCall === 'function') {
-                  (window as any).startZaloVideoCall()
-                } else {
-                  onCall()
-                }
-              }}
-              className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-emerald-300/45 bg-[#107c41] text-xs font-extrabold text-white transition hover:bg-[#15803d] shadow-[0_0_20px_rgba(16,185,129,.35)]"
+              onClick={handleStartCall}
+              className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-emerald-300/45 bg-emerald-600/75 text-xs font-extrabold text-white transition hover:bg-emerald-500"
             >
               <Glyph name="camera" size={15} /> Gọi Video
             </button>
             <button
               type="button"
               onClick={toggleMic}
-              className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[#e2bd6e]/30 bg-[#2a1309] text-xs font-bold text-[#e7d1a5] transition hover:bg-[#e2bd6e]/10"
+              className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[#e2bd6e]/30 bg-[#e2bd6e]/[.06] text-xs font-bold text-[#e7d1a5]"
             >
               <Glyph name="mic" size={15} /> {micReady ? 'Tắt mic đàm thoại' : 'Bật mic đàm thoại'}
             </button>
@@ -556,14 +475,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
         <div className="flex gap-2 border-t border-[#e2bd6e]/18 p-3 sm:hidden">
           <button
             type="button"
-            onClick={() => {
-              if (typeof (window as any).startZaloVideoCall === 'function') {
-                (window as any).startZaloVideoCall()
-                onClose()
-              } else {
-                onCall()
-              }
-            }}
+            onClick={handleStartCall}
             className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full bg-emerald-600 text-xs font-bold text-white"
           >
             <Glyph name="camera" size={15} /> Gọi Video
@@ -649,6 +561,15 @@ export function VideoCallOverlay({ playerName, open, onClose, onMinimize }: Call
       return
     }
     await openCamera()
+  }
+
+  const handleStartCall = () => {
+    if (typeof (window as any).startZaloVideoCall === 'function') {
+      (window as any).startZaloVideoCall()
+      onClose()
+    } else {
+      onCall()
+    }
   }
 
   const toggleMic = async () => {

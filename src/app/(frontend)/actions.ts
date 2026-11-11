@@ -32,8 +32,8 @@ export async function submitFeedback(input: {
       await fetch('/api/sanctuary/event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'FEEDBACK', category, message, contact, time: Date.now() })
-      });
+        body: JSON.stringify({ type: 'FEEDBACK', category, message, contact, time: Date.now() }),
+      })
     }
     return {
       ok: true,
