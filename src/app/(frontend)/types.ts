@@ -18,3 +18,17 @@ export type CalendarItem = {
   time?: string | null
   description?: string | null
 }
+
+export type OnlineDevotee = {
+  clientId?: string
+  id?: string
+  name?: string
+  fullName?: string
+  dharmaName?: string
+  dharma?: string
+  seatNo?: number
+  avatarType?: string
+  merit?: number
+  meritScore?: number
+}
+

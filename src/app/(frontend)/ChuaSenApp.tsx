@@ -9,7 +9,7 @@ import CommunityOverlay, { VideoCallOverlay } from './CommunityOverlay'
 import type { PracticeContext, Petition } from './PracticePanels'
 import { levelFor } from './temple-data'
 import { playChime, playTempleBell, playWoodblock, setAmbient } from './audio'
-import type { CalendarItem, PracticeItem } from './types'
+import type { CalendarItem, PracticeItem, OnlineDevotee } from './types'
 
 type IconName =
   | 'lotus'
@@ -335,6 +335,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
   const [phrase, setPhrase] = useState('')
   const [seat, setSeat] = useState<number | null>(null)
   const [hasNearSeat, setHasNearSeat] = useState(false)
+  const [onlineDevotees, setOnlineDevotees] = useState<OnlineDevotee[]>([])
   const [hydrated, setHydrated] = useState(false)
   const sceneRef = useRef<SceneApi | null>(null)
   const moveScene = useCallback((x: number, y: number) => sceneRef.current?.setMove(x, y), [])
@@ -363,6 +364,49 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     const interval = window.setInterval(check, 400)
     return () => window.clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    const handleDevoteesUpdate = (e?: any) => {
+      const rawList =
+        e?.detail ||
+        ((window as any).SupabaseSanctuary?.activeDevotees
+          ? Array.from((window as any).SupabaseSanctuary.activeDevotees.values())
+          : [])
+      const myId =
+        (window as any).SANCTUARY_CLIENT_ID ||
+        (window as any).SupabaseSanctuary?.getClientId?.() ||
+        ''
+      const ROBOT_NAMES = new Set([
+        'Thích Đào Đào',
+        'Thích Từ Bế',
+        'An Hiền',
+        'Phúc An Nhiên',
+        'Tâm An',
+        'Diệu Minh',
+        'Thiện Đức',
+        'An Lạc',
+      ])
+
+      const filtered = (Array.isArray(rawList) ? rawList : []).filter((d: any) => {
+        if (!d) return false
+        const id = d.clientId || d.id
+        if (id && myId && id === myId) return false
+        const name = String(d.name || d.fullName || '').trim()
+        if (!name || name === playerName) return false
+        if (ROBOT_NAMES.has(name) || name.toLowerCase().startsWith('npc')) return false
+        return true
+      })
+      setOnlineDevotees(filtered)
+    }
+
+    window.addEventListener('sanctuary_devotees_updated', handleDevoteesUpdate)
+    handleDevoteesUpdate()
+    const timer = window.setInterval(handleDevoteesUpdate, 2500)
+    return () => {
+      window.removeEventListener('sanctuary_devotees_updated', handleDevoteesUpdate)
+      window.clearInterval(timer)
+    }
+  }, [playerName])
 
   useEffect(() => {
     try {
@@ -632,7 +676,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
               aria-label="Xem người trong chùa"
               onClick={() => setPanel('people')}
             >
-              <Icon name="users" size={16} /> 12
+              <Icon name="users" size={16} /> {1 + onlineDevotees.length}
             </button>
             <span className="divider" />
             <button type="button" aria-label="Hồ sơ tu tập" onClick={() => setPanel('profile')}>
@@ -873,6 +917,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
       <CommunityOverlay
         playerName={playerName}
         open={communityOpen}
+        onlineDevotees={onlineDevotees}
         onClose={() => setCommunityOpen(false)}
         onCall={() => {
           setCommunityOpen(false)
@@ -894,6 +939,8 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
           practices={practices}
           calendar={calendar}
           playerName={playerName}
+          dharmaName={dharmaName}
+          onlineDevotees={onlineDevotees}
           merit={merit}
           beads={beads}
           muted={muted}

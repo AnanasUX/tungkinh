@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { submitFeedback } from './actions'
-import type { CalendarItem, PracticeItem } from './types'
+import type { CalendarItem, PracticeItem, OnlineDevotee } from './types'
 import PracticeBody, {
   isPracticePanel,
   practicePanelTitles,
@@ -36,6 +36,8 @@ type Props = {
   practices: PracticeItem[]
   calendar: CalendarItem[]
   playerName: string
+  dharmaName?: string
+  onlineDevotees?: OnlineDevotee[]
   merit: number
   beads: number
   muted: boolean
@@ -160,14 +162,6 @@ const fortunes: [string, string][] = [
   ['Gieo nhân lành', 'Một lời tử tế hôm nay có thể trở thành bóng mát cho người khác mai sau.'],
 ]
 
-const people = [
-  ['Phúc An Nhiên', 'Cấp 9', 'Đang niệm Phật'],
-  ['Tâm An', 'Cấp 3', 'Đang lễ Phật'],
-  ['Diệu Minh', 'Cấp 7', 'Đang thiền'],
-  ['Thiện Đức', 'Cấp 5', 'Đang dạo bước'],
-  ['An Lạc', 'Cấp 2', 'Đang tụng kinh'],
-]
-
 function PanelHeader({ panel, onClose }: { panel: PanelId; onClose: () => void }) {
   const [group, note] = panelMeta[panel]
   return (
@@ -201,6 +195,8 @@ export default function SystemPanel(props: Props) {
     practices,
     calendar,
     playerName,
+    dharmaName,
+    onlineDevotees,
     merit,
     beads,
     muted,
@@ -608,29 +604,43 @@ export default function SystemPanel(props: Props) {
           {panel === 'people' && (
             <div className="people-view">
               <div className="people-summary">
-                <strong>{people.length + 1}</strong>
+                <strong>{(onlineDevotees?.length ?? 0) + 1}</strong>
                 <span>
-                  người đang công phu tại {TEMPLE_SITES.find((site) => site.id === room)?.name}
+                  người thật đang trực tuyến tại {TEMPLE_SITES.find((site) => site.id === room)?.name}
                 </span>
               </div>
               <article className="me">
-                <span className="avatar">{playerName.slice(0, 1)}</span>
+                <span className="avatar">{playerName.slice(0, 1).toUpperCase()}</span>
                 <div>
                   <strong>{playerName}</strong>
-                  <small>Bạn · {merit} tịnh tâm</small>
+                  <small>
+                    {dharmaName ? `Pháp danh: ${dharmaName} · ` : ''}Bạn · {merit} tịnh tâm
+                  </small>
                 </div>
                 <em>Đang trực tuyến</em>
               </article>
-              {people.map((person) => (
-                <article key={person[0]}>
-                  <span className="avatar">{person[0].slice(0, 1)}</span>
-                  <div>
-                    <strong>{person[0]}</strong>
-                    <small>{person[1]}</small>
-                  </div>
-                  <em>{person[2]}</em>
-                </article>
-              ))}
+              {onlineDevotees && onlineDevotees.length > 0 ? (
+                onlineDevotees.map((devotee) => {
+                  const name = devotee.name || devotee.fullName || 'Đồng Tu'
+                  const seatText = devotee.seatNo ? `Bồ đoàn #${devotee.seatNo}` : 'Đang hiện diện'
+                  const dharmaText = devotee.dharma || devotee.dharmaName
+                  const subtext = dharmaText ? `Pháp danh: ${dharmaText} · ${seatText}` : seatText
+                  return (
+                    <article key={devotee.clientId || devotee.id || name}>
+                      <span className="avatar">{(name || 'Đ').slice(0, 1).toUpperCase()}</span>
+                      <div>
+                        <strong>{name}</strong>
+                        <small>{subtext}</small>
+                      </div>
+                      <em>Đang trực tuyến</em>
+                    </article>
+                  )
+                })
+              ) : (
+                <div className="mt-4 rounded-xl border border-[#e2bd6e]/20 bg-black/20 p-3 text-center text-xs text-[#a99474]">
+                  Hiện tại bạn là thiện hữu duy nhất đang trực tuyến. Chúc bạn một thời công phu an lạc thanh tịnh.
+                </div>
+              )}
             </div>
           )}
 

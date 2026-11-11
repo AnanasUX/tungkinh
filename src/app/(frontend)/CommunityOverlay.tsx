@@ -1,12 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import type { OnlineDevotee } from './types'
 
 type Props = {
   playerName: string
   open: boolean
   onClose: () => void
   onCall: () => void
+  onlineDevotees?: OnlineDevotee[]
 }
 
 type CallProps = {
@@ -102,13 +104,14 @@ function Glyph({ name, size = 18 }: { name: GlyphName; size?: number }) {
 }
 
 const quickPhrases = ['A Di Đà Phật', 'Tùy hỷ công đức', 'Thân tâm an lạc', 'Nguyện cầu bình an']
-const presentPeople = [
-  ['T', 'Thích Đào Đào', 'Đang thiền'],
-  ['A', 'An Hiền', 'An tọa'],
-  ['B', 'Thích Từ Bế', 'Đang niệm Phật'],
-]
 
-export default function CommunityOverlay({ playerName, open, onClose, onCall }: Props) {
+export default function CommunityOverlay({
+  playerName,
+  open,
+  onClose,
+  onCall,
+  onlineDevotees = [],
+}: Props) {
   const [tab, setTab] = useState<'common' | 'private' | 'people'>('common')
   const [draft, setDraft] = useState('')
   const [micReady, setMicReady] = useState(false)
@@ -303,7 +306,7 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
           {[
             ['common', 'Đạo Tràng Chung', 'chat'],
             ['private', 'Nhắn tin riêng', 'shield'],
-            ['people', `Hiện diện (${presentPeople.length + 1})`, 'users'],
+            ['people', `Hiện diện (${onlineDevotees.length + 1})`, 'users'],
           ].map(([id, label, icon]) => (
             <button
               key={id}
@@ -405,25 +408,46 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
             )}
             {tab === 'people' && (
               <div className="grid content-start gap-2 overflow-y-auto p-4 sm:p-5">
-                {[['B', playerName, 'Bạn đang ở đây'], ...presentPeople].map(
-                  ([initial, name, status], index) => (
-                    <article
-                      key={name}
-                      className="flex items-center gap-3 rounded-2xl border border-[#e2bd6e]/18 bg-[#e2bd6e]/[.05] p-3"
-                    >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/30 bg-[#7a3515] font-bold text-[#f4d17f]">
-                        {initial}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <strong className="block truncate text-sm text-[#fff0ce]">{name}</strong>
-                        <p className="mt-0.5 text-xs text-[#a99474]">{status}</p>
-                      </div>
-                      <span className="flex items-center gap-1.5 text-[11px] text-emerald-300">
-                        <i className="size-1.5 rounded-full bg-emerald-400" />{' '}
-                        {index ? 'Trong cảnh' : 'Bạn'}
-                      </span>
-                    </article>
-                  ),
+                <article className="flex items-center gap-3 rounded-2xl border border-[#e2bd6e]/30 bg-[#e2bd6e]/[.08] p-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/40 bg-[#7a3515] font-bold text-[#f4d17f]">
+                    {playerName.slice(0, 1).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <strong className="block truncate text-sm text-[#fff0ce]">{playerName}</strong>
+                    <p className="mt-0.5 text-xs text-[#d2ba94]">Bạn đang ở đây · Thiết bị này</p>
+                  </div>
+                  <span className="flex items-center gap-1.5 text-[11px] text-emerald-300">
+                    <i className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" /> Bạn
+                  </span>
+                </article>
+
+                {onlineDevotees && onlineDevotees.length > 0 ? (
+                  onlineDevotees.map((d) => {
+                    const name = d.name || d.fullName || 'Đồng Tu'
+                    const seatStr = d.seatNo ? `Bồ đoàn #${d.seatNo}` : 'Đang hiện diện'
+                    const subtitle = d.dharma || d.dharmaName ? `Pháp danh: ${d.dharma || d.dharmaName} · ${seatStr}` : seatStr
+                    return (
+                      <article
+                        key={d.clientId || d.id || name}
+                        className="flex items-center gap-3 rounded-2xl border border-[#e2bd6e]/18 bg-[#e2bd6e]/[.05] p-3"
+                      >
+                        <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#e2bd6e]/30 bg-[#5c2810] font-bold text-[#f1c86d]">
+                          {(name || 'Đ').slice(0, 1).toUpperCase()}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <strong className="block truncate text-sm text-[#fff0ce]">{name}</strong>
+                          <p className="mt-0.5 text-xs text-[#a99474]">{subtitle}</p>
+                        </div>
+                        <span className="flex items-center gap-1.5 text-[11px] text-emerald-300">
+                          <i className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" /> Trực tuyến
+                        </span>
+                      </article>
+                    )
+                  })
+                ) : (
+                  <div className="rounded-2xl border border-[#e2bd6e]/15 bg-black/20 p-4 text-center text-xs text-[#a99474]">
+                    Chưa có đạo hữu nào khác đang trực tuyến. Tin nhắn gửi vào Đạo Tràng vẫn sẽ được lưu trữ.
+                  </div>
                 )}
               </div>
             )}
@@ -431,23 +455,40 @@ export default function CommunityOverlay({ playerName, open, onClose, onCall }: 
 
           <aside className="hidden min-h-0 overflow-y-auto bg-black/10 p-4 md:block [@media(max-height:560px)]:hidden">
             <h3 className="text-xs font-extrabold uppercase tracking-[0.12em] text-[#ebcf91]">
-              Đạo hữu hiện diện
+              Đạo hữu trực tuyến ({onlineDevotees.length + 1})
             </h3>
             <p className="mt-1.5 text-[11px] leading-relaxed text-[#9f8c70]">
-              Những nhân vật đang hiện diện trong cảnh Chánh Điện.
+              Những thiện hữu thật đang kết nối cùng lúc.
             </p>
             <div className="mt-4 space-y-2">
-              {presentPeople.slice(0, 2).map(([initial, name, status]) => (
-                <div key={name} className="flex items-center gap-2.5">
-                  <span className="grid size-8 place-items-center rounded-full bg-[#6f3013] text-xs font-bold text-[#f1c86d]">
-                    {initial}
-                  </span>
-                  <div className="min-w-0">
-                    <strong className="block truncate text-xs text-[#f5e4c5]">{name}</strong>
-                    <span className="text-[10px] text-emerald-300">{status}</span>
-                  </div>
+              <div className="flex items-center gap-2.5">
+                <span className="grid size-8 place-items-center rounded-full bg-[#7a3515] text-xs font-bold text-[#f1c86d]">
+                  {playerName.slice(0, 1).toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <strong className="block truncate text-xs text-[#f5e4c5]">{playerName}</strong>
+                  <span className="text-[10px] text-emerald-300">Bạn · Trực tuyến</span>
                 </div>
-              ))}
+              </div>
+              {onlineDevotees && onlineDevotees.length > 0 ? (
+                onlineDevotees.map((d) => {
+                  const name = d.name || d.fullName || 'Đồng Tu'
+                  const seatStr = d.seatNo ? `Bồ đoàn #${d.seatNo}` : 'Đang tu tập'
+                  return (
+                    <div key={d.clientId || d.id || name} className="flex items-center gap-2.5">
+                      <span className="grid size-8 place-items-center rounded-full border border-[#f2c766]/30 bg-[#5c2810] text-xs font-bold text-[#f1c86d]">
+                        {(name || 'Đ').slice(0, 1).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <strong className="block truncate text-xs text-[#f5e4c5]">{name}</strong>
+                        <span className="text-[10px] text-emerald-300">Trực tuyến · {seatStr}</span>
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <p className="text-[11px] italic text-white/40">Chưa có người khác trực tuyến</p>
+              )}
             </div>
             <button
               type="button"
