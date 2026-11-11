@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import TempleScene, { type SceneApi } from './TempleScene'
+import TempleScene, { type SceneApi, ROBE_COLORS } from './TempleScene'
 import { templeSiteById } from './temple-world'
 import SystemPanel, { type PanelId } from './SystemPanel'
 import TouchJoystick from './TouchJoystick'
@@ -573,6 +573,25 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     setAmbientOn(next)
   }
 
+  const handleTheme = useCallback((nextTheme: string) => {
+    setTheme(nextTheme)
+    if (typeof window !== 'undefined') {
+      if ((window as any).currentUserProfile) {
+        (window as any).currentUserProfile.robeTheme = nextTheme
+        ;(window as any).currentUserProfile.robeColor = ROBE_COLORS[nextTheme] || ROBE_COLORS.xanh
+      }
+      try {
+        const saved = JSON.parse(window.localStorage.getItem('chua-sen-progress') || '{}')
+        saved.theme = nextTheme
+        window.localStorage.setItem('chua-sen-progress', JSON.stringify(saved))
+      } catch (_) {}
+      ;(window as any).SupabaseSanctuary?.updatePresence?.({
+        robeTheme: nextTheme,
+        robeColor: ROBE_COLORS[nextTheme] || ROBE_COLORS.xanh,
+      })
+    }
+  }, [])
+
   const chooseAction = (id: ActionId) => {
     setActiveAction(id)
     if (id === 'quests') setCollapsed((value) => !value)
@@ -583,7 +602,11 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
     else if (id === 'video') {
       setPanel(null)
       setCommunityOpen(false)
-      setCallOpen(true)
+      if (typeof (window as any).startZaloVideoCall === 'function') {
+        (window as any).startZaloVideoCall()
+      } else {
+        setCallOpen(true)
+      }
     } else setPanel(id)
   }
 
@@ -921,7 +944,11 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
         onClose={() => setCommunityOpen(false)}
         onCall={() => {
           setCommunityOpen(false)
-          setCallOpen(true)
+          if (typeof (window as any).startZaloVideoCall === 'function') {
+            (window as any).startZaloVideoCall()
+          } else {
+            setCallOpen(true)
+          }
         }}
       />
       <VideoCallOverlay
@@ -956,7 +983,7 @@ export default function ChuaSenApp({ practices, calendar }: Props) {
           onRoom={(nextRoom) => {
             setRoom(nextRoom)
           }}
-          onTheme={setTheme}
+          onTheme={handleTheme}
           onWish={(wish) => setWishes((current) => [...current, wish].slice(-20))}
           onPhrase={setPhrase}
           onKnock={knock}

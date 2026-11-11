@@ -104,12 +104,25 @@ const RESIDENTS: Resident[] = [
   },
 ]
 
-const ROBE_COLORS: Record<string, string> = {
+export const ROBE_COLORS: Record<string, string> = {
   xanh: '#3b72b8',
   nau: '#7a4b33',
   vang: '#c08a35',
   xam: '#7a8288',
   do: '#9a3f33',
+  trang: '#e6ebed',
+  bach: '#e6ebed',
+  lam: '#3b72b8',
+}
+
+export function resolveRobeColor(theme?: string, color?: string): string {
+  if (color && typeof color === 'string' && (color.startsWith('#') || color.startsWith('rgb'))) {
+    return color
+  }
+  if (theme && ROBE_COLORS[theme]) {
+    return ROBE_COLORS[theme]
+  }
+  return ROBE_COLORS.xanh
 }
 
 function seeded(seed: number) {
@@ -157,6 +170,7 @@ export default function TempleScene({
   onSiteChange?: (siteId: number) => void
 }) {
   const mountRef = useRef<HTMLDivElement>(null)
+  const labelsContainerRef = useRef<HTMLDivElement | null>(null)
   const labelRefs = useRef<(HTMLDivElement | null)[]>([])
   const needleRef = useRef<HTMLSpanElement>(null)
   const robeRef = useRef<((color: string) => void) | null>(null)
@@ -169,7 +183,18 @@ export default function TempleScene({
 
   useEffect(() => {
     themeRef.current = theme
-    robeRef.current?.(ROBE_COLORS[theme] ?? ROBE_COLORS.xanh)
+    const col = resolveRobeColor(theme)
+    robeRef.current?.(col)
+    ;(window as any).SupabaseSanctuary?.broadcast?.('DEVOTEE_WALKING', {
+      theme,
+      robeColor: col,
+      x: Number((window as any).lastPlayerPos?.x ?? 0),
+      z: Number((window as any).lastPlayerPos?.z ?? 17),
+      heading: Number((window as any).lastPlayerPos?.heading ?? Math.PI),
+      pose: (window as any).lastPlayerPos?.pose ?? 'stand',
+      walking: false,
+      seatNo: (window as any).lastPlayerPos?.seatNo ?? null,
+    })
   }, [theme])
 
   useEffect(() => {
@@ -1789,6 +1814,8 @@ export default function TempleScene({
       robe: THREE.MeshStandardMaterial
       pose: Pose
       phase: number
+      isWalking?: boolean
+      action?: { kind: 'bow' | 'knock'; start: number; duration: number }
     }
     const skin = std('#e2bb92', { roughness: 0.62 })
     const trim = std('#f3eee3')
@@ -2145,6 +2172,324 @@ export default function TempleScene({
     const activeWanderingRigs = new Set<CharacterRig>()
     robeRef.current = (color) => player.robe.color.set(color)
 
+    // Remote devotees synchronization (Supabase Realtime Presence & Broadcast).
+    type RemoteDevoteeEntity = {
+      id: string
+      name: string
+      dharmaName: string
+      seatNo: number | null
+      rig: CharacterRig
+      label: HTMLDivElement
+      targetX: number
+      targetZ: number
+      targetHeading: number
+      targetPose: Pose
+      isWalking: boolean
+      lastUpdate: number
+      robeTheme?: string
+      robeColor?: string
+    }
+    const remoteEntities = new Map<string, RemoteDevoteeEntity>()
+
+    const syncRemoteDevotees = (devoteeList: any[]) => {
+      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
+      const currentIds = new Set<string>()
+
+      if (Array.isArray(devoteeList)) {
+        devoteeList.forEach((d) => {
+          const clientId = String(d.id || d.clientId || '')
+          if (!clientId || clientId === myId) return
+          currentIds.add(clientId)
+
+          const devoteeName = d.name || d.fullName || 'Đồng Tu'
+          const dharmaName = d.dharma || d.dharmaName || 'Tịnh Niệm'
+          const rawSeat = typeof d.seatNo === 'number' ? d.seatNo : d.assignedSeatNo
+          const seatNo = rawSeat ? Number(rawSeat) : null
+
+          const remoteTheme = d.robeTheme || d.theme || 'xanh'
+          const remoteColor = resolveRobeColor(remoteTheme, d.robeColor)
+
+          if (remoteEntities.has(clientId)) {
+            const entity = remoteEntities.get(clientId)!
+            if (entity.robeColor !== remoteColor) {
+              entity.robeTheme = remoteTheme
+              entity.robeColor = remoteColor
+              entity.rig.robe.color.set(remoteColor)
+            }
+            const isRecentLive = (performance.now() - entity.lastUpdate) < 6000 || entity.isWalking || entity.seatNo === null
+            if (!isRecentLive && entity.seatNo !== seatNo && seatNo !== null) {
+              entity.seatNo = seatNo
+              if (seatNo && SEATS.find((s) => s.no === seatNo)) {
+                const s = SEATS.find((s) => s.no === seatNo)!
+                entity.targetX = s.x
+                entity.targetZ = s.z
+                entity.targetHeading = Math.PI
+                entity.targetPose = 'sit'
+              }
+              entity.label.innerHTML = `<strong>${devoteeName}<span class="scene-label__level">Bồ đoàn #${seatNo || 'Sân'}</span></strong><small>${dharmaName}</small>`
+            }
+          } else {
+            let x = 0
+            let z = 0
+            let pose: Pose = 'stand'
+            if (seatNo && SEATS.find((s) => s.no === seatNo)) {
+              const s = SEATS.find((s) => s.no === seatNo)!
+              x = s.x
+              z = s.z
+              pose = 'sit'
+            } else if (typeof d.x === 'number' && typeof d.z === 'number') {
+              x = d.x
+              z = d.z
+              pose = d.pose || 'stand'
+            } else {
+              let hash = 0
+              for (let i = 0; i < clientId.length; i++) hash = (hash * 31 + clientId.charCodeAt(i)) & 0xfffff
+              x = ((hash % 11) - 5) * 1.6
+              z = 2 + (hash % 7) * 1.4
+            }
+            const rig = character(x, z, remoteColor, pose, Math.random() * 2)
+            if (pose === 'sit') {
+              rig.group.rotation.set(0, Math.PI, 0)
+            } else {
+              rig.group.lookAt(x, 0, -20)
+            }
+            rigs.push(rig)
+
+            const label = document.createElement('div')
+            label.className = 'scene-label scene-label--remote'
+            label.innerHTML = `<strong>${devoteeName}<span class="scene-label__level">Bồ đoàn #${seatNo || 'Sân'}</span></strong><small>${dharmaName}</small>`
+            labelsContainerRef.current?.appendChild(label)
+
+            remoteEntities.set(clientId, {
+              id: clientId,
+              name: devoteeName,
+              dharmaName,
+              seatNo,
+              rig,
+              label,
+              targetX: x,
+              targetZ: z,
+              targetHeading: pose === 'sit' ? Math.PI : Math.atan2(0 - x, -20 - z),
+              targetPose: pose,
+              isWalking: false,
+              lastUpdate: performance.now(),
+              robeTheme: remoteTheme,
+              robeColor: remoteColor,
+            })
+          }
+        })
+      }
+
+      remoteEntities.forEach((entity, clientId) => {
+        const isRecentLive = (performance.now() - entity.lastUpdate) < 6000 || entity.isWalking
+        if (!currentIds.has(clientId) && !isRecentLive) {
+          world.remove(entity.rig.group)
+          const idx = rigs.indexOf(entity.rig)
+          if (idx !== -1) rigs.splice(idx, 1)
+          if (entity.label.parentNode) {
+            entity.label.parentNode.removeChild(entity.label)
+          }
+          remoteEntities.delete(clientId)
+        }
+      })
+    }
+
+    // Listen to real-time movements, walking & actions from remote devotees
+    ;(window as any).handleRemoteDevoteeWalking = (payload: any) => {
+      if (!payload) return
+      const clientId = String(payload.senderId || payload.clientId || '')
+      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
+      if (!clientId || clientId === myId) return
+
+      let entity = remoteEntities.get(clientId)
+      if (!entity) {
+        const devoteeName = payload.senderName || payload.name || payload.fullName || 'Đồng Tu'
+        const dharmaName = payload.dharmaName || payload.dharma || 'Tịnh Tâm'
+        const rawSeat = typeof payload.seatNo === 'number' ? payload.seatNo : null
+        let spawnX = typeof payload.x === 'number' ? payload.x : 0
+        let spawnZ = typeof payload.z === 'number' ? payload.z : 0
+        const pose: Pose = payload.pose || (rawSeat ? 'sit' : 'stand')
+
+        if (rawSeat && SEATS.find((s) => s.no === rawSeat) && typeof payload.x !== 'number') {
+          const s = SEATS.find((s) => s.no === rawSeat)!
+          spawnX = s.x
+          spawnZ = s.z
+        }
+
+        const remoteTheme = payload.theme || payload.robeTheme || 'xanh'
+        const remoteColor = resolveRobeColor(remoteTheme, payload.robeColor)
+        const rig = character(spawnX, spawnZ, remoteColor, pose, Math.random() * 2)
+        if (typeof payload.heading === 'number') {
+          rig.group.rotation.set(0, payload.heading, 0)
+        } else if (pose === 'sit') {
+          rig.group.rotation.set(0, Math.PI, 0)
+        }
+        rigs.push(rig)
+
+        const label = document.createElement('div')
+        label.className = 'scene-label scene-label--remote'
+        label.innerHTML = `<strong>${devoteeName}<span class="scene-label__level">Bồ đoàn #${rawSeat || 'Sân'}</span></strong><small>${dharmaName}</small>`
+        labelsContainerRef.current?.appendChild(label)
+
+        entity = {
+          id: clientId,
+          name: devoteeName,
+          dharmaName,
+          seatNo: rawSeat,
+          rig,
+          label,
+          targetX: spawnX,
+          targetZ: spawnZ,
+          targetHeading: typeof payload.heading === 'number' ? payload.heading : rig.group.rotation.y,
+          targetPose: pose,
+          isWalking: Boolean(payload.walking),
+          lastUpdate: performance.now(),
+          robeTheme: remoteTheme,
+          robeColor: remoteColor,
+        }
+        remoteEntities.set(clientId, entity)
+      } else {
+        if (payload.theme || payload.robeColor) {
+          const col = resolveRobeColor(payload.theme, payload.robeColor)
+          if (entity.robeColor !== col) {
+            entity.robeTheme = payload.theme
+            entity.robeColor = col
+            entity.rig.robe.color.set(col)
+          }
+        }
+        if (typeof payload.x === 'number') entity.targetX = payload.x
+        if (typeof payload.z === 'number') entity.targetZ = payload.z
+        if (typeof payload.heading === 'number') entity.targetHeading = payload.heading
+        if (payload.pose) entity.targetPose = payload.pose
+        entity.isWalking = Boolean(payload.walking)
+        entity.lastUpdate = performance.now()
+
+        if (payload.seatNo !== undefined && entity.seatNo !== payload.seatNo) {
+          entity.seatNo = payload.seatNo
+          entity.label.innerHTML = `<strong>${entity.name}<span class="scene-label__level">Bồ đoàn #${payload.seatNo || 'Sân'}</span></strong><small>${entity.dharmaName}</small>`
+        }
+
+        if ((window as any).SupabaseSanctuary?.activeDevotees?.has(clientId)) {
+          const d = (window as any).SupabaseSanctuary.activeDevotees.get(clientId)
+          if (d) {
+            d.seatNo = payload.seatNo
+            d.x = payload.x
+            d.z = payload.z
+            d.pose = payload.pose
+            d.walking = payload.walking
+          }
+        }
+        if (payload.action === 'bow' || payload.action === 'offer') {
+          entity.rig.action = {
+            kind: 'bow',
+            start: clock.elapsedTime,
+            duration: payload.action === 'offer' ? 2.8 : 2.6,
+          }
+        }
+      }
+    }
+
+    const triggerAction = (target: string | number | undefined, kind: 'bow' | 'knock') => {
+      if (!target) return
+      let targetSeat: number | null = null
+      let targetClientId: string | null = null
+      if (typeof target === 'number') {
+        targetSeat = target
+      } else if (typeof target === 'string') {
+        if (target.startsWith('seat-')) {
+          targetSeat = parseInt(target.replace('seat-', ''), 10)
+        } else {
+          targetClientId = target
+        }
+      }
+      remoteEntities.forEach((entity) => {
+        if ((targetClientId && entity.id === targetClientId) || (targetSeat && entity.seatNo === targetSeat)) {
+          entity.rig.action = { kind, start: clock.elapsedTime, duration: kind === 'bow' ? 2.6 : 1.0 }
+        }
+      })
+    }
+
+    ;(window as any).triggerDevoteeBow = (target?: string | number) => triggerAction(target, 'bow')
+    ;(window as any).triggerDevoteeKnock = (target?: string | number) => triggerAction(target, 'knock')
+
+    // 3D Speech bubbles system for communal chat messages
+    type SpeechBubble = {
+      id: string
+      targetRig: CharacterRig
+      element: HTMLDivElement
+      expiresAt: number
+    }
+    const speechBubbles = new Map<string, SpeechBubble>()
+
+    const showSpeechBubble = (targetRig: CharacterRig, authorName: string, text: string) => {
+      if (!labelsContainerRef.current) return
+      const key = String(targetRig.group.id)
+      let bubble = speechBubbles.get(key)
+      if (!bubble) {
+        const el = document.createElement('div')
+        el.className = 'scene-speech-bubble'
+        labelsContainerRef.current.appendChild(el)
+        bubble = {
+          id: key,
+          targetRig,
+          element: el,
+          expiresAt: clock.elapsedTime + 6.5,
+        }
+        speechBubbles.set(key, bubble)
+      }
+      bubble.expiresAt = clock.elapsedTime + 6.5
+      bubble.element.innerHTML = `<span class="bubble-tail"></span><strong class="bubble-author">${authorName}:</strong> <span>${text}</span>`
+      bubble.element.style.opacity = '1'
+    }
+
+    const onIncomingChatMessage = (event: any) => {
+      const msg = event.detail
+      if (!msg) return
+      const text = (msg.text || msg.body || '').trim()
+      if (!text) return
+      const senderId = String(msg.senderId || msg.clientId || '')
+      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
+      const authorName = msg.name || msg.author || msg.fullName || 'Đồng Tu'
+
+      if (msg.isSelf || senderId === myId || authorName === playerName) {
+        showSpeechBubble(player, playerName, text)
+      } else if (senderId && remoteEntities.has(senderId)) {
+        const ent = remoteEntities.get(senderId)!
+        showSpeechBubble(ent.rig, ent.name, text)
+      } else {
+        let found = false
+        remoteEntities.forEach((ent) => {
+          if (!found && (ent.name === authorName || ent.dharmaName === authorName)) {
+            showSpeechBubble(ent.rig, ent.name, text)
+            found = true
+          }
+        })
+      }
+    }
+    window.addEventListener('community_chat_message', onIncomingChatMessage)
+    window.addEventListener('sanctuary_chat_message', onIncomingChatMessage)
+    window.addEventListener('room-realtime-message', (e: any) => {
+      if (e.detail?.type === 'ROOM_CHAT') {
+        onIncomingChatMessage(e)
+      }
+    })
+
+    const onDevoteeChangeRobe = (event: any) => {
+      const p = event.detail
+      if (!p) return
+      const cId = String(p.senderId || p.clientId || '')
+      const myId = (window as any).SANCTUARY_CLIENT_ID || (window as any).SupabaseSanctuary?.getClientId?.() || ''
+      if (!cId || cId === myId) return
+      const ent = remoteEntities.get(cId)
+      if (ent) {
+        const col = resolveRobeColor(p.theme, p.robeColor)
+        ent.robeTheme = p.theme
+        ent.robeColor = col
+        ent.rig.robe.color.set(col)
+      }
+    }
+    window.addEventListener('devotee_change_robe', onDevoteeChangeRobe)
+
     // Incense smoke drifting up from the altar urn.
     const smokeTexture = canvasTexture(64, 64, (ctx) => {
       const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32)
@@ -2335,7 +2680,18 @@ export default function TempleScene({
       },
       bow: () => {
         if (route.length) return
+        heading = Math.PI
+        player.group.rotation.y = Math.PI
         action = { kind: 'bow', start: clock.elapsedTime, duration: 2.6 }
+        ;(window as any).SupabaseSanctuary?.broadcast?.('DEVOTEE_WALKING', {
+          action: 'bow',
+          heading: Math.PI,
+          pose: player.pose,
+          x: Number(player.group.position.x.toFixed(2)),
+          z: Number(player.group.position.z.toFixed(2)),
+          theme: themeRef.current,
+          robeColor: resolveRobeColor(themeRef.current),
+        })
       },
       ringBell: () => {
         activeBellSite = nearestTemple().id
@@ -2429,6 +2785,16 @@ export default function TempleScene({
     const clock = new THREE.Clock()
     let frame = 0
     let firstFrame = true
+
+    const lastBroadcastPos = {
+      x: 0,
+      z: 17,
+      heading: Math.PI,
+      walking: false,
+      pose: 'stand' as Pose,
+      seatNo: null as number | null,
+      time: 0,
+    }
 
     const animate = () => {
       frame = requestAnimationFrame(animate)
@@ -2555,6 +2921,42 @@ export default function TempleScene({
         }
       }
       player.group.rotation.y = heading
+
+      const nowMs = performance.now()
+      const isTime = nowMs - lastBroadcastPos.time >= 80
+      const movedDist = Math.hypot(position.x - lastBroadcastPos.x, position.z - lastBroadcastPos.z)
+      const turnedRad = Math.abs(heading - lastBroadcastPos.heading)
+      const walkingChanged = walking !== lastBroadcastPos.walking
+      const poseChanged = player.pose !== lastBroadcastPos.pose
+      const seatChanged = seated !== lastBroadcastPos.seatNo
+
+      if (
+        walkingChanged ||
+        poseChanged ||
+        seatChanged ||
+        (walking && isTime && (movedDist > 0.04 || turnedRad > 0.08)) ||
+        (!walking && lastBroadcastPos.walking)
+      ) {
+        lastBroadcastPos.x = position.x
+        lastBroadcastPos.z = position.z
+        lastBroadcastPos.heading = heading
+        lastBroadcastPos.walking = walking
+        lastBroadcastPos.pose = player.pose
+        lastBroadcastPos.seatNo = seated
+        lastBroadcastPos.time = nowMs
+        ;(window as any).lastPlayerPos = lastBroadcastPos
+
+        ;(window as any).SupabaseSanctuary?.broadcast?.('DEVOTEE_WALKING', {
+          x: Number(position.x.toFixed(2)),
+          z: Number(position.z.toFixed(2)),
+          heading: Number(heading.toFixed(2)),
+          pose: player.pose,
+          walking: walking,
+          seatNo: seated,
+          theme: themeRef.current,
+          robeColor: resolveRobeColor(themeRef.current),
+        })
+      }
       // Move the daylight rig with the active area so distant temples retain
       // the same soft shadows and depth as the original courtyard.
       sunTarget.position.set(position.x, 0, position.z)
@@ -2619,6 +3021,48 @@ export default function TempleScene({
         const size = 0.25 + life * 1.1
         sprite.scale.set(size, size, 1)
         sprite.material.opacity = smokeLevel * 0.45 * Math.sin(life * Math.PI)
+      })
+
+      // 1. Update remote entities: lerp position, heading, pose and walking state
+      remoteEntities.forEach((entity) => {
+        const rig = entity.rig
+
+        // Smooth position interpolation
+        const curX = rig.group.position.x
+        const curZ = rig.group.position.z
+        const dx = entity.targetX - curX
+        const dz = entity.targetZ - curZ
+        const dist = Math.hypot(dx, dz)
+
+        if (dist > 8) {
+          rig.group.position.x = entity.targetX
+          rig.group.position.z = entity.targetZ
+          rig.isWalking = false
+        } else if (dist > 0.02) {
+          const lerpFactor = Math.min(1, delta * 9)
+          rig.group.position.x += dx * lerpFactor
+          rig.group.position.z += dz * lerpFactor
+          rig.isWalking = true
+        } else {
+          rig.group.position.x = entity.targetX
+          rig.group.position.z = entity.targetZ
+          rig.isWalking = entity.isWalking
+        }
+
+        // Heading rotation interpolation
+        const curHeading = rig.group.rotation.y
+        const turn = Math.atan2(
+          Math.sin(entity.targetHeading - curHeading),
+          Math.cos(entity.targetHeading - curHeading),
+        )
+        rig.group.rotation.y += turn * Math.min(1, delta * 12)
+
+        // Pose transition (stand up vs sit down)
+        if (rig.pose !== entity.targetPose) {
+          rig.pose = entity.targetPose
+          rig.leftLeg.visible = rig.rightLeg.visible = entity.targetPose !== 'sit'
+          rig.body.position.y = entity.targetPose === 'sit' ? -0.14 : 0
+        }
       })
 
       activeWanderingRigs.clear()
@@ -2729,25 +3173,30 @@ export default function TempleScene({
       }
 
       rigs.forEach((rig, index) => {
-        const moving = (index === 0 && walking) || activeWanderingRigs.has(rig)
+        const moving = (index === 0 && walking) || activeWanderingRigs.has(rig) || rig.isWalking
         const pace = moving ? elapsed * 10 : elapsed * 1.5 + rig.phase
         const step = Math.sin(pace)
         rig.body.rotation.x = 0
         rig.leftLeg.visible = rig.rightLeg.visible = rig.pose !== 'sit'
-        if (index === 0 && action) {
-          const t = (elapsed - action.start) / action.duration
+        if ((index === 0 && action) || rig.action) {
+          const currentAction = index === 0 ? action : rig.action
+          const t = (elapsed - currentAction!.start) / currentAction!.duration
           if (t >= 1) {
-            const done = action.done
-            action = null
-            done?.()
+            if (index === 0) {
+              const done = action?.done
+              action = null
+              done?.()
+            } else {
+              rig.action = undefined
+            }
           } else {
             const k = Math.sin(t * Math.PI)
             const raise = Math.min(1, k * 1.8)
             rig.leftArm.rotation.set(-1.25 * raise, 0, -0.38 * raise - 0.16 * (1 - raise))
             rig.rightArm.rotation.set(-1.25 * raise, 0, 0.38 * raise + 0.16 * (1 - raise))
-            rig.body.rotation.x = action.kind === 'bow' ? 0.55 * k : 0.15 * k
+            rig.body.rotation.x = currentAction!.kind === 'bow' ? 0.55 * k : 0.15 * k
             rig.body.position.y = rig.pose === 'sit' ? -0.14 : 0
-            rig.head.rotation.set(action.kind === 'bow' ? 0.2 * k : 0.1 * k, 0, 0)
+            rig.head.rotation.set(currentAction!.kind === 'bow' ? 0.2 * k : 0.1 * k, 0, 0)
             return
           }
         }
@@ -2786,13 +3235,91 @@ export default function TempleScene({
           label.style.zIndex = String(1000 - Math.round(far * 10))
         }
       })
+
+      // Update remote devotee 3D name labels
+      remoteEntities.forEach((entity) => {
+        const rig = entity.rig
+        const label = entity.label
+        projected.copy(rig.group.position)
+        projected.y += rig.pose === 'sit' ? 2.3 : 2.55
+        const far = camera.position.distanceTo(projected)
+        projected.project(camera)
+        const visible = projected.z < 1 && far < 55 && Math.abs(projected.x) < 1.3 && Math.abs(projected.y) < 1.3
+        label.style.opacity = visible ? String(THREE.MathUtils.clamp((55 - far) / 12, 0, 1)) : '0'
+        if (visible) {
+          const x = ((projected.x + 1) / 2) * width
+          const y = ((1 - projected.y) / 2) * height
+          label.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -100%)`
+          label.style.zIndex = String(1000 - Math.round(far * 10))
+        }
+      })
+
+      // Update 3D floating speech bubbles
+      speechBubbles.forEach((bubble, key) => {
+        if (elapsed > bubble.expiresAt) {
+          bubble.element.style.opacity = '0'
+          if (elapsed > bubble.expiresAt + 0.5) {
+            if (bubble.element.parentNode) bubble.element.parentNode.removeChild(bubble.element)
+            speechBubbles.delete(key)
+          }
+          return
+        }
+        projected.copy(bubble.targetRig.group.position)
+        projected.y += bubble.targetRig.pose === 'sit' ? 2.85 : 3.2
+        const far = camera.position.distanceTo(projected)
+        projected.project(camera)
+        const visible = projected.z < 1 && far < 50 && Math.abs(projected.x) < 1.3 && Math.abs(projected.y) < 1.3
+        bubble.element.style.opacity = visible ? '1' : '0'
+        if (visible) {
+          const sx = ((projected.x + 1) / 2) * width
+          const sy = ((1 - projected.y) / 2) * height
+          bubble.element.style.transform = `translate3d(${sx.toFixed(1)}px, ${sy.toFixed(1)}px, 0) translate(-50%, -100%)`
+          bubble.element.style.zIndex = '1500'
+        }
+      })
+
       if (needleRef.current) needleRef.current.style.transform = `rotate(${-yaw}rad)`
 
       renderer.render(scene, camera)
     }
     animate()
 
+    const onDevoteesUpdated = (event: any) => {
+      const list = event.detail || []
+      syncRemoteDevotees(list)
+    }
+    window.addEventListener('sanctuary_devotees_updated', onDevoteesUpdated)
+
+    if ((window as any).SupabaseSanctuary?.activeDevotees) {
+      const initialList = Array.from((window as any).SupabaseSanctuary.activeDevotees.values())
+      syncRemoteDevotees(initialList)
+    }
+
+    const pollInterval = setInterval(() => {
+      if ((window as any).SupabaseSanctuary?.activeDevotees) {
+        const currentList = Array.from((window as any).SupabaseSanctuary.activeDevotees.values())
+        syncRemoteDevotees(currentList)
+      }
+    }, 1200)
+
     return () => {
+      clearInterval(pollInterval)
+      window.removeEventListener('sanctuary_devotees_updated', onDevoteesUpdated)
+      window.removeEventListener('community_chat_message', onIncomingChatMessage)
+      window.removeEventListener('sanctuary_chat_message', onIncomingChatMessage)
+      window.removeEventListener('devotee_change_robe', onDevoteeChangeRobe)
+      remoteEntities.forEach((entity) => {
+        if (entity.label.parentNode) entity.label.parentNode.removeChild(entity.label)
+        world.remove(entity.rig.group)
+      })
+      remoteEntities.clear()
+      speechBubbles.forEach((b) => {
+        if (b.element.parentNode) b.element.parentNode.removeChild(b.element)
+      })
+      speechBubbles.clear()
+      delete (window as any).triggerDevoteeBow
+      delete (window as any).triggerDevoteeKnock
+      delete (window as any).handleRemoteDevoteeWalking
       seatManager.releaseAllForActor('player')
       cancelAnimationFrame(frame)
       robeRef.current = null
@@ -2877,7 +3404,7 @@ export default function TempleScene({
         <Chibi variant="monk" />
       </div>
 
-      <div className="scene-labels" aria-hidden="true">
+      <div className="scene-labels" ref={labelsContainerRef} aria-hidden="true">
         <div
           className="scene-label scene-label--self"
           ref={(element) => {

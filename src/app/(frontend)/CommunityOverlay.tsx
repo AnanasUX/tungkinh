@@ -556,11 +556,16 @@ export function VideoCallOverlay({ playerName, open, onClose, onMinimize }: Call
   }, [])
 
   useEffect(() => {
+    if (open && typeof (window as any).startZaloVideoCall === 'function') {
+      (window as any).startZaloVideoCall()
+      onClose()
+      return
+    }
     if (!open) return
     setSeconds(0)
     const timer = window.setInterval(() => setSeconds((value) => value + 1), 1000)
     return () => window.clearInterval(timer)
-  }, [open])
+  }, [open, onClose])
 
   useEffect(() => stopAll, [stopAll])
 
